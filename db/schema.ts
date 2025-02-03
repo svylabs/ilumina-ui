@@ -21,6 +21,35 @@ export const insertSubmissionSchema = createInsertSchema(submissions, {
   email: z.string().email(),
 });
 
+// Schema for the test results JSON structure
+export const testResultSchema = z.object({
+  summary: z.object({
+    total: z.number(),
+    passed: z.number(),
+    failed: z.number(),
+    duration: z.number(),
+  }),
+  results: z.record(
+    z.string(),
+    z.record(
+      z.string(),
+      z.object({
+        passed: z.boolean(),
+        output: z.string().optional(),
+        duration: z.number(),
+        category: z.string(),
+        errorDetails: z
+          .object({
+            message: z.string(),
+            stackTrace: z.string().optional(),
+          })
+          .optional(),
+      }),
+    ),
+  ),
+});
+
 export const selectSubmissionSchema = createSelectSchema(submissions);
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;
+export type TestResults = z.infer<typeof testResultSchema>;
