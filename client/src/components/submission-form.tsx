@@ -14,7 +14,7 @@ import { insertSubmissionSchema } from "@db/schema";
 export default function SubmissionForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
+
   const form = useForm<InsertSubmission>({
     resolver: zodResolver(insertSubmissionSchema),
     defaultValues: {
@@ -33,7 +33,7 @@ export default function SubmissionForm() {
         title: "Success!",
         description: "Your submission has been received.",
       });
-      setLocation(`/results/${data.id}`);
+      setLocation(`/analysis/${data.id}`);
     },
     onError: (error: Error) => {
       toast({
@@ -60,7 +60,7 @@ export default function SubmissionForm() {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="email"

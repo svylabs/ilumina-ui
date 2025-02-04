@@ -29,23 +29,66 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).send(error.toString());
     }
 
-    // Create submission and initial run
     const [submission] = await db.insert(submissions)
       .values(result.data)
       .returning();
 
-    const [run] = await db.insert(runs).values({
-      submissionId: submission.id,
-      status: "running",
-      latestLog: "Initializing test run..."
-    }).returning();
+    const [run] = await db.insert(runs)
+      .values({
+        submissionId: submission.id,
+        status: "running",
+        latestLog: "Initializing analysis..."
+      })
+      .returning();
 
-    // Start the test run simulation
     setTimeout(() => {
       updateRunStatus(run.id).catch(console.error);
     }, 2000);
 
     res.status(201).json(submission);
+  });
+
+  app.get("/api/analysis/:id", async (req, res) => {
+    const [submission] = await db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, parseInt(req.params.id)))
+      .limit(1);
+
+    if (!submission) {
+      return res.status(404).send("Submission not found");
+    }
+
+    // Simulate analysis progress based on time elapsed
+    const startTime = new Date(submission.createdAt).getTime();
+    const elapsed = Date.now() - startTime;
+
+    const steps = {
+      files: {
+        status: elapsed > 2000 ? "completed" : "in_progress",
+        details: elapsed > 2000 ? "Found 3 Solidity contract files" : null
+      },
+      abi: {
+        status: elapsed > 4000 ? "completed" : elapsed > 2000 ? "in_progress" : "pending",
+        details: elapsed > 4000 ? "Identified compilation requirements" : null
+      },
+      workspace: {
+        status: elapsed > 6000 ? "completed" : elapsed > 4000 ? "in_progress" : "pending",
+        details: elapsed > 6000 ? "Workspace setup complete" : null
+      },
+      test_setup: {
+        status: elapsed > 8000 ? "completed" : elapsed > 6000 ? "in_progress" : "pending",
+        details: elapsed > 8000 ? "Test environment configured with flocc-ext" : null
+      },
+      actors: {
+        status: elapsed > 10000 ? "completed" : elapsed > 8000 ? "in_progress" : "pending",
+        details: elapsed > 10000 ? "Identified 2 main actors and their actions" : null
+      }
+    };
+
+    const status = elapsed > 10000 ? "completed" : "in_progress";
+
+    res.json({ status, steps });
   });
 
   app.get("/api/submissions/:id", async (req, res) => {
@@ -59,7 +102,6 @@ export function registerRoutes(app: Express): Server {
       return res.status(404).send("Submission not found");
     }
 
-    // Get all runs for this submission
     const testRuns = await db
       .select()
       .from(runs)
@@ -90,7 +132,6 @@ export function registerRoutes(app: Express): Server {
 
     console.log(`Created new run ${newRun.id} for submission ${submission.id}`);
 
-    // Simulate test progress
     setTimeout(() => {
       console.log(`Starting status update for run ${newRun.id}...`);
       updateRunStatus(newRun.id)
