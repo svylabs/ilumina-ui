@@ -48,6 +48,41 @@ export function registerRoutes(app: Express): Server {
     res.json({ ...submission, runs: testRuns });
   });
 
+  // New endpoint for creating a new run
+  app.post("/api/submissions/:id/runs", async (req, res) => {
+    const [submission] = await db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, parseInt(req.params.id)))
+      .limit(1);
+
+    if (!submission) {
+      return res.status(404).send("Submission not found");
+    }
+
+    const [newRun] = await db.insert(runs)
+      .values({
+        submissionId: submission.id,
+        status: "running",
+        latestLog: "Starting new test run..."
+      })
+      .returning();
+
+    // Simulate test progress with shorter timeout
+    setTimeout(async () => {
+      await db
+        .update(runs)
+        .set({
+          status: Math.random() > 0.5 ? "success" : "failed",
+          completedAt: new Date(),
+          latestLog: "Test run completed with some sample results..."
+        })
+        .where(eq(runs.id, newRun.id));
+    }, 3000); // Reduced to 3 seconds
+
+    res.status(201).json(newRun);
+  });
+
   app.post("/api/runs/:id/rerun", async (req, res) => {
     const [existingRun] = await db
       .select()
@@ -68,7 +103,7 @@ export function registerRoutes(app: Express): Server {
       })
       .returning();
 
-    // Simulate test progress (in a real app, this would be handled by a worker)
+    // Simulate test progress with shorter timeout
     setTimeout(async () => {
       await db
         .update(runs)
@@ -78,7 +113,7 @@ export function registerRoutes(app: Express): Server {
           latestLog: "Test run completed with some sample results..."
         })
         .where(eq(runs.id, newRun.id));
-    }, 5000);
+    }, 3000); // Reduced to 3 seconds
 
     res.status(201).json(newRun);
   });
