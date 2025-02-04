@@ -83,10 +83,14 @@ export function registerRoutes(app: Express): Server {
       actors: {
         status: elapsed > 10000 ? "completed" : elapsed > 8000 ? "in_progress" : "pending",
         details: elapsed > 10000 ? "Identified 2 main actors and their actions" : null
+      },
+      simulations: {
+        status: elapsed > 12000 ? "completed" : elapsed > 10000 ? "in_progress" : "pending",
+        details: elapsed > 12000 ? "All simulations completed successfully" : null
       }
     };
 
-    const status = elapsed > 10000 ? "completed" : "in_progress";
+    const status = elapsed > 12000 ? "completed" : "in_progress";
 
     res.json({ status, steps });
   });

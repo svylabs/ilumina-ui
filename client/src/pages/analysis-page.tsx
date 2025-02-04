@@ -1,13 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle, CircleDot } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type AnalysisStep = {
   id: string;
   title: string;
   description: string;
   status: "pending" | "in_progress" | "completed" | "failed";
+  link?: string;
+  linkText?: string;
 };
 
 const analysisSteps: AnalysisStep[] = [
@@ -21,25 +24,41 @@ const analysisSteps: AnalysisStep[] = [
     id: "abi",
     title: "ABI Detection",
     description: "Locating ABI files or identifying compilation requirements",
-    status: "pending"
+    status: "pending",
+    link: "/workspace/abi",
+    linkText: "View ABI Files"
   },
   {
     id: "workspace",
     title: "Workspace Setup",
     description: "Setting up development workspace and compiling code to ABIs",
-    status: "pending"
+    status: "pending",
+    link: "/workspace/code",
+    linkText: "View Code"
   },
   {
     id: "test_setup",
     title: "Test Environment",
     description: "Configuring test workspace with flocc-ext library",
-    status: "pending"
+    status: "pending",
+    link: "/workspace/test",
+    linkText: "View Test Setup"
   },
   {
     id: "actors",
     title: "Actor Analysis",
     description: "Identifying actors and implementing their actions",
-    status: "pending"
+    status: "pending",
+    link: "/workspace/actors",
+    linkText: "View Actors"
+  },
+  {
+    id: "simulations",
+    title: "Simulations",
+    description: "Running test simulations with identified actors",
+    status: "pending",
+    link: "/results",
+    linkText: "View Test Results"
   }
 ];
 
@@ -58,7 +77,7 @@ function StepStatus({ status }: { status: AnalysisStep["status"] }) {
 
 export default function AnalysisPage() {
   const { id } = useParams();
-  
+
   const { data: analysis, isLoading } = useQuery({
     queryKey: [`/api/analysis/${id}`],
     refetchInterval: (data) => {
@@ -91,11 +110,22 @@ export default function AnalysisPage() {
             <Card key={step.id}>
               <CardHeader className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="space-y-2">
                     <CardTitle className="text-xl">{step.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground">
                       {step.description}
                     </p>
+                    {step.link && analysis?.steps?.[step.id]?.status === "completed" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                      >
+                        <Link href={step.id === "simulations" ? `/results/${id}` : step.link}>
+                          {step.linkText}
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                   <StepStatus status={analysis?.steps?.[step.id]?.status || "pending"} />
                 </div>
