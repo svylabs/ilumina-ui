@@ -177,6 +177,30 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json(newRun);
   });
 
+  app.get("/api/download/:id", async (req, res) => {
+    const [submission] = await db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, parseInt(req.params.id)))
+      .limit(1);
+
+    if (!submission) {
+      return res.status(404).send("Submission not found");
+    }
+
+    // For now, we'll return a simple JSON file with submission details
+    // In a real implementation, this would zip and return the actual code
+    const data = {
+      repository: submission.githubUrl,
+      timestamp: submission.createdAt,
+      status: submission.status
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=project-${submission.id}.json`);
+    res.json(data);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

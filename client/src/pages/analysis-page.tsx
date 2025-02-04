@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CheckCircle2, XCircle, CircleDot } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, CircleDot, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type AnalysisStep = {
@@ -97,9 +97,19 @@ export default function AnalysisPage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Smart Contract Analysis
-          </h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Smart Contract Analysis
+            </h1>
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = `/api/download/${id}`}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download Project
+            </Button>
+          </div>
           <p className="text-muted-foreground text-lg">
             Analyzing repository structure and preparing test environment
           </p>
