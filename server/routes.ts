@@ -5,6 +5,22 @@ import { submissions, runs, insertSubmissionSchema } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 
+async function updateRunStatus(runId: number) {
+  const status = Math.random() > 0.5 ? "success" : "failed";
+  const [updatedRun] = await db
+    .update(runs)
+    .set({
+      status,
+      completedAt: new Date(),
+      latestLog: `Test run completed with ${status} status. Sample results...`
+    })
+    .where(eq(runs.id, runId))
+    .returning();
+
+  console.log(`Updated run ${runId} to status: ${status}`);
+  return updatedRun;
+}
+
 export function registerRoutes(app: Express): Server {
   app.post("/api/submissions", async (req, res) => {
     const result = insertSubmissionSchema.safeParse(req.body);
@@ -18,11 +34,16 @@ export function registerRoutes(app: Express): Server {
       .values(result.data)
       .returning();
 
-    await db.insert(runs).values({
+    const [run] = await db.insert(runs).values({
       submissionId: submission.id,
       status: "running",
       latestLog: "Initializing test run..."
-    });
+    }).returning();
+
+    // Start the test run simulation
+    setTimeout(() => {
+      updateRunStatus(run.id).catch(console.error);
+    }, 2000);
 
     res.status(201).json(submission);
   });
@@ -68,17 +89,12 @@ export function registerRoutes(app: Express): Server {
       })
       .returning();
 
-    // Simulate test progress with shorter timeout
-    setTimeout(async () => {
-      await db
-        .update(runs)
-        .set({
-          status: Math.random() > 0.5 ? "success" : "failed",
-          completedAt: new Date(),
-          latestLog: "Test run completed with some sample results..."
-        })
-        .where(eq(runs.id, newRun.id));
-    }, 3000); // Reduced to 3 seconds
+    console.log(`Created new run ${newRun.id} for submission ${submission.id}`);
+
+    // Simulate test progress
+    setTimeout(() => {
+      updateRunStatus(newRun.id).catch(console.error);
+    }, 2000);
 
     res.status(201).json(newRun);
   });
@@ -94,7 +110,6 @@ export function registerRoutes(app: Express): Server {
       return res.status(404).send("Run not found");
     }
 
-    // Create a new run for the same submission
     const [newRun] = await db.insert(runs)
       .values({
         submissionId: existingRun.submissionId,
@@ -103,17 +118,11 @@ export function registerRoutes(app: Express): Server {
       })
       .returning();
 
-    // Simulate test progress with shorter timeout
-    setTimeout(async () => {
-      await db
-        .update(runs)
-        .set({
-          status: Math.random() > 0.5 ? "success" : "failed",
-          completedAt: new Date(),
-          latestLog: "Test run completed with some sample results..."
-        })
-        .where(eq(runs.id, newRun.id));
-    }, 3000); // Reduced to 3 seconds
+    console.log(`Created re-run ${newRun.id} for run ${existingRun.id}`);
+
+    setTimeout(() => {
+      updateRunStatus(newRun.id).catch(console.error);
+    }, 2000);
 
     res.status(201).json(newRun);
   });
