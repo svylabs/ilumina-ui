@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,7 +10,17 @@ export const submissions = pgTable("submissions", {
   status: text("status", { enum: ["pending", "testing", "completed", "failed"] })
     .default("pending")
     .notNull(),
-  testResults: text("test_results"),
+});
+
+export const runs = pgTable("runs", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").notNull(),
+  status: text("status", { enum: ["pending", "running", "success", "failed"] })
+    .default("pending")
+    .notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  latestLog: text("latest_log"),
 });
 
 export const insertSubmissionSchema = createInsertSchema(submissions, {
@@ -21,35 +31,11 @@ export const insertSubmissionSchema = createInsertSchema(submissions, {
   email: z.string().email(),
 });
 
-// Schema for the test results JSON structure
-export const testResultSchema = z.object({
-  summary: z.object({
-    total: z.number(),
-    passed: z.number(),
-    failed: z.number(),
-    duration: z.number(),
-  }),
-  results: z.record(
-    z.string(),
-    z.record(
-      z.string(),
-      z.object({
-        passed: z.boolean(),
-        output: z.string().optional(),
-        duration: z.number(),
-        category: z.string(),
-        errorDetails: z
-          .object({
-            message: z.string(),
-            stackTrace: z.string().optional(),
-          })
-          .optional(),
-      }),
-    ),
-  ),
-});
+export const insertRunSchema = createInsertSchema(runs);
+export const selectRunSchema = createSelectSchema(runs);
 
 export const selectSubmissionSchema = createSelectSchema(submissions);
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;
-export type TestResults = z.infer<typeof testResultSchema>;
+export type InsertRun = typeof runs.$inferInsert;
+export type SelectRun = typeof runs.$inferSelect;

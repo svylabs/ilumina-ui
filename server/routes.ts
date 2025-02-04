@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { submissions, insertSubmissionSchema } from "@db/schema";
+import { submissions, runs, insertSubmissionSchema } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 
@@ -13,67 +13,18 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).send(error.toString());
     }
 
-    // For demonstration, add sample test results
-    const sampleTestResults = {
-      summary: {
-        total: 15,
-        passed: 12,
-        failed: 3,
-        duration: 5432 // milliseconds
-      },
-      results: {
-        "Code Quality": {
-          "Check code formatting": {
-            passed: true,
-            duration: 234,
-            category: "Code Quality",
-            output: "All files are properly formatted"
-          },
-          "Lint check": {
-            passed: false,
-            duration: 567,
-            category: "Code Quality",
-            errorDetails: {
-              message: "Found 2 eslint errors",
-              stackTrace: "warning: Missing semicolon (semi)\nwarning: Unexpected console statement (no-console)"
-            }
-          }
-        },
-        "Unit Tests": {
-          "User authentication": {
-            passed: true,
-            duration: 789,
-            category: "Unit Tests",
-            output: "All 5 authentication tests passed"
-          },
-          "Data validation": {
-            passed: true,
-            duration: 432,
-            category: "Unit Tests",
-            output: "Input validation working as expected"
-          }
-        },
-        "Integration Tests": {
-          "API endpoints": {
-            passed: false,
-            duration: 1234,
-            category: "Integration Tests",
-            errorDetails: {
-              message: "Failed to connect to database",
-              stackTrace: "Error: Connection refused\n  at Database.connect (/app/db.js:45:12)"
-            }
-          }
-        }
-      }
-    };
+    // Create submission and initial run
+    const [submission] = await db.insert(submissions)
+      .values(result.data)
+      .returning();
 
-    const submission = await db.insert(submissions).values({
-      ...result.data,
-      status: "completed",
-      testResults: JSON.stringify(sampleTestResults)
-    }).returning();
+    await db.insert(runs).values({
+      submissionId: submission.id,
+      status: "running",
+      latestLog: "Initializing test run..."
+    });
 
-    res.status(201).json(submission[0]);
+    res.status(201).json(submission);
   });
 
   app.get("/api/submissions/:id", async (req, res) => {
@@ -87,7 +38,49 @@ export function registerRoutes(app: Express): Server {
       return res.status(404).send("Submission not found");
     }
 
-    res.json(submission);
+    // Get all runs for this submission
+    const testRuns = await db
+      .select()
+      .from(runs)
+      .where(eq(runs.submissionId, submission.id))
+      .orderBy(runs.startedAt);
+
+    res.json({ ...submission, runs: testRuns });
+  });
+
+  app.post("/api/runs/:id/rerun", async (req, res) => {
+    const [existingRun] = await db
+      .select()
+      .from(runs)
+      .where(eq(runs.id, parseInt(req.params.id)))
+      .limit(1);
+
+    if (!existingRun) {
+      return res.status(404).send("Run not found");
+    }
+
+    // Create a new run for the same submission
+    const [newRun] = await db.insert(runs)
+      .values({
+        submissionId: existingRun.submissionId,
+        status: "running",
+        latestLog: "Re-running tests..."
+      })
+      .returning();
+
+    // Simulate test progress (in a real app, this would be handled by a worker)
+    setTimeout(async () => {
+      await db
+        .update(runs)
+        .set({
+          status: Math.random() > 0.5 ? "success" : "failed",
+          completedAt: new Date(),
+          latestLog: "Test run completed with some sample results..."
+        })
+        .where(eq(runs.id, newRun.id));
+    }, 5000);
+
+    res.status(201).json(newRun);
   });
 
   const httpServer = createServer(app);

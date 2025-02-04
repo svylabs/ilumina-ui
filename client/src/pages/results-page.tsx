@@ -10,6 +10,10 @@ export default function ResultsPage() {
   const { data: submission, isLoading } = useQuery({
     queryKey: [`/api/submissions/${id}`],
     retry: false,
+    refetchInterval: (data) => {
+      // Refetch every 2 seconds if there's a running test
+      return data?.runs?.some(run => run.status === "running") ? 2000 : false;
+    },
   });
 
   if (isLoading) {
@@ -40,14 +44,13 @@ export default function ResultsPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <Card>
           <CardContent className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold">Test Results</h2>
-            {submission.status === "completed" ? (
-              <TestResults results={submission.testResults} />
-            ) : (
-              <p className="text-muted-foreground">
-                Tests are {submission.status}. Check back later for results.
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Test Runs</h2>
+              <p className="text-sm text-muted-foreground">
+                Repository: {submission.githubUrl}
               </p>
-            )}
+            </div>
+            <TestResults runs={submission.runs} submissionId={submission.id} />
           </CardContent>
         </Card>
       </div>
