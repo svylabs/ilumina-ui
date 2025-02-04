@@ -69,7 +69,6 @@ export function registerRoutes(app: Express): Server {
     res.json({ ...submission, runs: testRuns });
   });
 
-  // New endpoint for creating a new run
   app.post("/api/submissions/:id/runs", async (req, res) => {
     const [submission] = await db
       .select()
@@ -93,7 +92,10 @@ export function registerRoutes(app: Express): Server {
 
     // Simulate test progress
     setTimeout(() => {
-      updateRunStatus(newRun.id).catch(console.error);
+      console.log(`Starting status update for run ${newRun.id}...`);
+      updateRunStatus(newRun.id)
+        .then(run => console.log(`Successfully updated run ${run.id} status to ${run.status}`))
+        .catch(err => console.error(`Failed to update run ${newRun.id} status:`, err));
     }, 2000);
 
     res.status(201).json(newRun);
@@ -121,7 +123,10 @@ export function registerRoutes(app: Express): Server {
     console.log(`Created re-run ${newRun.id} for run ${existingRun.id}`);
 
     setTimeout(() => {
-      updateRunStatus(newRun.id).catch(console.error);
+      console.log(`Starting status update for re-run ${newRun.id}...`);
+      updateRunStatus(newRun.id)
+        .then(run => console.log(`Successfully updated re-run ${run.id} status to ${run.status}`))
+        .catch(err => console.error(`Failed to update re-run ${newRun.id} status:`, err));
     }, 2000);
 
     res.status(201).json(newRun);
