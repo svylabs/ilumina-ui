@@ -6,46 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SunDim } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-
-const loginSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Invalid email format"),
-  password: z.string().min(1, "Password is required"),
-});
-
-const registerSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Invalid email format"),
-  name: z.string().min(1, "Name is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [, setLocation] = useLocation();
   const { login, register, user } = useAuth();
 
-  const loginForm = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  const loginForm = useForm({
     defaultValues: {
       email: "",
       password: "",
-    },
-    mode: "onBlur",
+    }
   });
 
-  const registerForm = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+  const registerForm = useForm({
     defaultValues: {
       email: "",
       name: "",
       password: "",
-    },
-    mode: "onBlur",
+    }
   });
 
   if (user) {
@@ -53,7 +33,7 @@ export default function AuthPage() {
     return null;
   }
 
-  const handleLoginSubmit = async (data: LoginFormData) => {
+  const handleLoginSubmit = async (data: { email: string; password: string }) => {
     try {
       await login(data.email, data.password);
       setLocation("/projects");
@@ -62,7 +42,7 @@ export default function AuthPage() {
     }
   };
 
-  const handleRegisterSubmit = async (data: RegisterFormData) => {
+  const handleRegisterSubmit = async (data: { email: string; name: string; password: string }) => {
     try {
       await register(data.email, data.name, data.password);
       setLocation("/projects");
@@ -74,7 +54,6 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-black">
       <div className="flex min-h-screen">
-        {/* Form Section */}
         <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
           <Card className="w-full max-w-md border-primary/20 bg-black/50">
             <CardContent className="pt-8 pb-8">
@@ -90,10 +69,7 @@ export default function AuthPage() {
 
               {isLogin ? (
                 <Form {...loginForm}>
-                  <form
-                    onSubmit={loginForm.handleSubmit(handleLoginSubmit)}
-                    className="space-y-4"
-                  >
+                  <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="space-y-4">
                     <FormField
                       control={loginForm.control}
                       name="email"
@@ -109,7 +85,6 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -128,7 +103,6 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -143,10 +117,7 @@ export default function AuthPage() {
                 </Form>
               ) : (
                 <Form {...registerForm}>
-                  <form
-                    onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
-                    className="space-y-4"
-                  >
+                  <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="space-y-4">
                     <FormField
                       control={registerForm.control}
                       name="name"
@@ -161,7 +132,6 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -180,7 +150,6 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -199,7 +168,6 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -229,7 +197,6 @@ export default function AuthPage() {
           </Card>
         </div>
 
-        {/* Info Section */}
         <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary/20 to-primary/5 p-8 items-center justify-center">
           <div className="max-w-md">
             <h1 className="text-4xl font-bold text-white mb-4">
