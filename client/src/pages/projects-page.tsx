@@ -1,18 +1,53 @@
 import { useAuth } from "@/lib/auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import type { SelectProject } from "@db/schema";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProjectsPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: projects, isLoading } = useQuery<SelectProject[]>({
     queryKey: ["/api/projects"],
     enabled: !!user,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      await apiRequest("DELETE", `/api/projects/${projectId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      toast({
+        title: "Project deleted",
+        description: "The project has been successfully deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   if (!user) {
@@ -73,9 +108,37 @@ export default function ProjectsPage() {
                         Created {format(new Date(project.createdAt), "PPP")}
                       </p>
                     </div>
-                    <Button asChild variant="secondary">
-                      <Link href={`/analysis/${project.id}`}>View Analysis</Link>
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button asChild variant="secondary">
+                        <Link href={`/analysis/${project.id}`}>View Analysis</Link>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-black/95 border-primary/20">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-white">Delete Project</AlertDialogTitle>
+                            <AlertDialogDescription className="text-white/70">
+                              Are you sure you want to delete "{project.name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-muted text-white hover:bg-muted/90">
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteMutation.mutate(project.id)}
+                              className="bg-red-600 text-white hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

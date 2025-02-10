@@ -69,6 +69,30 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json(project);
   });
 
+  // Add this route after the other project routes
+  app.delete("/api/projects/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const projectId = parseInt(req.params.id);
+
+    // Verify project belongs to user
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .where(eq(projects.userId, req.user.id))
+      .limit(1);
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found or you don't have permission to delete it"
+      });
+    }
+
+    await db.delete(projects).where(eq(projects.id, projectId));
+    res.sendStatus(204);
+  });
+
   // Modified submission endpoint to handle authentication
   app.post("/api/submissions", async (req, res) => {
     const result = insertSubmissionSchema.safeParse(req.body);
