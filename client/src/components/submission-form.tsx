@@ -52,11 +52,15 @@ export default function SubmissionForm() {
           name="githubUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>GitHub Repository URL</FormLabel>
+              <FormLabel className="text-primary/90">GitHub Repository URL</FormLabel>
               <FormControl>
-                <Input placeholder="https://github.com/user/repo" {...field} />
+                <Input 
+                  placeholder="https://github.com/user/repo" 
+                  {...field} 
+                  className="bg-black/50 border-primary/20 text-white placeholder:text-white/50"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-white/90" />
             </FormItem>
           )}
         />
@@ -66,16 +70,25 @@ export default function SubmissionForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className="text-primary/90">Email</FormLabel>
               <FormControl>
-                <Input placeholder="your@email.com" type="email" {...field} />
+                <Input 
+                  placeholder="your@email.com" 
+                  type="email" 
+                  {...field} 
+                  className="bg-black/50 border-primary/20 text-white placeholder:text-white/50"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-white/90" />
             </FormItem>
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={mutation.isPending}>
+        <Button 
+          type="submit" 
+          className="w-full bg-primary hover:bg-primary/90 text-black" 
+          disabled={mutation.isPending}
+        >
           {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Submit Project
         </Button>
