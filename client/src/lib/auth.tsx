@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import type { SelectUser } from "@db/schema";
 import { apiRequest, queryClient } from "./queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const {
     data: user,
@@ -37,6 +39,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const handlePendingProject = async (newUser: SelectUser) => {
+    const pendingGithubUrl = sessionStorage.getItem('pendingGithubUrl');
+    if (pendingGithubUrl) {
+      try {
+        const repoName = pendingGithubUrl.split("/").pop()?.replace(".git", "") || "New Project";
+        const res = await apiRequest("POST", "/api/projects", {
+          name: repoName,
+          githubUrl: pendingGithubUrl,
+          userId: newUser.id
+        });
+        const project = await res.json();
+        sessionStorage.removeItem('pendingGithubUrl');
+        setLocation(`/analysis/${project.id}`);
+      } catch (error) {
+        console.error("Error creating pending project:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create project from stored GitHub URL",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
       const res = await apiRequest("POST", "/api/login", { email, password });
@@ -44,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
+      handlePendingProject(user);
     },
     onError: (error: Error) => {
       toast({
@@ -73,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
+      handlePendingProject(user);
     },
     onError: (error: Error) => {
       toast({
