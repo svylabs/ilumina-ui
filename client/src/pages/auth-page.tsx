@@ -11,14 +11,14 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const loginSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().min(1, "Email is required").email("Invalid email format"),
+  password: z.string().min(1, "Password is required"),
 });
 
 const registerSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  email: z.string().min(1, "Email is required").email("Invalid email format"),
   name: z.string().min(1, "Name is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required").min(6, "Password must be at least 6 characters"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -35,7 +35,7 @@ export default function AuthPage() {
       email: "",
       password: "",
     },
-    mode: "onSubmit",
+    mode: "onBlur",
   });
 
   const registerForm = useForm<RegisterFormData>({
@@ -45,7 +45,7 @@ export default function AuthPage() {
       name: "",
       password: "",
     },
-    mode: "onSubmit",
+    mode: "onBlur",
   });
 
   if (user) {
@@ -104,7 +104,8 @@ export default function AuthPage() {
                             <Input
                               type="email"
                               placeholder="Enter your email"
-                              className="bg-black/50 border-primary/40 text-white"
+                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                              autoComplete="email"
                               {...field}
                             />
                           </FormControl>
@@ -122,7 +123,8 @@ export default function AuthPage() {
                             <Input
                               type="password"
                               placeholder="Enter your password"
-                              className="bg-black/50 border-primary/40 text-white"
+                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                              autoComplete="current-password"
                               {...field}
                             />
                           </FormControl>
@@ -155,7 +157,8 @@ export default function AuthPage() {
                             <Input
                               type="email"
                               placeholder="Enter your email"
-                              className="bg-black/50 border-primary/40 text-white"
+                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                              autoComplete="email"
                               {...field}
                             />
                           </FormControl>
@@ -172,7 +175,8 @@ export default function AuthPage() {
                           <FormControl>
                             <Input
                               placeholder="Enter your name"
-                              className="bg-black/50 border-primary/40 text-white"
+                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                              autoComplete="name"
                               {...field}
                             />
                           </FormControl>
@@ -190,7 +194,8 @@ export default function AuthPage() {
                             <Input
                               type="password"
                               placeholder="Choose a password"
-                              className="bg-black/50 border-primary/40 text-white"
+                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                              autoComplete="new-password"
                               {...field}
                             />
                           </FormControl>
