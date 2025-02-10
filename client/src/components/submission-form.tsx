@@ -74,24 +74,26 @@ export default function SubmissionForm() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-primary/90">Email</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="your@email.com" 
-                  type="email" 
-                  {...field} 
-                  className="bg-black/50 border-primary/40 text-white placeholder:text-white/50 focus:border-primary/70"
-                />
-              </FormControl>
-              <FormMessage className="text-white/90" />
-            </FormItem>
-          )}
-        />
+        {!user && (
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-primary/90">Email</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="your@email.com" 
+                    type="email" 
+                    {...field} 
+                    className="bg-black/50 border-primary/40 text-white placeholder:text-white/50 focus:border-primary/70"
+                  />
+                </FormControl>
+                <FormMessage className="text-white/90" />
+              </FormItem>
+            )}
+          />
+        )}
 
         <Button 
           type="submit" 
@@ -99,7 +101,7 @@ export default function SubmissionForm() {
           disabled={mutation.isPending}
         >
           {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Show project report
+          {user ? "Run Simulation" : "Show project report"}
         </Button>
       </form>
     </Form>
