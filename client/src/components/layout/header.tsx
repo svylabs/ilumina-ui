@@ -5,9 +5,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { Badge } from "@/components/ui/badge";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -19,6 +22,17 @@ export default function Header() {
       setLocation('/'); // Redirect to home page after logout
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  };
+
+  const getPlanBadgeVariant = (plan: string) => {
+    switch (plan) {
+      case 'pro':
+        return 'default';
+      case 'teams':
+        return 'secondary';
+      default:
+        return 'outline';
     }
   };
 
@@ -57,6 +71,19 @@ export default function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-black/95 border-primary/20">
+                  <DropdownMenuLabel className="flex items-center justify-between">
+                    <span>Account</span>
+                    <Badge variant={getPlanBadgeVariant(user.plan)} className="capitalize">
+                      {user.plan} Plan
+                    </Badge>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer"
+                    onClick={() => setLocation("/#pricing")}
+                  >
+                    Upgrade Plan
+                  </DropdownMenuItem>
                   <DropdownMenuItem 
                     className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer"
                     onClick={handleLogout}
@@ -94,8 +121,12 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="ghost" className="text-white/90 hover:text-white">
-                Pricing
+              <Button 
+                variant="ghost" 
+                className="text-white/90 hover:text-white"
+                asChild
+              >
+                <Link href="/#pricing">Pricing</Link>
               </Button>
 
               <Button 
