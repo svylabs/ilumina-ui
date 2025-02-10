@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { SunDim } from "lucide-react";
+import { SunDim, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,15 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <header className="border-b border-primary/20 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
@@ -28,42 +36,75 @@ export default function Header() {
         </span>
 
         <div className="flex items-center space-x-6 ml-auto">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-white/90 hover:text-white">
-                Features
+          {user ? (
+            // Logged in state
+            <>
+              <Button 
+                variant="ghost" 
+                className="text-white/90 hover:text-white"
+                asChild
+              >
+                <Link href="/projects">My Projects</Link>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-black/95 border-primary/20">
-              <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
-                Solidity Projects
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
-                AI Enabled Test Generation
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
-                Reports
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
-                Run Tests On Demand
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
-                Manage Teams
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-          <Button variant="ghost" className="text-white/90 hover:text-white">
-            Pricing
-          </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-white/90 hover:text-white">
+                    <User className="h-5 w-5 mr-2" />
+                    {user.name}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-black/95 border-primary/20">
+                  <DropdownMenuItem 
+                    className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer"
+                    onClick={handleLogout}
+                  >
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            // Logged out state
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-white/90 hover:text-white">
+                    Features
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-black/95 border-primary/20">
+                  <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
+                    Solidity Projects
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
+                    AI Enabled Test Generation
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
+                    Reports
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
+                    Run Tests On Demand
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white/90 focus:text-white focus:bg-primary/20">
+                    Manage Teams
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-          <Button 
-            variant="default" 
-            className="bg-primary hover:bg-primary/90 text-black"
-            asChild
-          >
-            <Link href={user ? "/projects" : "/auth"}>Go to App</Link>
-          </Button>
+              <Button variant="ghost" className="text-white/90 hover:text-white">
+                Pricing
+              </Button>
+
+              <Button 
+                variant="default" 
+                className="bg-primary hover:bg-primary/90 text-black"
+                asChild
+              >
+                <Link href="/auth">Sign In</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
