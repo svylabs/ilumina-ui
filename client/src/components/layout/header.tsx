@@ -38,24 +38,25 @@ export default function Header() {
 
   return (
     <header className="border-b border-primary/20 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
-      <div className="container flex h-16 max-w-screen-2xl items-center">
-        <Link href="/" className="flex flex-col items-start">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-primary rounded-lg">
-              <SunDim className="h-6 w-6 text-black" />
+      <div className="container flex h-20 max-w-screen-2xl items-center">
+        <Link href="/" className="flex flex-col justify-center">
+          <div className="flex items-center">
+            <div className="p-3 bg-primary rounded-lg mr-3">
+              <SunDim className="h-7 w-7 text-black" />
             </div>
-            <span className="text-xl font-semibold text-white">
-              <span className="text-primary font-bold">i</span>lumina
-            </span>
+            <div className="flex flex-col">
+              <span className="text-2xl font-semibold">
+                <span className="text-white font-bold">i</span><span className="text-primary">lumina</span>
+              </span>
+              <span className="text-sm text-white/70">
+                Agent based simulations for your protocol
+              </span>
+            </div>
           </div>
-          <span className="text-sm text-white/70 mt-1">
-            Agent based simulations for your protocol
-          </span>
         </Link>
 
         <div className="flex items-center space-x-6 ml-auto">
           {user ? (
-            // Logged in state
             <>
               <Button 
                 variant="ghost" 
@@ -96,7 +97,6 @@ export default function Header() {
               </DropdownMenu>
             </>
           ) : (
-            // Logged out state
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
