@@ -51,8 +51,8 @@ export default function Header() {
   };
 
   return (
-    <header className="border-b border-primary/20 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
-      <div className="container flex h-20 max-w-screen-2xl items-center">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-primary/20 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
+      <div className="container px-6 mx-auto flex h-20 max-w-screen-2xl items-center">
         <Link href="/" onClick={handleHomeClick} className="flex flex-col justify-center">
           <div className="flex items-center">
             <div className="p-3 bg-primary rounded-lg mr-3">
@@ -117,11 +117,27 @@ export default function Header() {
             </>
           ) : (
             <>
+              <div className="sm:flex items-center space-x-4 hidden">
+                <Button 
+                  variant="ghost" 
+                  className="text-white/90 hover:text-white"
+                  onClick={() => scrollToSection("features")}
+                >
+                  Features
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-white/90 hover:text-white"
+                  onClick={() => scrollToSection("pricing")}
+                >
+                  Pricing
+                </Button>
+              </div>
+
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild className="sm:hidden">
                   <Button variant="ghost" className="text-white/90 hover:text-white">
-                    <span className="hidden sm:inline">Features</span>
-                    <Menu className="h-5 w-5 sm:hidden" />
+                    <Menu className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-black/95 border-primary/20">
@@ -139,14 +155,6 @@ export default function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Button 
-                variant="ghost" 
-                className="text-white/90 hover:text-white hidden sm:inline-flex"
-                onClick={() => scrollToSection("pricing")}
-              >
-                Pricing
-              </Button>
 
               <Button 
                 variant="default" 
