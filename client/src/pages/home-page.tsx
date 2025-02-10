@@ -21,7 +21,7 @@ export default function HomePage() {
               Welcome to Ilumina
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Illuminate your smart contracts with comprehensive testing and analysis. 
+              Illuminate your smart contracts with comprehensive testing and analysis.
               Get detailed insights and ensure your code meets the highest standards.
             </p>
           </div>
@@ -99,10 +99,10 @@ export default function HomePage() {
                 period: "per month",
                 description: "Perfect for individual developers",
                 features: [
-                  "Up to 5 projects",
-                  "Basic test generation",
-                  "Community support",
-                  "Basic reporting"
+                  "1 project",
+                  "Test generation",
+                  "Run test on demand",
+                  "One user"
                 ]
               },
               {
@@ -111,10 +111,10 @@ export default function HomePage() {
                 period: "per month",
                 description: "Ideal for small teams",
                 features: [
-                  "Up to 15 projects",
-                  "Advanced AI test generation",
-                  "Priority support",
-                  "Advanced analytics",
+                  "5 projects",
+                  "Test generation",
+                  "Run test on demand",
+                  "Up to 10 users",
                   "Team collaboration"
                 ]
               },
@@ -132,11 +132,11 @@ export default function HomePage() {
                 ]
               }
             ].map((plan) => (
-              <Card 
-                key={plan.name} 
+              <Card
+                key={plan.name}
                 className={`border-2 ${
-                  plan.name === "Pro" 
-                    ? "border-primary" 
+                  plan.name === "Pro"
+                    ? "border-primary"
                     : "border-primary/20"
                 } bg-black/50 backdrop-blur relative`}
               >
@@ -160,7 +160,7 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  <Button 
+                  <Button
                     className={`w-full ${
                       plan.name === "Pro"
                         ? "bg-primary hover:bg-primary/90 text-black"
