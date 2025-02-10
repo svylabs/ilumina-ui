@@ -95,8 +95,8 @@ export default function HomePage() {
             {[
               {
                 name: "Basic",
-                price: "$49",
-                period: "per month",
+                price: "Free",
+                period: "forever",
                 description: "Perfect for individual developers",
                 features: [
                   "1 project",
@@ -107,7 +107,7 @@ export default function HomePage() {
               },
               {
                 name: "Pro",
-                price: "$99",
+                price: "$499",
                 period: "per month",
                 description: "Ideal for small teams",
                 features: [
@@ -115,7 +115,8 @@ export default function HomePage() {
                   "Test generation",
                   "Run test on demand",
                   "Up to 10 users",
-                  "Team collaboration"
+                  "Team collaboration",
+                  "Download test code"
                 ]
               },
               {
