@@ -94,42 +94,42 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                name: "Basic",
-                price: "Free",
+                name: "Free",
+                price: "$0",
                 period: "forever",
                 description: "Perfect for individual developers",
                 features: [
-                  "1 project",
-                  "Test generation",
-                  "Run test on demand",
-                  "One user"
+                  "1 repository",
+                  "One free simulation run",
+                  "View reports",
+                  "Basic analysis tools"
                 ]
               },
               {
                 name: "Pro",
-                price: "$499",
+                price: "$49",
                 period: "per month",
-                description: "Ideal for small teams",
+                description: "For professional developers",
                 features: [
-                  "5 projects",
-                  "Test generation",
-                  "Run test on demand",
-                  "Up to 10 users",
-                  "Team collaboration",
+                  "Up to 3 repositories",
+                  "60 simulations per month",
+                  "Advanced analysis tools",
+                  "Priority support",
                   "Download test code"
                 ]
               },
               {
-                name: "Enterprise",
-                price: "Custom",
-                period: "contact us",
-                description: "For large organizations",
+                name: "Teams",
+                price: "$499",
+                period: "per month",
+                description: "For growing teams",
                 features: [
-                  "Unlimited projects",
-                  "Custom test suites",
-                  "24/7 dedicated support",
-                  "Custom integrations",
-                  "Advanced security"
+                  "Unlimited repositories",
+                  "Unlimited simulations",
+                  "Team collaboration",
+                  "Advanced security",
+                  "Custom support",
+                  "API access"
                 ]
               }
             ].map((plan) => (

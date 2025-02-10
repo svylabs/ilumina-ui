@@ -101,7 +101,7 @@ export default function SubmissionForm() {
           disabled={mutation.isPending}
         >
           {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {user ? "Run Simulation" : "Show project report"}
+          Run Simulation
         </Button>
       </form>
     </Form>

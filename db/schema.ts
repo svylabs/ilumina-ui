@@ -8,6 +8,8 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  plan: text("plan", { enum: ["free", "pro", "teams"] }).default("free").notNull(),
+  simulationsUsed: integer("simulations_used").default(0).notNull(),
 });
 
 export const projects = pgTable("projects", {
@@ -45,6 +47,8 @@ export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
   name: z.string().min(1),
   password: z.string().min(6),
+  plan: z.enum(["free", "pro", "teams"]).default("free"),
+  simulationsUsed: z.number().default(0),
 });
 
 export const insertProjectSchema = createInsertSchema(projects);

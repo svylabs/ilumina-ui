@@ -23,9 +23,23 @@ export function registerRoutes(app: Express): Server {
     res.json(userProjects);
   });
 
-  // Create new project
+  // Modify the project creation endpoint
   app.post("/api/projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    // Check for existing project with same GitHub URL
+    const existingProject = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.githubUrl, req.body.githubUrl))
+      .where(eq(projects.userId, req.user.id))
+      .limit(1);
+
+    if (existingProject.length > 0) {
+      return res.status(400).json({
+        message: "A project with this GitHub URL already exists in your account"
+      });
+    }
 
     const [project] = await db
       .insert(projects)
