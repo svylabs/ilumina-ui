@@ -36,7 +36,7 @@ export default function HomePage() {
       </div>
 
       {/* Features Section */}
-      <section id="features" className="py-24 px-6 bg-black/95">
+      <section id="features" className="scroll-mt-20 py-24 px-6 bg-black/95">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Features</h2>
@@ -84,7 +84,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6 bg-gradient-to-b from-black/95 to-black">
+      <section id="pricing" className="scroll-mt-20 py-24 px-6 bg-gradient-to-b from-black/95 to-black">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Simple Pricing</h2>
