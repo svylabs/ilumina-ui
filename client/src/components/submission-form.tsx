@@ -8,18 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import type { InsertSubmission } from "@db/schema";
 import { insertSubmissionSchema } from "@db/schema";
 
 export default function SubmissionForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<InsertSubmission>({
     resolver: zodResolver(insertSubmissionSchema),
     defaultValues: {
       githubUrl: "",
-      email: "",
+      email: user?.email || "",
     },
   });
 
@@ -33,7 +35,14 @@ export default function SubmissionForm() {
         title: "Success!",
         description: "Your submission has been received.",
       });
-      setLocation(`/analysis/${data.id}`);
+
+      if (!user) {
+        // Store GitHub URL in session storage for later project creation
+        sessionStorage.setItem('pendingGithubUrl', form.getValues('githubUrl'));
+        setLocation('/auth');
+      } else {
+        setLocation(`/analysis/${data.id}`);
+      }
     },
     onError: (error: Error) => {
       toast({

@@ -7,8 +7,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 export default function Header() {
+  const { user } = useAuth();
+
   return (
     <header className="border-b border-primary/20 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
       <div className="container flex h-16 max-w-screen-2xl items-center">
@@ -59,7 +62,7 @@ export default function Header() {
             className="bg-primary hover:bg-primary/90 text-black"
             asChild
           >
-            <Link href="/app">Go to App</Link>
+            <Link href={user ? "/projects" : "/auth"}>Go to App</Link>
           </Button>
         </div>
       </div>

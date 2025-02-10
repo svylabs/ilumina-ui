@@ -1,27 +1,45 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { submissions, runs, insertSubmissionSchema } from "@db/schema";
+import { submissions, runs, projects, insertSubmissionSchema } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
-
-async function updateRunStatus(runId: number) {
-  const status = Math.random() > 0.5 ? "success" : "failed";
-  const [updatedRun] = await db
-    .update(runs)
-    .set({
-      status,
-      completedAt: new Date(),
-      latestLog: `Test run completed with ${status} status. Sample results...`
-    })
-    .where(eq(runs.id, runId))
-    .returning();
-
-  console.log(`Updated run ${runId} to status: ${status}`);
-  return updatedRun;
-}
+import { setupAuth } from "./auth";
 
 export function registerRoutes(app: Express): Server {
+  // Set up authentication
+  setupAuth(app);
+
+  // Get user's projects
+  app.get("/api/projects", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, req.user.id))
+      .orderBy(projects.createdAt);
+
+    res.json(userProjects);
+  });
+
+  // Create new project
+  app.post("/api/projects", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const [project] = await db
+      .insert(projects)
+      .values({
+        name: req.body.name,
+        githubUrl: req.body.githubUrl,
+        userId: req.user.id,
+      })
+      .returning();
+
+    res.status(201).json(project);
+  });
+
+  // Modified submission endpoint to handle authentication
   app.post("/api/submissions", async (req, res) => {
     const result = insertSubmissionSchema.safeParse(req.body);
     if (!result.success) {
@@ -29,15 +47,41 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).send(error.toString());
     }
 
-    const [submission] = await db.insert(submissions)
-      .values(result.data)
-      .returning();
+    // Start a transaction to create both submission and project
+    const [submission] = await db.transaction(async (tx) => {
+      let projectId: number | undefined;
 
-    const [run] = await db.insert(runs)
+      // If user is authenticated, create a project
+      if (req.isAuthenticated()) {
+        const repoName = result.data.githubUrl.split("/").pop()?.replace(".git", "") || "New Project";
+        const [project] = await tx
+          .insert(projects)
+          .values({
+            name: repoName,
+            githubUrl: result.data.githubUrl,
+            userId: req.user.id,
+          })
+          .returning();
+        projectId = project.id;
+      }
+
+      const [submission] = await tx
+        .insert(submissions)
+        .values({
+          ...result.data,
+          projectId,
+        })
+        .returning();
+
+      return [submission];
+    });
+
+    const [run] = await db
+      .insert(runs)
       .values({
         submissionId: submission.id,
         status: "running",
-        latestLog: "Initializing analysis..."
+        latestLog: "Initializing analysis...",
       })
       .returning();
 
@@ -203,4 +247,20 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+async function updateRunStatus(runId: number) {
+  const status = Math.random() > 0.5 ? "success" : "failed";
+  const [updatedRun] = await db
+    .update(runs)
+    .set({
+      status,
+      completedAt: new Date(),
+      latestLog: `Test run completed with ${status} status. Sample results...`,
+    })
+    .where(eq(runs.id, runId))
+    .returning();
+
+  console.log(`Updated run ${runId} to status: ${status}`);
+  return updatedRun;
 }
