@@ -4,7 +4,6 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SunDim } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,14 +11,14 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const registerSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1),
-  password: z.string().min(6),
+  email: z.string().email("Please enter a valid email address"),
+  name: z.string().min(1, "Name is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -53,6 +52,24 @@ export default function AuthPage() {
     return null;
   }
 
+  const handleLoginSubmit = async (data: LoginFormData) => {
+    try {
+      await login(data.email, data.password);
+      setLocation("/projects");
+    } catch (error) {
+      // Error handling is done in the auth context
+    }
+  };
+
+  const handleRegisterSubmit = async (data: RegisterFormData) => {
+    try {
+      await register(data.email, data.name, data.password);
+      setLocation("/projects");
+    } catch (error) {
+      // Error handling is done in the auth context
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black">
       <div className="flex min-h-screen">
@@ -73,10 +90,7 @@ export default function AuthPage() {
               {isLogin ? (
                 <Form {...loginForm}>
                   <form
-                    onSubmit={loginForm.handleSubmit(async (data) => {
-                      await login(data.email, data.password);
-                      setLocation("/projects");
-                    })}
+                    onSubmit={loginForm.handleSubmit(handleLoginSubmit)}
                     className="space-y-4"
                   >
                     <FormField
@@ -84,11 +98,12 @@ export default function AuthPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-white">Email</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
-                              className="bg-black/50 border-primary/40"
+                              placeholder="Enter your email"
+                              className="bg-black/50 border-primary/40 text-white"
                               {...field}
                             />
                           </FormControl>
@@ -101,11 +116,12 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-white">Password</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
-                              className="bg-black/50 border-primary/40"
+                              placeholder="Enter your password"
+                              className="bg-black/50 border-primary/40 text-white"
                               {...field}
                             />
                           </FormControl>
@@ -116,6 +132,7 @@ export default function AuthPage() {
                     <Button
                       type="submit"
                       className="w-full bg-primary hover:bg-primary/90 text-black"
+                      disabled={loginForm.formState.isSubmitting}
                     >
                       Sign In
                     </Button>
@@ -124,10 +141,7 @@ export default function AuthPage() {
               ) : (
                 <Form {...registerForm}>
                   <form
-                    onSubmit={registerForm.handleSubmit(async (data) => {
-                      await register(data.email, data.name, data.password);
-                      setLocation("/projects");
-                    })}
+                    onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
                     className="space-y-4"
                   >
                     <FormField
@@ -135,11 +149,12 @@ export default function AuthPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-white">Email</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
-                              className="bg-black/50 border-primary/40"
+                              placeholder="Enter your email"
+                              className="bg-black/50 border-primary/40 text-white"
                               {...field}
                             />
                           </FormControl>
@@ -152,10 +167,11 @@ export default function AuthPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel className="text-white">Name</FormLabel>
                           <FormControl>
                             <Input
-                              className="bg-black/50 border-primary/40"
+                              placeholder="Enter your name"
+                              className="bg-black/50 border-primary/40 text-white"
                               {...field}
                             />
                           </FormControl>
@@ -168,11 +184,12 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-white">Password</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
-                              className="bg-black/50 border-primary/40"
+                              placeholder="Choose a password"
+                              className="bg-black/50 border-primary/40 text-white"
                               {...field}
                             />
                           </FormControl>
@@ -183,6 +200,7 @@ export default function AuthPage() {
                     <Button
                       type="submit"
                       className="w-full bg-primary hover:bg-primary/90 text-black"
+                      disabled={registerForm.formState.isSubmitting}
                     >
                       Sign Up
                     </Button>
