@@ -3,11 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { SelectProject } from "@db/schema";
 
 export default function ProjectsPage() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect to home if not authenticated
+  if (!user) {
+    setLocation('/');
+    return null;
+  }
 
   const { data: projects, isLoading } = useQuery<SelectProject[]>({
     queryKey: ["/api/projects"],

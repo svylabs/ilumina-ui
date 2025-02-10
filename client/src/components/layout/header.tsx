@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { SunDim, User } from "lucide-react";
 import {
   DropdownMenu,
@@ -11,10 +11,12 @@ import { useAuth } from "@/lib/auth";
 
 export default function Header() {
   const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
   const handleLogout = async () => {
     try {
       await logout();
+      setLocation('/'); // Redirect to home page after logout
     } catch (error) {
       console.error("Logout failed:", error);
     }
