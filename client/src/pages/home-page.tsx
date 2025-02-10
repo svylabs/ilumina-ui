@@ -4,7 +4,7 @@ import { SunDim } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 p-6">
       <div className="max-w-4xl mx-auto space-y-12">
         <div className="text-center space-y-6">
           <div className="flex justify-center mb-8">
@@ -17,13 +17,13 @@ export default function HomePage() {
           <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Welcome to Ilumina
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl text-foreground/80 max-w-2xl mx-auto leading-relaxed">
             Illuminate your smart contracts with comprehensive testing and analysis. 
             Get detailed insights and ensure your code meets the highest standards.
           </p>
         </div>
 
-        <Card className="border-2 shadow-lg">
+        <Card className="border-2 border-border/50 bg-card/50 shadow-lg backdrop-blur">
           <CardContent className="p-8">
             <h2 className="text-2xl font-semibold mb-6 text-center">Start Your Analysis</h2>
             <SubmissionForm />
@@ -45,7 +45,7 @@ export default function HomePage() {
               description: "Fast and efficient testing process"
             }
           ].map((feature) => (
-            <Card key={feature.title} className="border shadow-sm">
+            <Card key={feature.title} className="border border-border/50 bg-card/50 shadow-sm backdrop-blur">
               <CardContent className="p-6 text-center">
                 <h3 className="font-semibold mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
