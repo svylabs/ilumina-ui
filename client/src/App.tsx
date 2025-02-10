@@ -8,6 +8,7 @@ import HomePage from "@/pages/home-page";
 import ResultsPage from "@/pages/results-page";
 import AnalysisPage from "@/pages/analysis-page";
 import ProjectsPage from "@/pages/projects-page";
+import NewProjectPage from "@/pages/new-project";
 import AuthPage from "@/pages/auth-page";
 import RootLayout from "@/components/layout/root-layout";
 
@@ -18,6 +19,7 @@ function Router() {
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/projects" component={ProjectsPage} />
+        <Route path="/new-project" component={NewProjectPage} />
         <Route path="/results/:id" component={ResultsPage} />
         <Route path="/analysis/:id" component={AnalysisPage} />
         <Route component={NotFound} />

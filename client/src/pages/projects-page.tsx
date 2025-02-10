@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Plus } from "lucide-react";
 import { Link } from "wouter";
 import type { SelectProject } from "@db/schema";
-import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 export default function ProjectsPage() {
   const { user } = useAuth();
@@ -33,7 +33,7 @@ export default function ProjectsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">My Projects</h1>
           <Button asChild>
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/new-project" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               New Project
             </Link>
@@ -47,7 +47,7 @@ export default function ProjectsPage() {
                 You don't have any projects yet.
               </p>
               <Button asChild>
-                <Link href="/">Add Your First Project</Link>
+                <Link href="/new-project">Add Your First Project</Link>
               </Button>
             </CardContent>
           </Card>
@@ -59,7 +59,7 @@ export default function ProjectsPage() {
                 className="border-primary/20 bg-black/50 hover:border-primary/40 transition-colors"
               >
                 <CardContent className="p-6">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-xl font-semibold text-white">
                         {project.name}
@@ -69,6 +69,9 @@ export default function ProjectsPage() {
                           {project.githubUrl}
                         </p>
                       )}
+                      <p className="text-sm text-white/50 mt-2">
+                        Created {format(new Date(project.createdAt), "PPP")}
+                      </p>
                     </div>
                     <Button asChild variant="secondary">
                       <Link href={`/analysis/${project.id}`}>View Analysis</Link>

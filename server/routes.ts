@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { submissions, runs, projects, insertSubmissionSchema } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 
@@ -26,6 +26,22 @@ export function registerRoutes(app: Express): Server {
   // Modify the project creation endpoint
   app.post("/api/projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const maxProjects = req.user.plan === 'teams' ? Infinity :
+                       req.user.plan === 'pro' ? 3 : 1;
+
+    // Get current project count
+    const projectCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projects)
+      .where(eq(projects.userId, req.user.id))
+      .then(result => result[0].count);
+
+    if (projectCount >= maxProjects) {
+      return res.status(403).json({
+        message: `You've reached the maximum number of projects for your ${req.user.plan} plan`
+      });
+    }
 
     // Check for existing project with same GitHub URL
     const existingProject = await db
