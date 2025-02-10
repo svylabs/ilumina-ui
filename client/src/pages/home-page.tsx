@@ -17,8 +17,8 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            <h1 className="text-5xl font-bold text-white">
-              Welcome to Ilumina
+            <h1 className="text-5xl font-bold">
+              Welcome to <span className="text-white font-bold">i</span><span className="text-primary">lumina</span>
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
               Illuminate your smart contracts with comprehensive testing and analysis.
