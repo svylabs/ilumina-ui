@@ -57,7 +57,7 @@ export default function SubmissionForm() {
                 <Input 
                   placeholder="https://github.com/user/repo" 
                   {...field} 
-                  className="bg-black/50 border-primary/20 text-white placeholder:text-white/50"
+                  className="bg-black/50 border-primary/40 text-white placeholder:text-white/50 focus:border-primary/70"
                 />
               </FormControl>
               <FormMessage className="text-white/90" />
@@ -76,7 +76,7 @@ export default function SubmissionForm() {
                   placeholder="your@email.com" 
                   type="email" 
                   {...field} 
-                  className="bg-black/50 border-primary/20 text-white placeholder:text-white/50"
+                  className="bg-black/50 border-primary/40 text-white placeholder:text-white/50 focus:border-primary/70"
                 />
               </FormControl>
               <FormMessage className="text-white/90" />
