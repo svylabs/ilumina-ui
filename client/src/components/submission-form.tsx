@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ export default function SubmissionForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const form = useForm<InsertSubmission>({
     resolver: zodResolver(insertSubmissionSchema),
@@ -41,6 +42,8 @@ export default function SubmissionForm() {
         sessionStorage.setItem('pendingGithubUrl', form.getValues('githubUrl'));
         setLocation('/auth');
       } else {
+        // Invalidate projects query since a new project was created
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
         setLocation(`/analysis/${data.id}`);
       }
     },

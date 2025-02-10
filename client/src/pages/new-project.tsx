@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export default function NewProjectPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [extractedName, setExtractedName] = useState("");
+  const queryClient = useQueryClient();
 
   // Get existing projects to check limits
   const { data: projects } = useQuery<InsertProject[]>({
@@ -41,11 +42,13 @@ export default function NewProjectPage() {
       return res.json();
     },
     onSuccess: (data) => {
+      // Invalidate projects query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       toast({
         title: "Success!",
         description: "Project created successfully.",
       });
-      setLocation(`/analysis/${data.id}`);
+      setLocation(`/projects`);
     },
     onError: (error: Error) => {
       toast({
