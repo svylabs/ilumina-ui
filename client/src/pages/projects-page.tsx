@@ -2,7 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, AlertCircle } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { Link } from "wouter";
 import type { SelectProject } from "@db/schema";
 import { Badge } from "@/components/ui/badge";
@@ -27,42 +27,17 @@ export default function ProjectsPage() {
     );
   }
 
-  const maxProjects = user.plan === 'teams' ? Infinity : 
-                     user.plan === 'pro' ? 3 : 1;
-
-  const canAddProject = !projects || projects.length < maxProjects;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-white">My Projects</h1>
-            <div className="flex items-center gap-4 mt-2">
-              <Badge variant="outline" className="capitalize">
-                {user.plan} Plan
-              </Badge>
-              <span className="text-sm text-white/70">
-                {user.simulationsUsed} simulations used
-              </span>
-            </div>
-          </div>
-          {canAddProject ? (
-            <Button asChild>
-              <Link href="/" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                New Project
-              </Link>
-            </Button>
-          ) : (
-            <div className="flex items-center gap-2 text-white/70">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">Project limit reached</span>
-              <Button variant="outline" asChild>
-                <Link href="/#pricing">Upgrade Plan</Link>
-              </Button>
-            </div>
-          )}
+          <h1 className="text-3xl font-bold text-white">My Projects</h1>
+          <Button asChild>
+            <Link href="/" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              New Project
+            </Link>
+          </Button>
         </div>
 
         {!projects?.length ? (
