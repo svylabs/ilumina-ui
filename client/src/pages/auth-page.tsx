@@ -11,12 +11,12 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const registerSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
   name: z.string().min(1, "Name is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -35,6 +35,7 @@ export default function AuthPage() {
       email: "",
       password: "",
     },
+    mode: "onSubmit",
   });
 
   const registerForm = useForm<RegisterFormData>({
@@ -44,9 +45,9 @@ export default function AuthPage() {
       name: "",
       password: "",
     },
+    mode: "onSubmit",
   });
 
-  // Redirect if already logged in
   if (user) {
     setLocation("/projects");
     return null;
@@ -107,7 +108,7 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -125,7 +126,7 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -158,7 +159,7 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -175,7 +176,7 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
@@ -193,7 +194,7 @@ export default function AuthPage() {
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />
