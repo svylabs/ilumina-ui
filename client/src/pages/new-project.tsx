@@ -31,6 +31,7 @@ export default function NewProjectPage() {
     defaultValues: {
       name: "",
       githubUrl: "",
+      userId: user?.id,
     },
   });
 
@@ -71,7 +72,7 @@ export default function NewProjectPage() {
 
   const maxProjects = user.plan === 'teams' ? Infinity : 
                      user.plan === 'pro' ? 3 : 1;
-  
+
   const projectCount = projects?.length || 0;
   const canAddProject = projectCount < maxProjects;
 
@@ -102,7 +103,7 @@ export default function NewProjectPage() {
           <CardContent className="p-6">
             <h2 className="text-2xl font-bold text-white mb-6">Create New Project</h2>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
+              <form onSubmit={form.handleSubmit((data) => mutation.mutate({...data, userId: user.id}))} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="githubUrl"
