@@ -5,27 +5,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SunDim } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [, setLocation] = useLocation();
   const { login, register, user } = useAuth();
 
-  const loginForm = useForm({
-    defaultValues: {
-      email: "",
-      password: "",
-    }
-  });
-
-  const registerForm = useForm({
-    defaultValues: {
-      email: "",
-      name: "",
-      password: "",
-    }
+  // Basic form state without validation
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    name: "",
   });
 
   if (user) {
@@ -33,18 +23,28 @@ export default function AuthPage() {
     return null;
   }
 
-  const handleLoginSubmit = async (data: { email: string; password: string }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await login(data.email, data.password);
+      await login(formData.email, formData.password);
       setLocation("/projects");
     } catch (error) {
       // Error handling is done in the auth context
     }
   };
 
-  const handleRegisterSubmit = async (data: { email: string; name: string; password: string }) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await register(data.email, data.name, data.password);
+      await register(formData.email, formData.name, formData.password);
       setLocation("/projects");
     } catch (error) {
       // Error handling is done in the auth context
@@ -68,118 +68,78 @@ export default function AuthPage() {
               </h2>
 
               {isLogin ? (
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="space-y-4">
-                    <FormField
-                      control={loginForm.control}
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-white">Email</label>
+                    <Input
+                      type="email"
                       name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="Enter your email"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                              autoComplete="email"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Enter your email"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                     />
-                    <FormField
-                      control={loginForm.control}
+                  </div>
+                  <div>
+                    <label className="text-white">Password</label>
+                    <Input
+                      type="password"
                       name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Enter your password"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                              autoComplete="current-password"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Enter your password"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                     />
-                    <Button
-                      type="submit"
-                      className="w-full bg-primary hover:bg-primary/90 text-black"
-                      disabled={loginForm.formState.isSubmitting}
-                    >
-                      Sign In
-                    </Button>
-                  </form>
-                </Form>
+                  </div>
+                  <Button 
+                    type="submit"
+                    className="w-full bg-primary hover:bg-primary/90 text-black"
+                  >
+                    Sign In
+                  </Button>
+                </form>
               ) : (
-                <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="space-y-4">
-                    <FormField
-                      control={registerForm.control}
+                <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-white">Name</label>
+                    <Input
+                      type="text"
                       name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter your name"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                              autoComplete="name"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Enter your name"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                     />
-                    <FormField
-                      control={registerForm.control}
+                  </div>
+                  <div>
+                    <label className="text-white">Email</label>
+                    <Input
+                      type="email"
                       name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="Enter your email"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                              autoComplete="email"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Enter your email"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                     />
-                    <FormField
-                      control={registerForm.control}
+                  </div>
+                  <div>
+                    <label className="text-white">Password</label>
+                    <Input
+                      type="password"
                       name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Choose a password"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                              autoComplete="new-password"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Choose a password"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                     />
-                    <Button
-                      type="submit"
-                      className="w-full bg-primary hover:bg-primary/90 text-black"
-                      disabled={registerForm.formState.isSubmitting}
-                    >
-                      Sign Up
-                    </Button>
-                  </form>
-                </Form>
+                  </div>
+                  <Button 
+                    type="submit"
+                    className="w-full bg-primary hover:bg-primary/90 text-black"
+                  >
+                    Sign Up
+                  </Button>
+                </form>
               )}
 
               <div className="mt-4 text-center">
@@ -203,8 +163,8 @@ export default function AuthPage() {
               {isLogin ? "Welcome Back!" : "Join Ilumina"}
             </h1>
             <p className="text-lg text-white/70">
-              Get comprehensive insights into your smart contracts with our advanced
-              testing and analysis platform.
+              Get comprehensive insights into your smart contracts with our
+              advanced testing and analysis platform.
             </p>
           </div>
         </div>
