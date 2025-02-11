@@ -181,7 +181,7 @@ export default function HomePage() {
               },
               {
                 name: "Teams",
-                price: "$799",
+                price: "$499",
                 period: "per month",
                 description: "For growing teams",
                 features: [
