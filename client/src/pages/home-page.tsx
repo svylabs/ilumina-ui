@@ -1,10 +1,51 @@
 import { Card, CardContent } from "@/components/ui/card";
 import SubmissionForm from "@/components/submission-form";
-import { SunDim, Check } from "lucide-react";
+import { SunDim, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Added import for Input component
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { insertContactSchema, type InsertContact } from "@db/schema";
+import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
+  const { toast } = useToast();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<InsertContact>({
+    resolver: zodResolver(insertContactSchema),
+  });
+
+  const contactMutation = useMutation({
+    mutationFn: async (data: InsertContact) => {
+      const res = await apiRequest("POST", "/api/contact", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Message sent",
+        description: "We'll get back to you soon!",
+      });
+      reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: InsertContact) => {
+    contactMutation.mutate(data);
+  };
+
   return (
     <div className="min-h-screen bg-black pt-20">
       {/* Hero Section */}
@@ -218,36 +259,61 @@ export default function HomePage() {
 
           <Card className="border-2 border-primary/20 bg-black/50">
             <CardContent className="p-8">
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                 <div className="space-y-2">
                   <label className="text-white">Name</label>
                   <Input
+                    {...register("name")}
                     placeholder="Your name"
                     className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                   />
+                  {errors.name && (
+                    <p className="text-red-500 text-sm">{errors.name.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-white">Email</label>
                   <Input
+                    {...register("email")}
                     type="email"
                     placeholder="your@email.com"
                     className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                   />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm">{errors.email.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-white">Message</label>
                   <textarea
+                    {...register("message")}
                     rows={4}
                     placeholder="Your message"
                     className="w-full rounded-md bg-black/50 border border-primary/40 text-white placeholder:text-white/50 p-3"
                   />
+                  {errors.message && (
+                    <p className="text-red-500 text-sm">{errors.message.message}</p>
+                  )}
                 </div>
                 <Button
                   type="submit"
                   className="w-full bg-primary hover:bg-primary/90 text-black"
+                  disabled={contactMutation.isPending}
                 >
-                  Send Message
+                  {contactMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Message"
+                  )}
                 </Button>
+                {contactMutation.isSuccess && (
+                  <p className="text-green-500 text-sm text-center">
+                    Thank you for your message! We'll get back to you soon.
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>

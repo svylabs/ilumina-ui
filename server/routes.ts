@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { submissions, runs, projects, insertSubmissionSchema } from "@db/schema";
+import { submissions, runs, projects, insertSubmissionSchema, contacts } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
@@ -332,6 +332,27 @@ export function registerRoutes(app: Express): Server {
     res.setHeader('Content-Disposition', `attachment; filename=project-${submission.id}.json`);
     res.json(data);
   });
+
+  app.post("/api/contact", async (req, res) => {
+    const result = insertContactSchema.safeParse(req.body);
+    if (!result.success) {
+      const error = fromZodError(result.error);
+      return res.status(400).send(error.toString());
+    }
+
+    try {
+      const [contact] = await db
+        .insert(contacts)
+        .values(result.data)
+        .returning();
+
+      res.status(201).json(contact);
+    } catch (err) {
+      console.error('Error saving contact:', err);
+      res.status(500).json({ message: "Failed to save contact information" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

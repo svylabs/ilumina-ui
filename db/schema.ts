@@ -2,6 +2,7 @@ import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Existing tables remain unchanged
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -55,7 +56,16 @@ export const analysisSteps = pgTable("analysis_steps", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Zod schemas for validation
+// New contacts table
+export const contacts = pgTable("contacts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Existing schemas remain unchanged
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
   name: z.string().min(1),
@@ -79,6 +89,16 @@ export const insertRunSchema = createInsertSchema(runs);
 export const selectRunSchema = createSelectSchema(runs);
 
 export const selectSubmissionSchema = createSelectSchema(submissions);
+
+// New contact form schema
+export const insertContactSchema = createInsertSchema(contacts, {
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+export const selectContactSchema = createSelectSchema(contacts);
+
+// Export types
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;
 export type InsertRun = typeof runs.$inferInsert;
@@ -87,6 +107,8 @@ export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertProject = typeof projects.$inferInsert;
 export type SelectProject = typeof projects.$inferSelect;
+export type InsertContact = typeof contacts.$inferInsert;
+export type SelectContact = typeof contacts.$inferSelect;
 
 export const insertAnalysisStepSchema = createInsertSchema(analysisSteps);
 export const selectAnalysisStepSchema = createSelectSchema(analysisSteps);
