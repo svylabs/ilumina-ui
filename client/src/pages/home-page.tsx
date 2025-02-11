@@ -134,7 +134,7 @@ export default function HomePage() {
                   "1 project",
                   "One time automated test generation",
                   "Chatbot access to update tests",
-                  "60 simulation runs per day",
+                  "20 simulation runs per day",
                   "Priority support"
                 ]
               },
