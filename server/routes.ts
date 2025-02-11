@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { submissions, runs, projects, insertSubmissionSchema, contacts, insertContactSchema } from "@db/schema";
+import { submissions, runs, projects, insertSubmissionSchema, contacts, insertContactSchema, pricingPlans, planFeatures } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
@@ -353,6 +353,32 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get pricing information
+  app.get("/api/pricing", async (_req, res) => {
+    try {
+      const plans = await db
+        .select()
+        .from(pricingPlans)
+        .orderBy(pricingPlans.price);
+
+      const features = await db
+        .select()
+        .from(planFeatures);
+
+      // Combine plans with their features
+      const pricingData = plans.map(plan => ({
+        ...plan,
+        features: features
+          .filter(feature => feature.planId === plan.id)
+          .map(feature => feature.feature)
+      }));
+
+      res.json(pricingData);
+    } catch (err) {
+      console.error('Error fetching pricing:', err);
+      res.status(500).json({ message: "Failed to fetch pricing information" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

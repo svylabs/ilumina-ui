@@ -13,6 +13,24 @@ export const users = pgTable("users", {
   simulationsUsed: integer("simulations_used").default(0).notNull(),
 });
 
+// New pricing tables
+export const pricingPlans = pgTable("pricing_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  price: integer("price").notNull(),
+  period: text("period").notNull(),
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const planFeatures = pgTable("plan_features", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").notNull(),
+  feature: text("feature").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -56,7 +74,6 @@ export const analysisSteps = pgTable("analysis_steps", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// New contacts table
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -65,7 +82,6 @@ export const contacts = pgTable("contacts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Existing schemas remain unchanged
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
   name: z.string().min(1),
@@ -90,7 +106,6 @@ export const selectRunSchema = createSelectSchema(runs);
 
 export const selectSubmissionSchema = createSelectSchema(submissions);
 
-// New contact form schema
 export const insertContactSchema = createInsertSchema(contacts, {
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
@@ -98,7 +113,12 @@ export const insertContactSchema = createInsertSchema(contacts, {
 });
 export const selectContactSchema = createSelectSchema(contacts);
 
-// Export types
+export const insertPricingPlanSchema = createInsertSchema(pricingPlans);
+export const selectPricingPlanSchema = createSelectSchema(pricingPlans);
+
+export const insertPlanFeatureSchema = createInsertSchema(planFeatures);
+export const selectPlanFeatureSchema = createSelectSchema(planFeatures);
+
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;
 export type InsertRun = typeof runs.$inferInsert;
@@ -114,3 +134,8 @@ export const insertAnalysisStepSchema = createInsertSchema(analysisSteps);
 export const selectAnalysisStepSchema = createSelectSchema(analysisSteps);
 export type InsertAnalysisStep = typeof analysisSteps.$inferInsert;
 export type SelectAnalysisStep = typeof analysisSteps.$inferSelect;
+
+export type InsertPricingPlan = typeof pricingPlans.$inferInsert;
+export type SelectPricingPlan = typeof pricingPlans.$inferSelect;
+export type InsertPlanFeature = typeof planFeatures.$inferInsert;
+export type SelectPlanFeature = typeof planFeatures.$inferSelect;

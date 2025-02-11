@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertContactSchema, type InsertContact } from "@db/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +45,18 @@ export default function HomePage() {
   const onSubmit = (data: InsertContact) => {
     contactMutation.mutate(data);
   };
+
+  // Add pricing data query
+  const { data: pricingData, isLoading: isPricingLoading } = useQuery({
+    queryKey: ["/api/pricing"],
+    queryFn: async () => {
+      const response = await fetch("/api/pricing");
+      if (!response.ok) {
+        throw new Error("Failed to fetch pricing data");
+      }
+      return response.json();
+    },
+  });
 
   return (
     <div className="min-h-screen bg-black pt-20">
@@ -96,31 +108,28 @@ export default function HomePage() {
                 title: "Solidity Projects",
                 description:
                   "Advanced support for Solidity smart contract testing and validation",
-                icon: "🔗"
+                icon: "🔗",
               },
               {
                 title: "AI Enabled Test Generation",
-                description:
-                  "Automatically generate comprehensive test cases using AI",
-                icon: "🤖"
+                description: "Automatically generate comprehensive test cases using AI",
+                icon: "🤖",
               },
               {
                 title: "Detailed Reports",
                 description: "Get in-depth analysis and actionable insights",
-                icon: "📊"
+                icon: "📊",
               },
               {
                 title: "Run Tests On Demand",
-                description:
-                  "Execute tests whenever you need with real-time results",
-                icon: "▶️"
+                description: "Execute tests whenever you need with real-time results",
+                icon: "▶️",
               },
               {
                 title: "Manage Teams",
-                description:
-                  "Collaborate with your team and manage permissions",
-                icon: "👥"
-              }
+                description: "Collaborate with your team and manage permissions",
+                icon: "👥",
+              },
             ].map((feature) => (
               <Card
                 key={feature.title}
@@ -151,97 +160,63 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Free",
-                price: "$0",
-                period: "forever",
-                description: "Perfect for individual developers",
-                features: [
-                  "1 project",
-                  "One time automated test generation per month",
-                  "Report for latest run",
-                  "1 simulation run per day",
-                  "No chatbot access"
-                ]
-              },
-              {
-                name: "Pro",
-                price: "$39",
-                period: "per month",
-                description: "For professional developers",
-                features: [
-                  "1 project",
-                  "One time automated test generation",
-                  "Chatbot access to update tests",
-                  "20 simulation runs per day",
-                  "Priority support"
-                ]
-              },
-              {
-                name: "Teams",
-                price: "$499",
-                period: "per month",
-                description: "For growing teams",
-                features: [
-                  "Unlimited projects",
-                  "Unlimited simulation runs",
-                  "Automated simulation updates",
-                  "Chatbot access to update tests",
-                  "< 24 hour support turnaround"
-                ]
-              }
-            ].map((plan) => (
-              <Card
-                key={plan.name}
-                className={`border-2 ${
-                  plan.name === "Pro"
-                    ? "border-primary"
-                    : "border-primary/20"
-                } bg-black/50 backdrop-blur relative`}
-              >
-                <CardContent className="p-6">
-                  {plan.name === "Pro" && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary px-3 py-1 rounded-full text-xs font-semibold text-black">
-                      Popular
+          {isPricingLoading ? (
+            <div className="flex justify-center">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {pricingData?.map((plan) => (
+                <Card
+                  key={plan.name}
+                  className={`border-2 ${
+                    plan.name === "Pro"
+                      ? "border-primary"
+                      : "border-primary/20"
+                  } bg-black/50 backdrop-blur relative`}
+                >
+                  <CardContent className="p-6">
+                    {plan.name === "Pro" && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary px-3 py-1 rounded-full text-xs font-semibold text-black">
+                        Popular
+                      </div>
+                    )}
+                    <div className="text-center mb-6">
+                      <h3 className="text-xl font-semibold mb-2 text-white">
+                        {plan.name}
+                      </h3>
+                      <div className="text-3xl font-bold text-white mb-1">
+                        ${plan.price}
+                      </div>
+                      <div className="text-sm text-white/70">
+                        {plan.period}
+                      </div>
+                      <p className="mt-2 text-white/70">
+                        {plan.description}
+                      </p>
                     </div>
-                  )}
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-semibold mb-2 text-white">
-                      {plan.name}
-                    </h3>
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {plan.price}
-                    </div>
-                    <div className="text-sm text-white/70">
-                      {plan.period}
-                    </div>
-                    <p className="mt-2 text-white/70">
-                      {plan.description}
-                    </p>
-                  </div>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center text-white/90">
-                        <Check className="h-4 w-4 text-primary mr-2" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className={`w-full ${
-                      plan.name === "Pro"
-                        ? "bg-primary hover:bg-primary/90 text-black"
-                        : "bg-primary/20 hover:bg-primary/30 text-white"
-                    }`}
-                  >
-                    Get Started
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-center text-white/90">
+                          <Check className="h-4 w-4 text-primary mr-2" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className={`w-full ${
+                        plan.name === "Pro"
+                          ? "bg-primary hover:bg-primary/90 text-black"
+                          : "bg-primary/20 hover:bg-primary/30 text-white"
+                      }`}
+                    >
+                      Get Started
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
