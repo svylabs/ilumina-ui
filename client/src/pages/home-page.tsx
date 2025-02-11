@@ -160,7 +160,7 @@ export default function HomePage() {
                 description: "Perfect for individual developers",
                 features: [
                   "1 project",
-                  "Automated test generation",
+                  "One time automated test generation per month",
                   "Report for latest run",
                   "1 simulation run per day",
                   "No chatbot access"
