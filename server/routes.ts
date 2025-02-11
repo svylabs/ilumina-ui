@@ -158,7 +158,7 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json(submission);
   });
 
-  // Update the analysis endpoint to handle step-by-step progress
+  // Update the analysis endpoint
   app.get("/api/analysis/:id", async (req, res) => {
     const [submission] = await db
       .select()
@@ -170,15 +170,15 @@ export function registerRoutes(app: Express): Server {
       return res.status(404).send("Submission not found");
     }
 
-    // Get the current step from database
-    const [currentStep] = await db
+    // Get all steps for this submission from database
+    const steps = await db
       .select()
       .from(analysisSteps)
       .where(eq(analysisSteps.submissionId, submission.id))
-      .orderBy(analysisSteps.createdAt, "desc")
-      .limit(1);
+      .orderBy(analysisSteps.createdAt);
 
-    const steps = {
+    // Initialize step statuses
+    const stepsStatus = {
       files: {
         status: "pending",
         details: null
@@ -205,23 +205,19 @@ export function registerRoutes(app: Express): Server {
       }
     };
 
-    // Mark all steps up to current as completed
-    let foundCurrent = false;
-    for (const step of ['files', 'abi', 'workspace', 'test_setup', 'actors', 'simulations']) {
-      if (foundCurrent) {
-        steps[step].status = "pending";
-      } else if (step === currentStep?.stepId) {
-        steps[step].status = currentStep?.status || "pending"; //Handle case where currentStep is null
-        steps[step].details = currentStep?.details || null; //Handle case where currentStep is null
-        foundCurrent = true;
-      } else {
-        steps[step].status = "completed";
-        steps[step].details = "Step completed";
+    // Update status and details for each step that exists in the database
+    steps.forEach(step => {
+      if (stepsStatus[step.stepId]) {
+        stepsStatus[step.stepId].status = step.status;
+        stepsStatus[step.stepId].details = step.details;
       }
-    }
+    });
 
-    const status = foundCurrent ? "in_progress" : "completed";
-    res.json({ status, steps });
+    // Check if any step is in progress to determine overall status
+    const hasInProgressStep = steps.some(step => step.status === "in_progress");
+    const status = hasInProgressStep ? "in_progress" : "completed";
+
+    res.json({ status, steps: stepsStatus });
   });
 
   app.get("/api/submissions/:id", async (req, res) => {
