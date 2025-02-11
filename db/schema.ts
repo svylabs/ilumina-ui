@@ -42,6 +42,19 @@ export const runs = pgTable("runs", {
   latestLog: text("latest_log"),
 });
 
+export const analysisSteps = pgTable("analysis_steps", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").notNull(),
+  stepId: text("step_id", {
+    enum: ["files", "abi", "workspace", "test_setup", "actors", "simulations"]
+  }).notNull(),
+  status: text("status", {
+    enum: ["pending", "in_progress", "completed", "failed"]
+  }).default("pending").notNull(),
+  details: text("details"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
@@ -74,3 +87,8 @@ export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertProject = typeof projects.$inferInsert;
 export type SelectProject = typeof projects.$inferSelect;
+
+export const insertAnalysisStepSchema = createInsertSchema(analysisSteps);
+export const selectAnalysisStepSchema = createSelectSchema(analysisSteps);
+export type InsertAnalysisStep = typeof analysisSteps.$inferInsert;
+export type SelectAnalysisStep = typeof analysisSteps.$inferSelect;

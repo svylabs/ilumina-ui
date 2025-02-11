@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle, CircleDot, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+type StepStatus = "pending" | "in_progress" | "completed" | "failed";
+
 type AnalysisStep = {
   id: string;
   title: string;
   description: string;
-  status: "pending" | "in_progress" | "completed" | "failed";
+  status: StepStatus;
   link?: string;
   linkText?: string;
 };
@@ -17,7 +19,7 @@ type AnalysisResponse = {
   status: string;
   steps: {
     [key: string]: {
-      status: "pending" | "in_progress" | "completed" | "failed";
+      status: StepStatus;
       details: string | null;
     }
   }
@@ -72,7 +74,7 @@ const analysisSteps: AnalysisStep[] = [
   }
 ];
 
-function StepStatus({ status }: { status: AnalysisStep["status"] }) {
+function StepStatus({ status }: { status: StepStatus }) {
   switch (status) {
     case "completed":
       return <CheckCircle2 className="h-6 w-6 text-green-500" />;
@@ -91,13 +93,14 @@ export default function AnalysisPage() {
   const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
     refetchInterval: (data) => {
-      if (!data || !data.steps) return 2000; 
+      if (!data || !data.steps) return 2000;
 
-      const isInProgress = Object.values(data.steps).some(step => 
-        step.status === "pending" || step.status === "in_progress"
+      // Only continue polling if there's a step in progress
+      const hasInProgressStep = Object.values(data.steps).some(
+        step => step.status === "in_progress"
       );
 
-      return isInProgress ? 2000 : false;
+      return hasInProgressStep ? 2000 : false;
     },
   });
 
@@ -109,7 +112,7 @@ export default function AnalysisPage() {
     );
   }
 
-  const getStepStatus = (stepId: string): AnalysisStep["status"] => {
+  const getStepStatus = (stepId: string): StepStatus => {
     if (!analysis?.steps) return "pending";
     return analysis.steps[stepId]?.status || "pending";
   };

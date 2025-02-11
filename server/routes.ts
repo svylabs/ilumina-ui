@@ -5,6 +5,7 @@ import { submissions, runs, projects, insertSubmissionSchema } from "@db/schema"
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
+import { analysisSteps } from "@db/schema"; // Import the analysisSteps schema
 
 export function registerRoutes(app: Express): Server {
   // Set up authentication
@@ -130,6 +131,17 @@ export function registerRoutes(app: Express): Server {
       return [submission];
     });
 
+    // Add this after creating the submission
+    const [initialStep] = await db
+      .insert(analysisSteps)
+      .values({
+        submissionId: submission.id,
+        stepId: "files",
+        status: "in_progress",
+        details: "Starting file analysis...",
+      })
+      .returning();
+
     const [run] = await db
       .insert(runs)
       .values({
@@ -146,6 +158,7 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json(submission);
   });
 
+  // Update the analysis endpoint to handle step-by-step progress
   app.get("/api/analysis/:id", async (req, res) => {
     const [submission] = await db
       .select()
@@ -157,39 +170,57 @@ export function registerRoutes(app: Express): Server {
       return res.status(404).send("Submission not found");
     }
 
-    // Simulate analysis progress based on time elapsed
-    const startTime = new Date(submission.createdAt).getTime();
-    const elapsed = Date.now() - startTime;
+    // Get the current step from database
+    const [currentStep] = await db
+      .select()
+      .from(analysisSteps)
+      .where(eq(analysisSteps.submissionId, submission.id))
+      .orderBy(analysisSteps.createdAt, "desc")
+      .limit(1);
 
     const steps = {
       files: {
-        status: elapsed > 2000 ? "completed" : "in_progress",
-        details: elapsed > 2000 ? "Found 3 Solidity contract files" : null
+        status: "pending",
+        details: null
       },
       abi: {
-        status: elapsed > 4000 ? "completed" : elapsed > 2000 ? "in_progress" : "pending",
-        details: elapsed > 4000 ? "Identified compilation requirements" : null
+        status: "pending",
+        details: null
       },
       workspace: {
-        status: elapsed > 6000 ? "completed" : elapsed > 4000 ? "in_progress" : "pending",
-        details: elapsed > 6000 ? "Workspace setup complete" : null
+        status: "pending",
+        details: null
       },
       test_setup: {
-        status: elapsed > 8000 ? "completed" : elapsed > 6000 ? "in_progress" : "pending",
-        details: elapsed > 8000 ? "Test environment configured with flocc-ext" : null
+        status: "pending",
+        details: null
       },
       actors: {
-        status: elapsed > 10000 ? "completed" : elapsed > 8000 ? "in_progress" : "pending",
-        details: elapsed > 10000 ? "Identified 2 main actors and their actions" : null
+        status: "pending",
+        details: null
       },
       simulations: {
-        status: elapsed > 12000 ? "completed" : elapsed > 10000 ? "in_progress" : "pending",
-        details: elapsed > 12000 ? "All simulations completed successfully" : null
+        status: "pending",
+        details: null
       }
     };
 
-    const status = elapsed > 12000 ? "completed" : "in_progress";
+    // Mark all steps up to current as completed
+    let foundCurrent = false;
+    for (const step of ['files', 'abi', 'workspace', 'test_setup', 'actors', 'simulations']) {
+      if (foundCurrent) {
+        steps[step].status = "pending";
+      } else if (step === currentStep?.stepId) {
+        steps[step].status = currentStep?.status || "pending"; //Handle case where currentStep is null
+        steps[step].details = currentStep?.details || null; //Handle case where currentStep is null
+        foundCurrent = true;
+      } else {
+        steps[step].status = "completed";
+        steps[step].details = "Step completed";
+      }
+    }
 
+    const status = foundCurrent ? "in_progress" : "completed";
     res.json({ status, steps });
   });
 
