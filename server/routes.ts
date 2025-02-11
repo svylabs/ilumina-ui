@@ -1,11 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { submissions, runs, projects, insertSubmissionSchema, contacts } from "@db/schema";
+import { submissions, runs, projects, insertSubmissionSchema, contacts, insertContactSchema } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import { analysisSteps } from "@db/schema"; // Import the analysisSteps schema
+import { analysisSteps } from "@db/schema";
 
 export function registerRoutes(app: Express): Server {
   // Set up authentication
