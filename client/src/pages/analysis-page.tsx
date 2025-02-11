@@ -16,8 +16,8 @@ type AnalysisStep = {
 const analysisSteps: AnalysisStep[] = [
   {
     id: "files",
-    title: "File Analysis",
-    description: "Identifying repository structure and smart contract files",
+    title: "Beginning Evaluation",
+    description: "Analyzing repository structure and identifying smart contract files",
     status: "pending"
   },
   {
@@ -81,7 +81,11 @@ export default function AnalysisPage() {
   const { data: analysis, isLoading } = useQuery({
     queryKey: [`/api/analysis/${id}`],
     refetchInterval: (data) => {
-      return data?.status === "completed" || data?.status === "failed" ? false : 2000;
+      // Only continue polling if we don't have data yet or if the analysis is still in progress
+      const isInProgress = !data || Object.values(data.steps).some(step => 
+        step.status === "pending" || step.status === "in_progress"
+      );
+      return isInProgress ? 2000 : false;
     },
   });
 

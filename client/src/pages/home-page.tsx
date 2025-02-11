@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import SubmissionForm from "@/components/submission-form";
 import { SunDim, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input"; // Added import for Input component
 
 export default function HomePage() {
   return (
@@ -99,7 +100,7 @@ export default function HomePage() {
                 period: "forever",
                 description: "Perfect for individual developers",
                 features: [
-                  "1 repository",
+                  "1 project",
                   "One free simulation run",
                   "View reports",
                   "Basic analysis tools"
@@ -111,7 +112,7 @@ export default function HomePage() {
                 period: "per month",
                 description: "For professional developers",
                 features: [
-                  "Up to 3 repositories",
+                  "Up to 3 projects",
                   "60 simulations per month",
                   "Advanced analysis tools",
                   "Priority support",
@@ -124,7 +125,7 @@ export default function HomePage() {
                 period: "per month",
                 description: "For growing teams",
                 features: [
-                  "Unlimited repositories",
+                  "Unlimited projects",
                   "Unlimited simulations",
                   "Team collaboration",
                   "Advanced security",
@@ -174,6 +175,52 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="scroll-mt-20 py-24 px-6 bg-black">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">Contact Us</h2>
+            <p className="text-lg text-white/70">Get in touch with our team</p>
+          </div>
+
+          <Card className="border-2 border-primary/20 bg-black/50">
+            <CardContent className="p-8">
+              <form className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-white">Name</label>
+                  <Input 
+                    placeholder="Your name"
+                    className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-white">Email</label>
+                  <Input 
+                    type="email"
+                    placeholder="your@email.com"
+                    className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-white">Message</label>
+                  <textarea 
+                    rows={4}
+                    placeholder="Your message"
+                    className="w-full rounded-md bg-black/50 border border-primary/40 text-white placeholder:text-white/50 p-3"
+                  />
+                </div>
+                <Button 
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary/90 text-black"
+                >
+                  Send Message
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>
