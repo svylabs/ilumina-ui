@@ -19,11 +19,10 @@ export default function HomePage() {
               </div>
             </div>
             <h1 className="text-5xl font-bold">
-              Welcome to <span className="text-white font-bold">i</span><span className="text-primary">lumina</span>
+              <span className="text-white font-bold">Smart</span> testing for your smart contracts
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Illuminate your smart contracts with comprehensive testing and analysis.
-              Get detailed insights and ensure your code meets the highest standards.
+              Thorough agent based simulations and analysis for your smart contracts.
             </p>
           </div>
 
