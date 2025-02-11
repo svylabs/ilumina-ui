@@ -13,6 +13,16 @@ type AnalysisStep = {
   linkText?: string;
 };
 
+type AnalysisResponse = {
+  status: string;
+  steps: {
+    [key: string]: {
+      status: "pending" | "in_progress" | "completed" | "failed";
+      details: string | null;
+    }
+  }
+};
+
 const analysisSteps: AnalysisStep[] = [
   {
     id: "files",
@@ -78,13 +88,15 @@ function StepStatus({ status }: { status: AnalysisStep["status"] }) {
 export default function AnalysisPage() {
   const { id } = useParams();
 
-  const { data: analysis, isLoading } = useQuery({
+  const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
     refetchInterval: (data) => {
-      // Only continue polling if we don't have data yet or if the analysis is still in progress
-      const isInProgress = !data || Object.values(data.steps).some(step => 
+      if (!data || !data.steps) return 2000; 
+
+      const isInProgress = Object.values(data.steps).some(step => 
         step.status === "pending" || step.status === "in_progress"
       );
+
       return isInProgress ? 2000 : false;
     },
   });
@@ -96,6 +108,16 @@ export default function AnalysisPage() {
       </div>
     );
   }
+
+  const getStepStatus = (stepId: string): AnalysisStep["status"] => {
+    if (!analysis?.steps) return "pending";
+    return analysis.steps[stepId]?.status || "pending";
+  };
+
+  const getStepDetails = (stepId: string): string | null => {
+    if (!analysis?.steps) return null;
+    return analysis.steps[stepId]?.details || null;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
@@ -129,7 +151,7 @@ export default function AnalysisPage() {
                     <p className="text-sm text-muted-foreground">
                       {step.description}
                     </p>
-                    {step.link && analysis?.steps?.[step.id]?.status === "completed" && (
+                    {step.link && getStepStatus(step.id) === "completed" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -141,12 +163,12 @@ export default function AnalysisPage() {
                       </Button>
                     )}
                   </div>
-                  <StepStatus status={analysis?.steps?.[step.id]?.status || "pending"} />
+                  <StepStatus status={getStepStatus(step.id)} />
                 </div>
-                {analysis?.steps?.[step.id]?.details && (
+                {getStepDetails(step.id) && (
                   <div className="mt-4 p-3 bg-muted rounded-md">
                     <pre className="text-sm whitespace-pre-wrap">
-                      {analysis.steps[step.id].details}
+                      {getStepDetails(step.id)}
                     </pre>
                   </div>
                 )}
