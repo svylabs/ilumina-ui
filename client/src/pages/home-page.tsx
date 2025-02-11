@@ -99,36 +99,36 @@ export default function HomePage() {
                 period: "forever",
                 description: "Perfect for individual developers",
                 features: [
-                  "1 project",
-                  "One free simulation run",
+                  "Limited simulations",
+                  "Basic analysis tools",
                   "View reports",
-                  "Basic analysis tools"
+                  "Community support"
                 ]
               },
               {
                 name: "Pro",
-                price: "$49",
+                price: "$39",
                 period: "per month",
                 description: "For professional developers",
                 features: [
-                  "Up to 3 projects",
-                  "60 simulations per month",
-                  "Advanced analysis tools",
+                  "1 project",
+                  "Chatbot access to update tests",
+                  "60 simulation runs per month",
                   "Priority support",
                   "Download test code"
                 ]
               },
               {
                 name: "Teams",
-                price: "$499",
+                price: "$799",
                 period: "per month",
                 description: "For growing teams",
                 features: [
-                  "Unlimited projects",
-                  "Unlimited simulations",
-                  "Team collaboration",
+                  "Unlimited repos",
+                  "Unlimited simulation runs",
+                  "Continuous simulation updates",
+                  "Updates based on commits",
                   "Advanced security",
-                  "Custom support",
                   "API access"
                 ]
               }
