@@ -17,6 +17,10 @@ export default function Header() {
   const [, setLocation] = useLocation();
 
   const scrollToSection = (id: string) => {
+    if (window.location.pathname !== '/') {
+      setLocation('/#' + id);
+      return;
+    }
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -97,6 +101,7 @@ export default function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer sm:hidden"
+                    onClick={() => setLocation('/projects')}
                   >
                     My Projects
                   </DropdownMenuItem>
@@ -117,22 +122,20 @@ export default function Header() {
             </>
           ) : (
             <>
-              <div className="sm:flex items-center space-x-4 hidden">
-                <Button 
-                  variant="ghost" 
-                  className="text-white/90 hover:text-white"
-                  onClick={() => scrollToSection("features")}
-                >
-                  Features
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="text-white/90 hover:text-white"
-                  onClick={() => scrollToSection("pricing")}
-                >
-                  Pricing
-                </Button>
-              </div>
+              <Button 
+                variant="ghost" 
+                className="text-white/90 hover:text-white hidden sm:flex"
+                onClick={() => scrollToSection("features")}
+              >
+                Features
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="text-white/90 hover:text-white hidden sm:flex"
+                onClick={() => scrollToSection("pricing")}
+              >
+                Pricing
+              </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild className="sm:hidden">
