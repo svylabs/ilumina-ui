@@ -177,39 +177,46 @@ export function registerRoutes(app: Express): Server {
       .where(eq(analysisSteps.submissionId, submission.id))
       .orderBy(analysisSteps.createdAt);
 
-    // Initialize step statuses
+    // Update the stepsStatus object creation in the analysis endpoint
     const stepsStatus = {
       files: {
         status: "pending",
-        details: null
+        details: null,
+        startTime: null
       },
       abi: {
         status: "pending",
-        details: null
+        details: null,
+        startTime: null
       },
       workspace: {
         status: "pending",
-        details: null
+        details: null,
+        startTime: null
       },
       test_setup: {
         status: "pending",
-        details: null
+        details: null,
+        startTime: null
       },
       actors: {
         status: "pending",
-        details: null
+        details: null,
+        startTime: null
       },
       simulations: {
         status: "pending",
-        details: null
+        details: null,
+        startTime: null
       }
     };
 
-    // Update status and details for each step that exists in the database
+    // Update the step status update logic
     steps.forEach(step => {
       if (stepsStatus[step.stepId]) {
         stepsStatus[step.stepId].status = step.status;
         stepsStatus[step.stepId].details = step.details;
+        stepsStatus[step.stepId].startTime = step.status === 'in_progress' ? step.createdAt.toISOString() : null;
       }
     });
 

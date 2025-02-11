@@ -3,6 +3,7 @@ import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle, CircleDot, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { format, addMinutes, formatDistanceToNow } from "date-fns";
 
 type StepStatus = "pending" | "in_progress" | "completed" | "failed";
 
@@ -13,6 +14,8 @@ type AnalysisStep = {
   status: StepStatus;
   link?: string;
   linkText?: string;
+  details?: string | null;
+  startTime?: string;
 };
 
 type AnalysisResponse = {
@@ -21,6 +24,7 @@ type AnalysisResponse = {
     [key: string]: {
       status: StepStatus;
       details: string | null;
+      startTime?: string;
     }
   }
 };
@@ -74,14 +78,23 @@ const analysisSteps: AnalysisStep[] = [
   }
 ];
 
-function StepStatus({ status }: { status: StepStatus }) {
+function StepStatus({ status, startTime }: { status: StepStatus; startTime?: string }) {
   switch (status) {
     case "completed":
       return <CheckCircle2 className="h-6 w-6 text-green-500" />;
     case "failed":
       return <XCircle className="h-6 w-6 text-red-500" />;
     case "in_progress":
-      return <Loader2 className="h-6 w-6 animate-spin text-blue-500" />;
+      return (
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+          {startTime && (
+            <span className="text-sm text-muted-foreground">
+              ~{formatDistanceToNow(addMinutes(new Date(startTime), 1))} remaining
+            </span>
+          )}
+        </div>
+      );
     default:
       return <CircleDot className="h-6 w-6 text-gray-300" />;
   }
@@ -122,6 +135,15 @@ export default function AnalysisPage() {
     return analysis.steps[stepId]?.details || null;
   };
 
+  const calculateProgress = (): number => {
+    if (!analysis?.steps) return 0;
+    const totalSteps = analysisSteps.length;
+    const completedSteps = Object.values(analysis.steps).filter(
+      step => step.status === "completed"
+    ).length;
+    return Math.round((completedSteps / totalSteps) * 100);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -142,11 +164,22 @@ export default function AnalysisPage() {
           <p className="text-muted-foreground text-lg">
             Analyzing repository structure and preparing test environment
           </p>
+          <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+            <div 
+              className="bg-primary h-full transition-all duration-500 ease-in-out"
+              style={{ width: `${calculateProgress()}%` }}
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Overall Progress: {calculateProgress()}%
+          </p>
         </div>
 
         <div className="grid gap-4">
           {analysisSteps.map((step) => (
-            <Card key={step.id}>
+            <Card key={step.id} className={`transition-all duration-300 ${
+              getStepStatus(step.id) === "in_progress" ? "border-primary" : ""
+            }`}>
               <CardHeader className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
@@ -166,7 +199,10 @@ export default function AnalysisPage() {
                       </Button>
                     )}
                   </div>
-                  <StepStatus status={getStepStatus(step.id)} />
+                  <StepStatus 
+                    status={getStepStatus(step.id)} 
+                    startTime={analysis?.steps[step.id]?.startTime}
+                  />
                 </div>
                 {getStepDetails(step.id) && (
                   <div className="mt-4 p-3 bg-muted rounded-md">
