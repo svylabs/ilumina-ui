@@ -22,7 +22,7 @@ export default function HomePage() {
               <span className="text-white font-bold">Smart</span> testing for your smart contracts
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Thorough agent based simulations and analysis for your smart contracts.
+              Powerful agent-based simulations that reveal how your smart contracts behave in real-world scenarios
             </p>
           </div>
 
