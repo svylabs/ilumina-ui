@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -40,7 +40,7 @@ export const projects = pgTable("projects", {
 });
 
 export const submissions = pgTable("submissions", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   githubUrl: text("github_url").notNull(),
   email: text("email").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -52,7 +52,7 @@ export const submissions = pgTable("submissions", {
 
 export const runs = pgTable("runs", {
   id: serial("id").primaryKey(),
-  submissionId: integer("submission_id").notNull(),
+  submissionId: uuid("submission_id").notNull(),
   status: text("status", { enum: ["pending", "running", "success", "failed"] })
     .default("pending")
     .notNull(),
@@ -63,7 +63,7 @@ export const runs = pgTable("runs", {
 
 export const analysisSteps = pgTable("analysis_steps", {
   id: serial("id").primaryKey(),
-  submissionId: integer("submission_id").notNull(),
+  submissionId: uuid("submission_id").notNull(),
   stepId: text("step_id", {
     enum: ["files", "abi", "workspace", "test_setup", "actors", "simulations"]
   }).notNull(),

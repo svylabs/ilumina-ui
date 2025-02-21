@@ -94,7 +94,7 @@ export function registerRoutes(app: Express): Server {
     res.sendStatus(204);
   });
 
-  // Modified submission endpoint to handle authentication
+  // Modify the submission endpoint to handle authentication
   app.post("/api/submissions", async (req, res) => {
     const result = insertSubmissionSchema.safeParse(req.body);
     if (!result.success) {
@@ -151,9 +151,28 @@ export function registerRoutes(app: Express): Server {
       })
       .returning();
 
-    setTimeout(() => {
-      updateRunStatus(run.id).catch(console.error);
-    }, 2000);
+    // Call the external analysis API
+    try {
+      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/begin_analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer my_secure_password'
+        },
+        body: JSON.stringify({
+          github_repository_url: submission.githubUrl,
+          submission_id: submission.id
+        })
+      });
+
+      if (!analysisResponse.ok) {
+        console.error('Analysis API Error:', await analysisResponse.text());
+        // We still return 201 since the submission was created, but log the error
+      }
+    } catch (error) {
+      console.error('Failed to call analysis API:', error);
+      // We still return 201 since the submission was created, but log the error
+    }
 
     res.status(201).json(submission);
   });
