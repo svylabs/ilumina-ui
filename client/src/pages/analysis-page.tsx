@@ -18,15 +18,15 @@ type AnalysisStep = {
   startTime?: string;
 };
 
+type AnalysisStepStatus = {
+  status: StepStatus;
+  details: string | null;
+  startTime: string | null;
+};
+
 type AnalysisResponse = {
   status: string;
-  steps: {
-    [key: string]: {
-      status: StepStatus;
-      details: string | null;
-      startTime?: string;
-    }
-  }
+  steps: Record<string, AnalysisStepStatus>;
 };
 
 const analysisSteps: AnalysisStep[] = [
@@ -78,7 +78,7 @@ const analysisSteps: AnalysisStep[] = [
   }
 ];
 
-function StepStatus({ status, startTime }: { status: StepStatus; startTime?: string }) {
+function StepStatus({ status, startTime }: { status: StepStatus; startTime?: string | null }) {
   switch (status) {
     case "completed":
       return <CheckCircle2 className="h-6 w-6 text-green-500" />;
@@ -106,13 +106,10 @@ export default function AnalysisPage() {
   const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
     refetchInterval: (data) => {
-      if (!data || !data.steps) return 2000;
-
-      // Only continue polling if there's a step in progress
+      if (!data?.steps) return 2000;
       const hasInProgressStep = Object.values(data.steps).some(
         step => step.status === "in_progress"
       );
-
       return hasInProgressStep ? 2000 : false;
     },
   });
@@ -125,18 +122,29 @@ export default function AnalysisPage() {
     );
   }
 
+  if (!analysis) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold">Analysis Not Found</h2>
+          <p className="text-muted-foreground">The requested analysis could not be found.</p>
+          <Button asChild>
+            <Link href="/">Return Home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const getStepStatus = (stepId: string): StepStatus => {
-    if (!analysis?.steps) return "pending";
     return analysis.steps[stepId]?.status || "pending";
   };
 
   const getStepDetails = (stepId: string): string | null => {
-    if (!analysis?.steps) return null;
     return analysis.steps[stepId]?.details || null;
   };
 
   const calculateProgress = (): number => {
-    if (!analysis?.steps) return 0;
     const totalSteps = analysisSteps.length;
     const completedSteps = Object.values(analysis.steps).filter(
       step => step.status === "completed"
@@ -201,7 +209,7 @@ export default function AnalysisPage() {
                   </div>
                   <StepStatus 
                     status={getStepStatus(step.id)} 
-                    startTime={analysis?.steps[step.id]?.startTime}
+                    startTime={analysis.steps[step.id]?.startTime}
                   />
                 </div>
                 {getStepDetails(step.id) && (

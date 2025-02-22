@@ -68,17 +68,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem('pendingGithubUrl');
       sessionStorage.removeItem('pendingEmail');
 
-      if (!data.submissionId) {
-        throw new Error("No submission ID returned from project creation");
+      // Redirect to analysis page with the submission ID
+      if (data.submissionId) {
+        setLocation(`/analysis/${data.submissionId}`);
+      } else {
+        // Fallback to projects page if no submission ID
+        setLocation('/projects');
       }
-
-      // Redirect to analysis page
-      setLocation(`/analysis/${data.submissionId}`);
     } catch (error) {
       console.error("Error creating pending project:", error);
       toast({
         title: "Error",
-        description: "Failed to create project. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
         variant: "destructive",
       });
       // On error, redirect to projects page

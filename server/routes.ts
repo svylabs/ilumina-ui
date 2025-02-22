@@ -233,91 +233,94 @@ export function registerRoutes(app: Express): Server {
 
   // Update the analysis endpoint
   app.get("/api/analysis/:id", async (req, res) => {
-    const [submission] = await db
-      .select()
-      .from(submissions)
-      .where(eq(submissions.id, parseInt(req.params.id)))
-      .limit(1);
+    try {
+      const submissionId = req.params.id;
 
-    if (!submission) {
-      return res.status(404).send("Submission not found");
+      // First try to get submission by project ID
+      let submission = await db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.projectId, parseInt(submissionId)))
+        .orderBy(submissions.createdAt, "desc")
+        .limit(1);
+
+      // If not found, try UUID format
+      if (!submission.length && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) {
+        submission = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.id, submissionId))
+          .limit(1);
+      }
+
+      if (!submission.length) {
+        return res.status(404).send("Submission not found");
+      }
+
+      // Get all steps for this submission from database
+      const steps = await db
+        .select()
+        .from(analysisSteps)
+        .where(eq(analysisSteps.submissionId, submission[0].id))
+        .orderBy(analysisSteps.createdAt);
+
+      const stepsStatus = {
+        files: { status: "pending", details: null, startTime: null },
+        abi: { status: "pending", details: null, startTime: null },
+        workspace: { status: "pending", details: null, startTime: null },
+        test_setup: { status: "pending", details: null, startTime: null },
+        actors: { status: "pending", details: null, startTime: null },
+        simulations: { status: "pending", details: null, startTime: null }
+      };
+
+      steps.forEach(step => {
+        if (stepsStatus[step.stepId]) {
+          stepsStatus[step.stepId] = {
+            status: step.status,
+            details: step.details,
+            startTime: step.status === 'in_progress' ? step.createdAt.toISOString() : null
+          };
+        }
+      });
+
+      const hasInProgressStep = steps.some(step => step.status === "in_progress");
+      const status = hasInProgressStep ? "in_progress" : "completed";
+
+      res.json({ status, steps: stepsStatus });
+    } catch (error) {
+      console.error('Error in analysis endpoint:', error);
+      res.status(500).send("Internal server error");
     }
-
-    // Get all steps for this submission from database
-    const steps = await db
-      .select()
-      .from(analysisSteps)
-      .where(eq(analysisSteps.submissionId, submission.id))
-      .orderBy(analysisSteps.createdAt);
-
-    // Update the stepsStatus object creation in the analysis endpoint
-    const stepsStatus = {
-      files: {
-        status: "pending",
-        details: null,
-        startTime: null
-      },
-      abi: {
-        status: "pending",
-        details: null,
-        startTime: null
-      },
-      workspace: {
-        status: "pending",
-        details: null,
-        startTime: null
-      },
-      test_setup: {
-        status: "pending",
-        details: null,
-        startTime: null
-      },
-      actors: {
-        status: "pending",
-        details: null,
-        startTime: null
-      },
-      simulations: {
-        status: "pending",
-        details: null,
-        startTime: null
-      }
-    };
-
-    // Update the step status update logic
-    steps.forEach(step => {
-      if (stepsStatus[step.stepId]) {
-        stepsStatus[step.stepId].status = step.status;
-        stepsStatus[step.stepId].details = step.details;
-        stepsStatus[step.stepId].startTime = step.status === 'in_progress' ? step.createdAt.toISOString() : null;
-      }
-    });
-
-    // Check if any step is in progress to determine overall status
-    const hasInProgressStep = steps.some(step => step.status === "in_progress");
-    const status = hasInProgressStep ? "in_progress" : "completed";
-
-    res.json({ status, steps: stepsStatus });
   });
 
   app.get("/api/submissions/:id", async (req, res) => {
-    const [submission] = await db
-      .select()
-      .from(submissions)
-      .where(eq(submissions.id, parseInt(req.params.id)))
-      .limit(1);
+    try {
+      const submissionId = req.params.id;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) {
+        return res.status(400).send("Invalid submission ID format");
+      }
 
-    if (!submission) {
-      return res.status(404).send("Submission not found");
+      const [submission] = await db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.id, submissionId))
+        .limit(1);
+
+      if (!submission) {
+        return res.status(404).send("Submission not found");
+      }
+
+      const testRuns = await db
+        .select()
+        .from(runs)
+        .where(eq(runs.submissionId, submission.id))
+        .orderBy(runs.startedAt);
+
+      res.json({ ...submission, runs: testRuns });
+    } catch (error) {
+      console.error('Error in submissions endpoint:', error);
+      res.status(500).send("Internal server error");
     }
-
-    const testRuns = await db
-      .select()
-      .from(runs)
-      .where(eq(runs.submissionId, submission.id))
-      .orderBy(runs.startedAt);
-
-    res.json({ ...submission, runs: testRuns });
   });
 
   app.post("/api/submissions/:id/runs", async (req, res) => {
@@ -454,6 +457,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   const httpServer = createServer(app);
+  const PORT = process.env.PORT || 3000;
+  app.set('port', PORT);
+
   return httpServer;
 }
 

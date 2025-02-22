@@ -60,12 +60,15 @@ export default function SubmissionForm() {
         throw new Error(error.message || 'Failed to create project');
       }
 
-      const project = await res.json();
+      const { submissionId } = await res.json();
+
       toast({
         title: "Success!",
         description: "Your project has been created.",
       });
-      setLocation(`/analysis/${project.submissionId}`);
+
+      // Redirect to analysis page with the submission ID
+      setLocation(`/analysis/${submissionId}`);
     } catch (error) {
       toast({
         title: "Error",
@@ -120,6 +123,7 @@ export default function SubmissionForm() {
         <Button 
           type="submit" 
           className="w-full bg-primary hover:bg-primary/90 text-black"
+          disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {user ? 'Create Project' : 'Continue to Login'}
