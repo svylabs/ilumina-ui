@@ -58,16 +58,70 @@ export function registerRoutes(app: Express): Server {
       });
     }
 
-    const [project] = await db
-      .insert(projects)
-      .values({
-        name: req.body.name,
-        githubUrl: req.body.githubUrl,
-        userId: req.user.id,
-      })
-      .returning();
+    // Start a transaction to create both project and submission
+    const [project, submission] = await db.transaction(async (tx) => {
+      const [project] = await tx
+        .insert(projects)
+        .values({
+          name: req.body.name,
+          githubUrl: req.body.githubUrl,
+          userId: req.user.id,
+        })
+        .returning();
 
-    res.status(201).json(project);
+      const [submission] = await tx
+        .insert(submissions)
+        .values({
+          githubUrl: req.body.githubUrl,
+          email: req.user.email,
+          projectId: project.id,
+        })
+        .returning();
+
+      await tx
+        .insert(analysisSteps)
+        .values({
+          submissionId: submission.id,
+          stepId: "files",
+          status: "in_progress",
+          details: "Starting file analysis...",
+        })
+        .returning();
+
+      await tx
+        .insert(runs)
+        .values({
+          submissionId: submission.id,
+          status: "running",
+          latestLog: "Initializing analysis...",
+        })
+        .returning();
+
+      return [project, submission];
+    });
+
+    // Call the external analysis API
+    try {
+      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/begin_analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer my_secure_password'
+        },
+        body: JSON.stringify({
+          github_repository_url: submission.githubUrl,
+          submission_id: submission.id
+        })
+      });
+
+      if (!analysisResponse.ok) {
+        console.error('Analysis API Error:', await analysisResponse.text());
+      }
+    } catch (error) {
+      console.error('Failed to call analysis API:', error);
+    }
+
+    res.status(201).json({ ...project, submissionId: submission.id });
   });
 
   // Add this route after the other project routes
