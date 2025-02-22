@@ -44,14 +44,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (pendingGithubUrl) {
       try {
         const repoName = pendingGithubUrl.split("/").pop()?.replace(".git", "") || "New Project";
-        const res = await apiRequest("POST", "/api/projects", {
+        const response = await apiRequest("POST", "/api/projects", {
           name: repoName,
           githubUrl: pendingGithubUrl,
           userId: newUser.id
         });
-        const project = await res.json();
+
+        if (!response.ok) {
+          throw new Error("Failed to create project");
+        }
+
+        const data = await response.json();
         sessionStorage.removeItem('pendingGithubUrl');
-        setLocation(`/analysis/${project.id}`);
+        sessionStorage.removeItem('pendingEmail');
+
+        // Ensure we have a submissionId before redirecting
+        if (!data.submissionId) {
+          throw new Error("No submission ID returned from project creation");
+        }
+
+        setLocation(`/analysis/${data.submissionId}`);
       } catch (error) {
         console.error("Error creating pending project:", error);
         toast({
@@ -117,6 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      sessionStorage.removeItem('pendingGithubUrl');
+      sessionStorage.removeItem('pendingEmail');
     },
     onError: (error: Error) => {
       toast({
