@@ -1,64 +1,83 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import type { InsertSubmission } from "@db/schema";
 import { insertSubmissionSchema } from "@db/schema";
+import { z } from "zod";
+
+// Create a simpler schema for non-authenticated submissions
+const unauthenticatedSchema = z.object({
+  githubUrl: insertSubmissionSchema.shape.githubUrl,
+  email: insertSubmissionSchema.shape.email,
+});
 
 export default function SubmissionForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const form = useForm<InsertSubmission>({
-    resolver: zodResolver(insertSubmissionSchema),
+    resolver: zodResolver(user ? insertSubmissionSchema : unauthenticatedSchema),
     defaultValues: {
       githubUrl: "",
       email: user?.email || "",
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (data: InsertSubmission) => {
-      const res = await apiRequest("POST", "/api/submissions", data);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Success!",
-        description: "Your submission has been received.",
+  const handleSubmit = async (data: InsertSubmission) => {
+    if (!user) {
+      // Store GitHub URL in session storage and redirect to auth
+      sessionStorage.setItem('pendingGithubUrl', data.githubUrl);
+      if (data.email) {
+        sessionStorage.setItem('pendingEmail', data.email);
+      }
+      setLocation('/auth');
+      return;
+    }
+
+    try {
+      // User is authenticated, proceed with project creation
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.githubUrl.split("/").pop()?.replace(".git", "") || "New Project",
+          githubUrl: data.githubUrl,
+        }),
+        credentials: 'include',
       });
 
-      if (!user) {
-        // Store GitHub URL in session storage for later project creation
-        sessionStorage.setItem('pendingGithubUrl', form.getValues('githubUrl'));
-        setLocation('/auth');
-      } else {
-        // Invalidate projects query since a new project was created
-        queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-        setLocation(`/analysis/${data.id}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to create project');
       }
-    },
-    onError: (error: Error) => {
+
+      const project = await res.json();
+      toast({
+        title: "Success!",
+        description: "Your project has been created.",
+      });
+      setLocation(`/analysis/${project.submissionId}`);
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to create project',
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="githubUrl"
@@ -100,11 +119,10 @@ export default function SubmissionForm() {
 
         <Button 
           type="submit" 
-          className="w-full bg-primary hover:bg-primary/90 text-black" 
-          disabled={mutation.isPending}
+          className="w-full bg-primary hover:bg-primary/90 text-black"
         >
-          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Run Simulation
+          {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {user ? 'Create Project' : 'Continue to Login'}
         </Button>
       </form>
     </Form>
