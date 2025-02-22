@@ -45,13 +45,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const repoName = pendingGithubUrl.split("/").pop()?.replace(".git", "") || "New Project";
-      const response = await apiRequest("POST", "/api/projects", {
-        name: repoName,
-        githubUrl: pendingGithubUrl,
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: repoName,
+          githubUrl: pendingGithubUrl,
+        }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create project");
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create project');
       }
 
       const data = await response.json();
