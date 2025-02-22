@@ -41,8 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handlePendingProject = async (newUser: SelectUser) => {
     const pendingGithubUrl = sessionStorage.getItem('pendingGithubUrl');
+
+    // If no pending project, redirect to projects page
     if (!pendingGithubUrl) {
-      // If no pending project, redirect to projects page
       setLocation('/projects');
       return;
     }
@@ -67,18 +68,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(error.message || 'Failed to create project');
       }
 
-      const data = await response.json();
-
       // Clean up session storage
       sessionStorage.removeItem('pendingGithubUrl');
       sessionStorage.removeItem('pendingEmail');
 
-      // Only redirect to analysis if we have a submissionId
-      if (data.submissionId) {
-        setLocation(`/analysis/${data.submissionId}`);
-      } else {
-        setLocation('/projects');
-      }
+      // Redirect to projects page after creating the project
+      setLocation('/projects');
     } catch (error) {
       console.error("Error creating pending project:", error);
       toast({

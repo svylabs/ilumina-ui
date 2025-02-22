@@ -42,6 +42,7 @@ export default function SubmissionForm() {
     }
 
     try {
+      const repoName = data.githubUrl.split("/").pop()?.replace(".git", "") || "New Project";
       // User is authenticated, proceed with project creation
       const res = await fetch('/api/projects', {
         method: 'POST',
@@ -49,8 +50,9 @@ export default function SubmissionForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: data.githubUrl.split("/").pop()?.replace(".git", "") || "New Project",
+          name: repoName,
           githubUrl: data.githubUrl,
+          userId: user.id,
         }),
         credentials: 'include',
       });
@@ -60,15 +62,15 @@ export default function SubmissionForm() {
         throw new Error(error.message || 'Failed to create project');
       }
 
-      const { submissionId } = await res.json();
+      const project = await res.json();
 
       toast({
         title: "Success!",
         description: "Your project has been created.",
       });
 
-      // Redirect to analysis page with the submission ID
-      setLocation(`/analysis/${submissionId}`);
+      // Redirect to projects page after creation
+      setLocation('/projects');
     } catch (error) {
       toast({
         title: "Error",
