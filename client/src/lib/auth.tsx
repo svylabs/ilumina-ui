@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | null>({
+  } = useQuery<SelectUser>({
     queryKey: ["/api/user"],
     queryFn: async ({ queryKey }) => {
       try {
@@ -41,7 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handlePendingProject = async (newUser: SelectUser) => {
     const pendingGithubUrl = sessionStorage.getItem('pendingGithubUrl');
-    if (!pendingGithubUrl) return;
+    if (!pendingGithubUrl) {
+      // If no pending project, redirect to projects page
+      setLocation('/projects');
+      return;
+    }
 
     try {
       const repoName = pendingGithubUrl.split("/").pop()?.replace(".git", "") || "New Project";
@@ -53,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           name: repoName,
           githubUrl: pendingGithubUrl,
+          userId: newUser.id,
         }),
         credentials: 'include',
       });
@@ -68,11 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem('pendingGithubUrl');
       sessionStorage.removeItem('pendingEmail');
 
-      // Redirect to analysis page with the submission ID
+      // Only redirect to analysis if we have a submissionId
       if (data.submissionId) {
         setLocation(`/analysis/${data.submissionId}`);
       } else {
-        // Fallback to projects page if no submission ID
         setLocation('/projects');
       }
     } catch (error) {
@@ -82,7 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
         variant: "destructive",
       });
-      // On error, redirect to projects page
       setLocation('/projects');
     }
   };
@@ -94,15 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
-
-      // Check for pending project after successful login
-      const hasPendingProject = sessionStorage.getItem('pendingGithubUrl');
-      if (hasPendingProject) {
-        handlePendingProject(user);
-      } else {
-        // If no pending project, redirect to projects page
-        setLocation('/projects');
-      }
+      handlePendingProject(user);
     },
     onError: (error: Error) => {
       toast({
@@ -133,15 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
-
-      // Check for pending project after successful registration
-      const hasPendingProject = sessionStorage.getItem('pendingGithubUrl');
-      if (hasPendingProject) {
-        handlePendingProject(user);
-      } else {
-        // If no pending project, redirect to projects page
-        setLocation('/projects');
-      }
+      handlePendingProject(user);
     },
     onError: (error: Error) => {
       toast({
@@ -175,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user || null,
         isLoading,
         error: error || null,
         login: async (email, password) => {
