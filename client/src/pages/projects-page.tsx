@@ -28,6 +28,7 @@ export default function ProjectsPage() {
   const { data: projects, isLoading } = useQuery<SelectProject[]>({
     queryKey: ["/api/projects"],
     enabled: !!user,
+    staleTime: 0, // Always refetch on mount
   });
 
   const deleteMutation = useMutation({
@@ -51,7 +52,7 @@ export default function ProjectsPage() {
   });
 
   if (!user) {
-    return <Link href="/auth">Redirecting to login...</Link>;
+    return <Link href="/auth">Please login to view your projects</Link>;
   }
 
   if (isLoading) {

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { queryClient } from "@/lib/queryClient"; // Added import
 import type { InsertSubmission } from "@db/schema";
 import { insertSubmissionSchema } from "@db/schema";
 import { z } from "zod";
@@ -43,7 +44,6 @@ export default function SubmissionForm() {
 
     try {
       const repoName = data.githubUrl.split("/").pop()?.replace(".git", "") || "New Project";
-      // User is authenticated, proceed with project creation
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: {
@@ -62,7 +62,10 @@ export default function SubmissionForm() {
         throw new Error(error.message || 'Failed to create project');
       }
 
-      const project = await res.json();
+      await res.json();
+
+      // Invalidate the projects query to force a refresh
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
 
       toast({
         title: "Success!",
