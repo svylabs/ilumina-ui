@@ -4,9 +4,190 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
+
+// Simulation run type definition
+type SimulationRun = {
+  id: string;
+  status: "success" | "failure";
+  date: string;
+  logUrl: string;
+  summary: {
+    totalTests: number;
+    passed: number;
+    failed: number;
+  };
+};
+
+// Component for Simulations tab
+function SimulationsComponent() {
+  // State for simulation runs
+  const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
+  const [isRunningSimulation, setIsRunningSimulation] = useState(false);
+  const [progress, setProgress] = useState(0);
+  
+  // Generate a new simulation ID
+  const generateSimId = () => {
+    return `sim-${String(Math.floor(Math.random() * 900) + 100)}`;
+  };
+  
+  // Start a new simulation
+  const startSimulation = () => {
+    if (isRunningSimulation) return;
+    
+    setIsRunningSimulation(true);
+    setProgress(0);
+    
+    // Mock progress updates
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          
+          // Add a new simulation with randomized success/failure
+          setTimeout(() => {
+            const isSuccess = Math.random() > 0.3; // 70% success rate
+            const totalTests = Math.floor(Math.random() * 20) + 30; // 30-50 tests
+            const passedTests = isSuccess 
+              ? totalTests 
+              : Math.floor(totalTests * (Math.random() * 0.4 + 0.5)); // 50-90% pass rate for failures
+            
+            const newRun: SimulationRun = {
+              id: generateSimId(),
+              status: isSuccess ? "success" : "failure",
+              date: new Date().toISOString(),
+              logUrl: "#log",
+              summary: {
+                totalTests,
+                passed: passedTests,
+                failed: totalTests - passedTests
+              }
+            };
+            
+            setSimulationRuns(prev => [newRun, ...prev]);
+            setIsRunningSimulation(false);
+          }, 500);
+          
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 300);
+  };
+  
+  return (
+    <div className="text-white">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-blue-400">Simulations</h3>
+          <button
+            onClick={startSimulation}
+            disabled={isRunningSimulation}
+            className={`px-4 py-2 rounded-md font-medium ${
+              isRunningSimulation 
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+          >
+            {isRunningSimulation ? 'Running...' : 'Run Simulation'}
+          </button>
+        </div>
+        
+        {isRunningSimulation && (
+          <div className="bg-gray-900 p-4 rounded-md">
+            <div className="flex items-center mb-2">
+              <div className="w-4 h-4 rounded-full bg-blue-500 animate-pulse mr-2"></div>
+              <span className="text-blue-400 font-medium">Simulation in progress</span>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2.5 mb-2">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <div className="text-right text-xs text-gray-400">{progress}% complete</div>
+            <div className="mt-2 text-sm text-gray-300">
+              <p>• Preparing test environment</p>
+              {progress > 20 && <p>• Deploying contracts</p>}
+              {progress > 40 && <p>• Initializing actor agents</p>}
+              {progress > 60 && <p>• Running test scenarios</p>}
+              {progress > 80 && <p>• Analyzing results</p>}
+            </div>
+          </div>
+        )}
+        
+        {simulationRuns.length > 0 ? (
+          <div className="bg-gray-900 rounded-md">
+            <div className="border-b border-gray-800 p-4">
+              <div className="grid grid-cols-12 text-sm text-gray-400 font-medium">
+                <div className="col-span-2">Run ID</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-3">Date</div>
+                <div className="col-span-2">Tests</div>
+                <div className="col-span-3">Actions</div>
+              </div>
+            </div>
+            
+            <div className="divide-y divide-gray-800">
+              {simulationRuns.map((run) => (
+                <div key={run.id} className="p-4 hover:bg-gray-800/50 transition-colors">
+                  <div className="grid grid-cols-12 items-center">
+                    <div className="col-span-2 font-mono text-white">{run.id}</div>
+                    <div className="col-span-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        ${run.status === 'success' 
+                          ? 'bg-green-900/50 text-green-300' 
+                          : 'bg-red-900/50 text-red-300'
+                        }`}
+                      >
+                        {run.status === 'success' ? '✓ Success' : '✗ Failed'}
+                      </span>
+                    </div>
+                    <div className="col-span-3 text-gray-300">
+                      {new Date(run.date).toLocaleString()}
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex space-x-1 text-sm">
+                        <span className="text-green-400">{run.summary.passed}</span>
+                        <span className="text-gray-500">/</span>
+                        <span className="text-gray-300">{run.summary.totalTests}</span>
+                        {run.summary.failed > 0 && (
+                          <span className="text-red-400 ml-1">({run.summary.failed} failed)</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-3 flex space-x-2">
+                      <a 
+                        href={run.logUrl} 
+                        className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                      >
+                        <span className="mr-1">📝</span> View Log
+                      </a>
+                      <a 
+                        href={`#details-${run.id}`} 
+                        className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                      >
+                        <span className="mr-1">📊</span> Details
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 bg-gray-900 rounded-md">
+            <div className="text-gray-300 mb-4">
+              No simulation runs available yet. Click the button above to start a simulation.
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type StepStatus = "pending" | "in_progress" | "completed" | "failed";
 
@@ -735,185 +916,8 @@ export default function AnalysisPage() {
                           })()}
                         </div>
                       ) : currentStep.id === "simulations" ? (
-                        <div className="text-white">
-                          {(() => {
-                            try {
-                              // Create mock simulation runs for the interface
-                              const simulationRuns = [
-                                {
-                                  id: "sim-001",
-                                  status: "success",
-                                  date: "2025-03-28T14:30:00",
-                                  logUrl: "#log-001",
-                                  summary: {
-                                    totalTests: 42,
-                                    passed: 38,
-                                    failed: 4
-                                  }
-                                },
-                                {
-                                  id: "sim-002",
-                                  status: "failure",
-                                  date: "2025-03-29T09:15:00",
-                                  logUrl: "#log-002",
-                                  summary: {
-                                    totalTests: 42,
-                                    passed: 35,
-                                    failed: 7
-                                  }
-                                },
-                                {
-                                  id: "sim-003",
-                                  status: "success",
-                                  date: "2025-03-30T11:45:00",
-                                  logUrl: "#log-003",
-                                  summary: {
-                                    totalTests: 42,
-                                    passed: 42,
-                                    failed: 0
-                                  }
-                                }
-                              ];
-                              
-                              // Simulation run in progress state
-                              const [isRunningSimulation, setIsRunningSimulation] = useState(false);
-                              const [progress, setProgress] = useState(0);
-                              
-                              // Start a new simulation
-                              const startSimulation = () => {
-                                setIsRunningSimulation(true);
-                                setProgress(0);
-                                
-                                // Mock progress updates
-                                const interval = setInterval(() => {
-                                  setProgress(prev => {
-                                    if (prev >= 100) {
-                                      clearInterval(interval);
-                                      setTimeout(() => setIsRunningSimulation(false), 500);
-                                      return 100;
-                                    }
-                                    return prev + 5;
-                                  });
-                                }, 300);
-                              };
-                              
-                              return (
-                                <div className="space-y-6">
-                                  <div className="flex justify-between items-center">
-                                    <h3 className="text-xl font-semibold text-blue-400">Simulation Runs</h3>
-                                    <button
-                                      onClick={startSimulation}
-                                      disabled={isRunningSimulation}
-                                      className={`px-4 py-2 rounded-md font-medium ${
-                                        isRunningSimulation 
-                                          ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-                                          : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                      }`}
-                                    >
-                                      {isRunningSimulation ? 'Running...' : 'Run Simulation'}
-                                    </button>
-                                  </div>
-                                  
-                                  {isRunningSimulation && (
-                                    <div className="bg-gray-900 p-4 rounded-md">
-                                      <div className="flex items-center mb-2">
-                                        <div className="w-4 h-4 rounded-full bg-blue-500 animate-pulse mr-2"></div>
-                                        <span className="text-blue-400 font-medium">Simulation in progress</span>
-                                      </div>
-                                      <div className="w-full bg-gray-800 rounded-full h-2.5 mb-2">
-                                        <div 
-                                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-                                          style={{ width: `${progress}%` }}
-                                        ></div>
-                                      </div>
-                                      <div className="text-right text-xs text-gray-400">{progress}% complete</div>
-                                      <div className="mt-2 text-sm text-gray-300">
-                                        <p>• Preparing test environment</p>
-                                        {progress > 20 && <p>• Deploying contracts</p>}
-                                        {progress > 40 && <p>• Initializing actor agents</p>}
-                                        {progress > 60 && <p>• Running test scenarios</p>}
-                                        {progress > 80 && <p>• Analyzing results</p>}
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="bg-gray-900 rounded-md">
-                                    <div className="border-b border-gray-800 p-4">
-                                      <div className="grid grid-cols-12 text-sm text-gray-400 font-medium">
-                                        <div className="col-span-2">Run ID</div>
-                                        <div className="col-span-2">Status</div>
-                                        <div className="col-span-3">Date</div>
-                                        <div className="col-span-2">Tests</div>
-                                        <div className="col-span-3">Actions</div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="divide-y divide-gray-800">
-                                      {simulationRuns.map((run) => (
-                                        <div key={run.id} className="p-4 hover:bg-gray-800/50 transition-colors">
-                                          <div className="grid grid-cols-12 items-center">
-                                            <div className="col-span-2 font-mono text-white">{run.id}</div>
-                                            <div className="col-span-2">
-                                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                ${run.status === 'success' 
-                                                  ? 'bg-green-900/50 text-green-300' 
-                                                  : 'bg-red-900/50 text-red-300'
-                                                }`}
-                                              >
-                                                {run.status === 'success' ? '✓ Success' : '✗ Failed'}
-                                              </span>
-                                            </div>
-                                            <div className="col-span-3 text-gray-300">
-                                              {new Date(run.date).toLocaleString()}
-                                            </div>
-                                            <div className="col-span-2">
-                                              <div className="flex space-x-1 text-sm">
-                                                <span className="text-green-400">{run.summary.passed}</span>
-                                                <span className="text-gray-500">/</span>
-                                                <span className="text-gray-300">{run.summary.totalTests}</span>
-                                                {run.summary.failed > 0 && (
-                                                  <span className="text-red-400 ml-1">({run.summary.failed} failed)</span>
-                                                )}
-                                              </div>
-                                            </div>
-                                            <div className="col-span-3 flex space-x-2">
-                                              <a 
-                                                href={run.logUrl} 
-                                                className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
-                                              >
-                                                <span className="mr-1">📝</span> View Log
-                                              </a>
-                                              <a 
-                                                href={`#details-${run.id}`} 
-                                                className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
-                                              >
-                                                <span className="mr-1">📊</span> Details
-                                              </a>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            } catch (e) {
-                              return (
-                                <div className="p-4 bg-gray-900 rounded-md">
-                                  <h3 className="text-xl font-semibold text-blue-400 mb-4">Simulation Runs</h3>
-                                  <div className="text-gray-300 mb-4">
-                                    No simulation runs available yet. Click the button below to start a simulation.
-                                  </div>
-                                  <button 
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
-                                  >
-                                    Run Simulation
-                                  </button>
-                                </div>
-                              );
-                            }
-                          })()}
-                        </div>
+                        <SimulationsComponent />
+                      
                       ) : currentStep.id === "actors" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
                           {(() => {
