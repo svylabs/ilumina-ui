@@ -542,6 +542,17 @@ export default function AnalysisPage() {
   });
 
   // Set the selected step to the current in-progress step or the first completed one
+  // Initialize tabs to ensure Code Files tab is active by default
+  useEffect(() => {
+    // Show Code Files tab as default
+    document.getElementById('console-content')?.classList.add('hidden');
+    document.getElementById('code-content')?.classList.remove('hidden');
+    document.getElementById('console-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+    document.getElementById('console-tab')?.classList.add('border-transparent', 'text-gray-400');
+    document.getElementById('code-tab')?.classList.add('border-blue-400', 'text-blue-400');
+    document.getElementById('code-tab')?.classList.remove('border-transparent', 'text-gray-400');
+  }, []);
+
   useEffect(() => {
     if (analysis && analysis.steps) {
       // Type safety: Explicitly cast entries to the right type
@@ -642,48 +653,39 @@ export default function AnalysisPage() {
           Overall Progress: {calculateProgress()}%
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Left sidebar with steps */}
-          <div className="md:col-span-5 space-y-4">
-            {analysisSteps.map((step, index) => (
-              <Card 
-                key={step.id} 
-                className={`transition-all duration-300 cursor-pointer hover:border-primary/70 ${
-                  selectedStep === step.id ? 'border-primary' : 
-                  getStepStatus(step.id) === "in_progress" ? "border-primary/80" : ""
-                }`}
-                onClick={() => setSelectedStep(step.id)}
-              >
-                <CardHeader className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex h-8 w-8 rounded-full bg-muted items-center justify-center">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{step.title}</CardTitle>
-                        <CardDescription className="text-sm">
-                          {step.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <StepStatus 
-                        status={getStepStatus(step.id)} 
-                        startTime={analysis.steps[step.id]?.startTime}
-                      />
-                      {selectedStep === step.id && (
-                        <ChevronRight className="h-5 w-5 text-primary" />
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
+        {/* Compact Steps Bar */}
+        <div className="flex flex-wrap justify-center mb-6">
+          {analysisSteps.map((step, index) => (
+            <div 
+              key={step.id}
+              onClick={() => setSelectedStep(step.id)}
+              className={`flex items-center px-4 py-2 cursor-pointer border-b-2 ${
+                selectedStep === step.id 
+                  ? 'border-primary text-primary' 
+                  : getStepStatus(step.id) === "completed"
+                    ? 'border-green-500 text-green-500'
+                    : getStepStatus(step.id) === "in_progress"
+                      ? 'border-blue-500 text-blue-500' 
+                      : 'border-gray-500 text-gray-500'
+              }`}
+            >
+              <div className="flex h-6 w-6 rounded-full mr-2 items-center justify-center text-xs border">
+                {index + 1}
+              </div>
+              <span className="font-medium">{step.title}</span>
+              <div className="ml-2">
+                <StepStatus 
+                  status={getStepStatus(step.id)} 
+                  startTime={analysis.steps[step.id]?.startTime}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
 
-          {/* Right side with output */}
-          <div className="md:col-span-7">
+        <div className="grid grid-cols-1 gap-6">
+          {/* Main content with output */}
+          <div className="w-full">
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -968,9 +970,9 @@ export default function AnalysisPage() {
                                       
                                       {/* Code Hierarchy */}
                                       <div id="code-content" className="test-env-content">
-                                        <div className="flex flex-col md:flex-row gap-4">
+                                        <div className="flex flex-col gap-4">
                                           {/* Main code viewer */}
-                                          <div className="flex-1 overflow-hidden">
+                                          <div className="w-full overflow-hidden">
                                             {/* Dynamically get repository from submission */}
                                             <GitHubCodeViewer 
                                               owner="ethereum"
@@ -989,36 +991,38 @@ export default function AnalysisPage() {
                                             // Only render the assistant for pro and teams plans
                                             if (user && (user.plan === "pro" || user.plan === "teams")) {
                                               return (
-                                                <div className="w-full md:w-1/3 lg:w-1/4 bg-gray-800 rounded-lg p-2 h-fit">
+                                                <div className="w-full bg-gray-800 rounded-lg p-3">
                                                   <div className="mb-2 p-2 bg-blue-500/10 rounded flex items-center">
                                                     <span className="text-blue-400 font-semibold">AI Assistant</span>
                                                     <Badge className="ml-2 bg-blue-500 text-xs" variant="default">
                                                       {user.plan === "pro" ? "Pro" : "Teams"}
                                                     </Badge>
                                                   </div>
-                                                  <TestEnvironmentChat 
-                                                    submissionId={id || ""}
-                                                    projectName={enhancedTestSetupData.projectName || "Smart Contract Project"}
-                                                    onCodeUpdate={(code: string, path?: string) => {
-                                                      console.log("Code update requested:", { code, path });
-                                                      // Here you would implement the code update logic
-                                                    }}
-                                                    initialMessages={[
-                                                      {
-                                                        id: "welcome",
-                                                        role: "assistant",
-                                                        content: "Welcome to the AI Code Assistant. I can help you understand and modify the code. What questions do you have?",
-                                                        timestamp: new Date()
-                                                      }
-                                                    ]}
-                                                  />
+                                                  <div className="h-[300px]">
+                                                    <TestEnvironmentChat 
+                                                      submissionId={id || ""}
+                                                      projectName={enhancedTestSetupData.projectName || "Smart Contract Project"}
+                                                      onCodeUpdate={(code: string, path?: string) => {
+                                                        console.log("Code update requested:", { code, path });
+                                                        // Here you would implement the code update logic
+                                                      }}
+                                                      initialMessages={[
+                                                        {
+                                                          id: "welcome",
+                                                          role: "assistant",
+                                                          content: "Welcome to the AI Code Assistant. I can help you understand and modify the code. What questions do you have?",
+                                                          timestamp: new Date()
+                                                        }
+                                                      ]}
+                                                    />
+                                                  </div>
                                                 </div>
                                               );
                                             }
                                             
                                             // For free plan users, show upgrade prompt
                                             return (
-                                              <div className="w-full md:w-1/3 lg:w-1/4 bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center h-auto md:h-fit">
+                                              <div className="w-full bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center h-[150px]">
                                                 <h3 className="text-white font-semibold mb-2">AI Assistant</h3>
                                                 <p className="text-gray-400 text-sm text-center mb-4">
                                                   Upgrade to Pro or Teams plan to access the AI Assistant and get help with your smart contracts.

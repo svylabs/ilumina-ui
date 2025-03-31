@@ -139,21 +139,21 @@ export default function TestEnvironmentChat({
 
   return (
     <div className="flex flex-col h-full bg-black/90 rounded-md overflow-hidden">
-      <div className="p-3 bg-gray-900 flex items-center border-b border-gray-800">
-        <Bot className="h-5 w-5 text-blue-400 mr-2" />
-        <span className="font-medium text-white">Test Environment Assistant</span>
-        <span className="ml-2 px-2 py-0.5 text-xs bg-blue-900/50 text-blue-300 rounded-full">
+      <div className="p-2 bg-gray-900 flex items-center border-b border-gray-800">
+        <Bot className="h-4 w-4 text-blue-400 mr-2" />
+        <span className="font-medium text-white text-sm">Test Environment Assistant</span>
+        <span className="ml-2 px-2 py-0.5 text-xs bg-blue-900/50 text-blue-300 rounded-full truncate max-w-[150px]">
           {projectName}
         </span>
       </div>
 
-      <div className="flex-grow overflow-auto p-4 space-y-4">
+      <div className="flex-grow overflow-auto p-2 space-y-3" style={{ height: "calc(100% - 120px)" }}>
         {/* Messages */}
         {messages.length === 0 ? (
-          <div className="text-center py-6 text-gray-400">
-            <Bot className="h-12 w-12 mx-auto mb-3 text-gray-600" />
-            <p className="text-sm">
-              I can help you customize your test environment. Ask me to create new tests, modify existing ones, or implement specific test scenarios.
+          <div className="text-center py-4 text-gray-400">
+            <Bot className="h-10 w-10 mx-auto mb-2 text-gray-600" />
+            <p className="text-xs">
+              I can help you customize your test environment. Ask me to create new tests or implement specific test scenarios.
             </p>
           </div>
         ) : (
@@ -164,7 +164,7 @@ export default function TestEnvironmentChat({
             >
               <div 
                 className={`
-                  max-w-[85%] rounded-lg p-3 
+                  max-w-[90%] rounded-lg p-2
                   ${message.role === "user" 
                     ? "bg-gray-700 text-white" 
                     : "bg-blue-900/50 text-blue-100"
@@ -173,18 +173,18 @@ export default function TestEnvironmentChat({
               >
                 <div className="flex items-center mb-1">
                   {message.role === "assistant" ? (
-                    <Bot className="h-4 w-4 mr-1 text-blue-300" />
+                    <Bot className="h-3 w-3 mr-1 text-blue-300" />
                   ) : (
-                    <User className="h-4 w-4 mr-1 text-gray-300" />
+                    <User className="h-3 w-3 mr-1 text-gray-300" />
                   )}
                   <span className="text-xs opacity-70">
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className="text-xs whitespace-pre-wrap">{message.content}</p>
                 
                 {message.codeSnippet && (
-                  <div className="mt-2 bg-black/60 p-2 rounded-md overflow-auto">
+                  <div className="mt-2 bg-black/60 p-2 rounded-md overflow-auto max-h-[150px]">
                     <pre className="text-xs text-green-400 whitespace-pre">
                       {message.codeSnippet}
                     </pre>
@@ -198,13 +198,13 @@ export default function TestEnvironmentChat({
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-gray-900/40 border-t border-gray-800">
+      <div className="p-2 bg-gray-900/40 border-t border-gray-800">
         <div className="flex space-x-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your request here..."
-            className="min-h-[60px] w-full bg-gray-800 text-white border-gray-700 focus-visible:ring-blue-500"
+            className="min-h-[50px] max-h-[80px] w-full bg-gray-800 text-white border-gray-700 focus-visible:ring-blue-500 text-sm"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -217,12 +217,12 @@ export default function TestEnvironmentChat({
             onClick={handleSendMessage} 
             size="icon" 
             disabled={isLoading || !input.trim()}
-            className="shrink-0 h-full aspect-square"
+            className="shrink-0 h-auto aspect-square"
           >
             {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <ArrowUpCircle className="h-5 w-5" />
+              <ArrowUpCircle className="h-4 w-4" />
             )}
           </Button>
         </div>
