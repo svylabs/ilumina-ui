@@ -153,13 +153,40 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Get simulation runs for a submission
-  app.get("/api/simulation-runs/:submissionId", async (req, res) => {
+  // Get simulation runs for a submission or project ID
+  app.get("/api/simulation-runs/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
     
     try {
-      const { submissionId } = req.params;
+      const id = req.params.id;
+      let submissionId: string | null = null;
       
+      // First, check if this is a project ID
+      if (/^\d+$/.test(id)) {
+        // It's a number, probably a project ID
+        const projectSubmission = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.projectId, parseInt(id)))
+          .orderBy(submissions.createdAt, "desc")
+          .limit(1);
+        
+        if (projectSubmission.length > 0) {
+          submissionId = projectSubmission[0].id;
+        }
+      } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        // It's a UUID format, probably a submission ID
+        submissionId = id;
+      }
+      
+      if (!submissionId) {
+        return res.status(404).json({
+          success: false,
+          message: "No submission found for the given ID"
+        });
+      }
+      
+      // Get simulation runs for this submission
       const runs = await db.select()
         .from(simulationRuns)
         .where(eq(simulationRuns.submissionId, submissionId))
