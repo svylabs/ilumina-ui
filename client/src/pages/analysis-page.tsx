@@ -483,62 +483,18 @@ export default function AnalysisPage() {
                                 testSetupData = JSON.parse(details);
                               }
                               
+                              // Need to add activeSubstep state for the Implementation Steps section
+                              const [activeSubstep, setActiveSubstep] = useState(
+                                testSetupData.substeps && testSetupData.substeps.length > 0 
+                                  ? testSetupData.substeps[0].id 
+                                  : ""
+                              );
+                              
                               return (
                                 <div className="space-y-6">
 
-                                  
-                                  {/* Substeps Section */}
-                                  {testSetupData.substeps && (
-                                    <div className="space-y-4">
-                                      <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
-                                      
-                                      {/* Substep Navigation Tabs */}
-                                      <div className="flex space-x-2 border-b border-gray-800">
-                                        {testSetupData.substeps.map((substep: any) => (
-                                          <button
-                                            key={substep.id}
-                                            onClick={() => {
-                                              const element = document.getElementById(`substep-${substep.id}`);
-                                              if (element) {
-                                                element.scrollIntoView({ behavior: 'smooth' });
-                                              }
-                                            }}
-                                            className="px-4 py-2 text-sm rounded-t-md hover:bg-gray-800 focus:outline-none"
-                                          >
-                                            {substep.name}
-                                          </button>
-                                        ))}
-                                      </div>
-                                      
-                                      {/* Substep Content */}
-                                      <div className="space-y-6">
-                                        {testSetupData.substeps.map((substep: any) => (
-                                          <div id={`substep-${substep.id}`} key={substep.id} className="bg-gray-900 p-4 rounded-md">
-                                            <div className="flex items-center justify-between mb-3">
-                                              <h4 className="text-lg font-medium text-yellow-300">{substep.name}</h4>
-                                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                                substep.status === 'completed' ? 'bg-green-900 text-green-300' : 
-                                                substep.status === 'in_progress' ? 'bg-blue-900 text-blue-300' : 
-                                                'bg-gray-800 text-gray-300'
-                                              }`}>
-                                                {substep.status.charAt(0).toUpperCase() + substep.status.slice(1)}
-                                              </span>
-                                            </div>
-                                            <p className="text-gray-300 mb-3">{substep.description}</p>
-                                            
-                                            {substep.output && (
-                                              <div className="mt-2 bg-black/60 p-3 rounded-md">
-                                                <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
                                   {/* Test Environment with 3 sections in an embedded layout */}
-                                  <div className="mt-8 mb-4">
+                                  <div className="mb-8">
                                     <h3 className="text-xl font-semibold text-blue-400 mb-2">Test Environment</h3>
                                     
                                     {/* Main container with three sections */}
@@ -692,6 +648,52 @@ export default function AnalysisPage() {
                                       </div>
                                     </div>
                                   </div>
+
+                                  {/* Implementation Steps Section */}
+                                  {testSetupData.substeps && (
+                                    <div className="space-y-4 mt-8">
+                                      <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
+                                      
+                                      {/* Substep Navigation Tabs */}
+                                      <div className="flex space-x-2 border-b border-gray-800">
+                                        {testSetupData.substeps.map((substep: any) => (
+                                          <button
+                                            key={substep.id}
+                                            onClick={() => {
+                                              setActiveSubstep(substep.id);
+                                            }}
+                                            className={`px-3 py-2 text-sm font-medium border-b-2 ${
+                                              activeSubstep === substep.id 
+                                                ? 'border-blue-400 text-blue-400' 
+                                                : 'border-transparent text-gray-400 hover:text-gray-300'
+                                            }`}
+                                          >
+                                            {substep.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Substep Content */}
+                                      <div className="space-y-6">
+                                        {testSetupData.substeps.map((substep: any) => (
+                                          <div 
+                                            key={substep.id} 
+                                            className={activeSubstep === substep.id ? 'block' : 'hidden'}
+                                          >
+                                            <div className="mb-4">
+                                              <p className="text-gray-300">{substep.description}</p>
+                                            </div>
+                                            
+                                            {substep.output && (
+                                              <div className="mt-2 bg-black/60 p-3 rounded-md">
+                                                <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             } catch (e) {
