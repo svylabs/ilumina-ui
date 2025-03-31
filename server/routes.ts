@@ -1,7 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { submissions, runs, projects, insertSubmissionSchema, contacts, insertContactSchema, pricingPlans, planFeatures, users } from "@db/schema";
+import { 
+  submissions, runs, projects, simulationRuns, users,
+  insertSubmissionSchema, insertContactSchema, 
+  pricingPlans, planFeatures 
+} from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
@@ -101,29 +105,72 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
     
     try {
-      // Increment the counter
-      await db.update(users)
-        .set({ 
-          simulationsUsed: sql`${users.simulationsUsed} + 1`,
-          lastSimulationDate: new Date()
-        })
-        .where(eq(users.id, req.user.id));
+      const { submissionId, runId, status, logUrl, summary } = req.body;
       
-      // Return updated user data
-      const [updatedUser] = await db.select()
-        .from(users)
-        .where(eq(users.id, req.user.id))
-        .limit(1);
+      // Start transaction
+      const result = await db.transaction(async (tx) => {
+        // 1. Increment user counter
+        await tx.update(users)
+          .set({ 
+            simulationsUsed: sql`${users.simulationsUsed} + 1`,
+            lastSimulationDate: new Date()
+          })
+          .where(eq(users.id, req.user.id));
+        
+        // 2. Store the simulation run in the database
+        const [simRun] = await tx.insert(simulationRuns)
+          .values({
+            userId: req.user.id,
+            submissionId,
+            runId,
+            status,
+            logUrl,
+            summary,
+            date: new Date(),
+          })
+          .returning();
+        
+        // 3. Get updated user data
+        const [updatedUser] = await tx.select()
+          .from(users)
+          .where(eq(users.id, req.user.id))
+          .limit(1);
+        
+        return { simRun, user: updatedUser };
+      });
       
       return res.json({ 
         success: true, 
-        simulationsUsed: updatedUser.simulationsUsed 
+        simulationRun: result.simRun,
+        simulationsUsed: result.user.simulationsUsed 
       });
     } catch (error) {
       console.error("Error logging simulation:", error);
       return res.status(500).json({ 
         success: false, 
         message: "Failed to log simulation run" 
+      });
+    }
+  });
+  
+  // Get simulation runs for a submission
+  app.get("/api/simulation-runs/:submissionId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
+    
+    try {
+      const { submissionId } = req.params;
+      
+      const runs = await db.select()
+        .from(simulationRuns)
+        .where(eq(simulationRuns.submissionId, submissionId))
+        .orderBy(sql`${simulationRuns.date} DESC`);
+      
+      return res.json(runs);
+    } catch (error) {
+      console.error("Error fetching simulation runs:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch simulation runs" 
       });
     }
   });

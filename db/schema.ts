@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, uuid, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -85,6 +85,19 @@ export const contacts = pgTable("contacts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// New table to track simulation runs
+export const simulationRuns = pgTable("simulation_runs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  submissionId: uuid("submission_id").notNull(),
+  runId: text("run_id").notNull(), // Client-side generated ID like 'sim-123'
+  status: text("status", { enum: ["success", "failure"] }).notNull(),
+  date: timestamp("date").defaultNow().notNull(),
+  logUrl: text("log_url"),
+  summary: jsonb("summary"), // Will store totalTests, passed, failed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
   name: z.string().min(1),
@@ -122,6 +135,9 @@ export const selectPricingPlanSchema = createSelectSchema(pricingPlans);
 export const insertPlanFeatureSchema = createInsertSchema(planFeatures);
 export const selectPlanFeatureSchema = createSelectSchema(planFeatures);
 
+export const insertSimulationRunSchema = createInsertSchema(simulationRuns);
+export const selectSimulationRunSchema = createSelectSchema(simulationRuns);
+
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;
 export type InsertRun = typeof runs.$inferInsert;
@@ -132,6 +148,8 @@ export type InsertProject = typeof projects.$inferInsert;
 export type SelectProject = typeof projects.$inferSelect;
 export type InsertContact = typeof contacts.$inferInsert;
 export type SelectContact = typeof contacts.$inferSelect;
+export type InsertSimulationRun = typeof simulationRuns.$inferInsert;
+export type SelectSimulationRun = typeof simulationRuns.$inferSelect;
 
 export const insertAnalysisStepSchema = createInsertSchema(analysisSteps);
 export const selectAnalysisStepSchema = createSelectSchema(analysisSteps);

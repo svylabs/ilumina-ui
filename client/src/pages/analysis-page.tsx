@@ -25,6 +25,8 @@ type SimulationRun = {
 
 // Component for Simulations tab
 function SimulationsComponent() {
+  const { id: submissionId } = useParams();
+  
   // State for simulation runs
   const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
@@ -41,39 +43,55 @@ function SimulationsComponent() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Fetch simulation status on component mount or when user changes
+  // Fetch simulation runs and status on component mount
   useEffect(() => {
-    if (!user) return;
+    if (!user || !submissionId) return;
     
-    const fetchSimStatus = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/can-run-simulation');
-        if (!response.ok) {
-          if (response.status === 401) {
-            setSimStatus({
-              canRun: false,
-              message: "Please login to run simulations"
-            });
-            return;
-          }
-          throw new Error('Failed to fetch simulation status');
+        // Fetch simulation status
+        const statusResponse = await fetch('/api/can-run-simulation');
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          setSimStatus(statusData);
+          setShowUpgradeMessage(!statusData.canRun);
+        } else if (statusResponse.status === 401) {
+          setSimStatus({
+            canRun: false,
+            message: "Please login to run simulations"
+          });
         }
         
-        const data = await response.json();
-        setSimStatus(data);
-        setShowUpgradeMessage(!data.canRun);
+        // Fetch existing simulation runs
+        const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
+        if (runsResponse.ok) {
+          const runsData = await runsResponse.json();
+          // Convert database records to our SimulationRun type
+          const formattedRuns: SimulationRun[] = runsData.map((run: any) => ({
+            id: run.runId, // Use the runId as our display ID
+            status: run.status as 'success' | 'failure',
+            date: run.date,
+            logUrl: run.logUrl || '#log',
+            summary: run.summary || {
+              totalTests: 0,
+              passed: 0,
+              failed: 0
+            }
+          }));
+          setSimulationRuns(formattedRuns);
+        }
       } catch (error) {
-        console.error('Error fetching simulation status:', error);
+        console.error('Error fetching simulation data:', error);
         toast({
           title: "Error",
-          description: "Could not check simulation limits. Please try again.",
+          description: "Could not load simulation data. Please try again.",
           variant: "destructive"
         });
       }
     };
     
-    fetchSimStatus();
-  }, [user, toast]);
+    fetchData();
+  }, [user, submissionId, toast]);
   
   // Generate a new simulation ID
   const generateSimId = () => {
@@ -82,80 +100,129 @@ function SimulationsComponent() {
   
   // Start a new simulation
   const startSimulation = async () => {
-    if (isRunningSimulation || !simStatus?.canRun) return;
+    if (isRunningSimulation || !simStatus?.canRun || !submissionId) return;
     
     try {
       setIsRunningSimulation(true);
       setProgress(0);
-      
-      // First log the simulation
-      const logResponse = await fetch('/api/log-simulation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!logResponse.ok) {
-        if (logResponse.status === 401) {
-          toast({
-            title: "Authentication Required",
-            description: "Please login to run simulations",
-            variant: "destructive"
-          });
-          setIsRunningSimulation(false);
-          return;
-        }
-        throw new Error('Failed to log simulation');
-      }
-      
-      // Get updated simulation status
-      const statusResponse = await fetch('/api/can-run-simulation');
-      if (statusResponse.ok) {
-        const newStatus = await statusResponse.json();
-        setSimStatus(newStatus);
-      }
+      const simId = generateSimId();
       
       // Mock progress updates
       const interval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval);
-            
-            // Add a new simulation with randomized success/failure
-            setTimeout(() => {
-              const isSuccess = Math.random() > 0.3; // 70% success rate
-              const totalTests = Math.floor(Math.random() * 20) + 30; // 30-50 tests
-              const passedTests = isSuccess 
-                ? totalTests 
-                : Math.floor(totalTests * (Math.random() * 0.4 + 0.5)); // 50-90% pass rate for failures
-              
-              const newRun: SimulationRun = {
-                id: generateSimId(),
-                status: isSuccess ? "success" : "failure",
-                date: new Date().toISOString(),
-                logUrl: "#log",
-                summary: {
-                  totalTests,
-                  passed: passedTests,
-                  failed: totalTests - passedTests
-                }
-              };
-              
-              setSimulationRuns(prev => [newRun, ...prev]);
-              setIsRunningSimulation(false);
-            }, 500);
-            
             return 100;
           }
           return prev + 5;
         });
       }, 300);
+      
+      // Simulate a running time
+      setTimeout(async () => {
+        try {
+          // Generate random results
+          const isSuccess = Math.random() > 0.3; // 70% success rate
+          const totalTests = Math.floor(Math.random() * 20) + 30; // 30-50 tests
+          const passedTests = isSuccess 
+            ? totalTests 
+            : Math.floor(totalTests * (Math.random() * 0.4 + 0.5)); // 50-90% pass rate for failures
+          
+          // Log the simulation run
+          const logResponse = await fetch('/api/log-simulation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              submissionId,
+              runId: simId,
+              status: isSuccess ? 'success' : 'failure',
+              logUrl: '#log',
+              summary: {
+                totalTests,
+                passed: passedTests,
+                failed: totalTests - passedTests
+              }
+            })
+          });
+          
+          if (!logResponse.ok) {
+            if (logResponse.status === 401) {
+              toast({
+                title: "Authentication Required",
+                description: "Please login to run simulations",
+                variant: "destructive"
+              });
+              setIsRunningSimulation(false);
+              clearInterval(interval);
+              return;
+            }
+            throw new Error('Failed to log simulation');
+          }
+          
+          const logData = await logResponse.json();
+          
+          // Update simulation runs with the new one from the server
+          if (logData.success && logData.simulationRun) {
+            // Fetch all runs to ensure consistency
+            const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
+            if (runsResponse.ok) {
+              const runsData = await runsResponse.json();
+              // Convert database records to our SimulationRun type
+              const formattedRuns: SimulationRun[] = runsData.map((run: any) => ({
+                id: run.runId, // Use the runId as our display ID
+                status: run.status as 'success' | 'failure',
+                date: run.date,
+                logUrl: run.logUrl || '#log',
+                summary: run.summary || {
+                  totalTests: 0,
+                  passed: 0,
+                  failed: 0
+                }
+              }));
+              setSimulationRuns(formattedRuns);
+            } else {
+              // Fallback to just adding the new run as a formatted SimulationRun
+              const newRun: SimulationRun = {
+                id: logData.simulationRun.runId,
+                status: logData.simulationRun.status,
+                date: logData.simulationRun.date,
+                logUrl: logData.simulationRun.logUrl || '#log',
+                summary: logData.simulationRun.summary || {
+                  totalTests: 0,
+                  passed: 0,
+                  failed: 0
+                }
+              };
+              setSimulationRuns(prev => [newRun, ...prev]);
+            }
+          }
+          
+          // Update simulation status with new counts
+          const statusResponse = await fetch('/api/can-run-simulation');
+          if (statusResponse.ok) {
+            const newStatus = await statusResponse.json();
+            setSimStatus(newStatus);
+            setShowUpgradeMessage(!newStatus.canRun);
+          }
+          
+          setIsRunningSimulation(false);
+        } catch (error) {
+          console.error('Error completing simulation:', error);
+          toast({
+            title: "Error",
+            description: "Failed to complete simulation. Please try again.",
+            variant: "destructive"
+          });
+          setIsRunningSimulation(false);
+        }
+      }, 8000); // 8 seconds total simulation time
     } catch (error) {
-      console.error('Error running simulation:', error);
+      console.error('Error starting simulation:', error);
       toast({
         title: "Error",
-        description: "Failed to run simulation. Please try again.",
+        description: "Failed to start simulation. Please try again.",
         variant: "destructive"
       });
       setIsRunningSimulation(false);
