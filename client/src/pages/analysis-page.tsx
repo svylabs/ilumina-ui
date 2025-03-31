@@ -552,19 +552,82 @@ export default function AnalysisPage() {
                                     </div>
                                   )}
 
-                                  {/* Test Environment with 3 sections in a grid layout */}
-                                  <div className="mt-8">
-                                    <h3 className="text-xl font-semibold text-blue-400 mb-4">Test Environment</h3>
+                                  {/* Test Environment with 3 sections in an embedded layout */}
+                                  <div className="mt-8 mb-4">
+                                    <h3 className="text-xl font-semibold text-blue-400 mb-2">Test Environment</h3>
                                     
-                                    {/* Three-section grid layout */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                      
-                                      {/* Section 1: Console Output */}
-                                      <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
-                                        <div className="text-lg font-medium text-white p-2 bg-gray-800 border-b border-gray-700">
+                                    {/* Main container with three sections */}
+                                    <div className="bg-gray-900 rounded-lg border border-gray-800 p-2">
+                                      {/* Top row with tabs for main sections */}
+                                      <div className="flex border-b border-gray-800 mb-2">
+                                        <div id="console-tab" 
+                                          className="px-4 py-2 text-blue-400 font-medium cursor-pointer border-b-2 border-blue-400"
+                                          onClick={() => {
+                                            document.getElementById('console-content')?.classList.remove('hidden');
+                                            document.getElementById('chat-content')?.classList.add('hidden');
+                                            document.getElementById('code-content')?.classList.add('hidden');
+                                            document.getElementById('console-tab')?.classList.add('border-blue-400', 'text-blue-400');
+                                            document.getElementById('console-tab')?.classList.remove('border-transparent', 'text-gray-400');
+                                            document.getElementById('chat-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('chat-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                            document.getElementById('code-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                          }}>
                                           Console Output
                                         </div>
-                                        <div className="h-[calc(500px-40px)] overflow-auto p-3 font-mono text-sm">
+                                        <div id="chat-tab" 
+                                          className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
+                                          onClick={() => {
+                                            document.getElementById('console-content')?.classList.add('hidden');
+                                            document.getElementById('chat-content')?.classList.remove('hidden');
+                                            document.getElementById('code-content')?.classList.add('hidden');
+                                            document.getElementById('console-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('console-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                            document.getElementById('chat-tab')?.classList.add('border-blue-400', 'text-blue-400');
+                                            document.getElementById('chat-tab')?.classList.remove('border-transparent', 'text-gray-400');
+                                            document.getElementById('code-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                          }}>
+                                          AI Assistant
+                                        </div>
+                                        <div id="code-tab" 
+                                          className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
+                                          onClick={() => {
+                                            document.getElementById('console-content')?.classList.add('hidden');
+                                            document.getElementById('chat-content')?.classList.add('hidden');
+                                            document.getElementById('code-content')?.classList.remove('hidden');
+                                            document.getElementById('console-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('console-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                            document.getElementById('chat-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('chat-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                            document.getElementById('code-tab')?.classList.add('border-blue-400', 'text-blue-400');
+                                            document.getElementById('code-tab')?.classList.remove('border-transparent', 'text-gray-400');
+                                          }}>
+                                          Code Files
+                                        </div>
+                                        <div className="ml-auto flex space-x-2">
+                                          <button 
+                                            className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded"
+                                            onClick={() => {
+                                              const allContents = document.querySelectorAll('.test-env-content');
+                                              allContents.forEach(el => el.classList.remove('hidden'));
+                                              
+                                              // Add the active styling to all tabs
+                                              document.getElementById('console-tab')?.classList.add('border-blue-400', 'text-blue-400');
+                                              document.getElementById('console-tab')?.classList.remove('border-transparent', 'text-gray-400');
+                                              document.getElementById('chat-tab')?.classList.add('border-blue-400', 'text-blue-400');
+                                              document.getElementById('chat-tab')?.classList.remove('border-transparent', 'text-gray-400');
+                                              document.getElementById('code-tab')?.classList.add('border-blue-400', 'text-blue-400');
+                                              document.getElementById('code-tab')?.classList.remove('border-transparent', 'text-gray-400');
+                                            }}>
+                                            Show All
+                                          </button>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Console Output Section */}
+                                      <div id="console-content" className="test-env-content">
+                                        <div className="h-[400px] overflow-auto p-3 font-mono text-sm">
                                           <div className="text-green-400">
                                             <p>// Test Environment Setup</p>
                                             <p>$ npm install hardhat @nomiclabs/hardhat-ethers ethers</p>
@@ -589,30 +652,9 @@ export default function AnalysisPage() {
                                         </div>
                                       </div>
                                       
-                                      {/* Section 2: Chat Bot Interface */}
-                                      <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
-                                        <div className="flex items-center justify-between text-lg font-medium text-white p-2 bg-gray-800 border-b border-gray-700 cursor-pointer"
-                                          onClick={() => {
-                                            // Toggle chat visibility
-                                            const chatBody = document.getElementById('test-environment-chat-body');
-                                            if (chatBody) {
-                                              const isHidden = chatBody.classList.contains('hidden');
-                                              if (isHidden) {
-                                                chatBody.classList.remove('hidden');
-                                              } else {
-                                                chatBody.classList.add('hidden');
-                                              }
-                                            }
-                                          }}>
-                                          <span>AI Assistant</span>
-                                          <div className="p-1 rounded-full hover:bg-gray-700">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                          </div>
-                                        </div>
-                                        
-                                        <div id="test-environment-chat-body" className="h-[calc(500px-40px)]">
+                                      {/* Chat Bot Interface */}
+                                      <div id="chat-content" className="test-env-content hidden">
+                                        <div className="h-[400px]">
                                           <TestEnvironmentChat 
                                             submissionId={id || ""}
                                             projectName={testSetupData.projectName || "Smart Contract Project"}
@@ -632,12 +674,9 @@ export default function AnalysisPage() {
                                         </div>
                                       </div>
                                       
-                                      {/* Section 3: Code Hierarchy */}
-                                      <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
-                                        <div className="text-lg font-medium text-white p-2 bg-gray-800 border-b border-gray-700">
-                                          Code Files
-                                        </div>
-                                        <div className="h-[calc(500px-40px)]">
+                                      {/* Code Hierarchy */}
+                                      <div id="code-content" className="test-env-content hidden">
+                                        <div className="h-[400px]">
                                           {/* Dynamically get repository from submission */}
                                           <GitHubCodeViewer 
                                             owner="ethereum"
