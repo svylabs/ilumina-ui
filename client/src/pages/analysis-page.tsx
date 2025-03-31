@@ -431,7 +431,7 @@ Security Analysis:
   },
   {
     id: "test_setup",
-    title: "Test Environment",
+    title: "Setup Simulation",
     description: "Configuring and implementing the simulation environment",
     status: "pending",
     output: `// Test Environment Setup
@@ -461,7 +461,7 @@ Test scenario scripts generated:
   },
   {
     id: "simulations",
-    title: "Simulations",
+    title: "Run Simulation",
     description: "Running test simulations with identified actors",
     status: "pending",
     link: "/results",
@@ -542,15 +542,9 @@ export default function AnalysisPage() {
   });
 
   // Set the selected step to the current in-progress step or the first completed one
-  // Initialize tabs to ensure Code Files tab is active by default
+  // No tab initialization needed
   useEffect(() => {
-    // Show Code Files tab as default
-    document.getElementById('console-content')?.classList.add('hidden');
-    document.getElementById('code-content')?.classList.remove('hidden');
-    document.getElementById('console-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-    document.getElementById('console-tab')?.classList.add('border-transparent', 'text-gray-400');
-    document.getElementById('code-tab')?.classList.add('border-blue-400', 'text-blue-400');
-    document.getElementById('code-tab')?.classList.remove('border-transparent', 'text-gray-400');
+    // Code content is always visible now
   }, []);
 
   useEffect(() => {
@@ -870,58 +864,12 @@ export default function AnalysisPage() {
                               return (
                                 <div className="space-y-6">
 
-                                  {/* Test Environment with 3 sections in an embedded layout */}
+                                  {/* Test Environment with file viewer and AI assistant */}
                                   <div className="mb-8">
                                     <h3 className="text-xl font-semibold text-blue-400 mb-2">Test Environment</h3>
                                     
-                                    {/* Main container with three sections */}
+                                    {/* Main container with code files and AI assistant */}
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-2">
-                                      {/* Top row with tabs for main sections */}
-                                      <div className="flex border-b border-gray-800 mb-2">
-                                        <div id="console-tab" 
-                                          className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
-                                          onClick={() => {
-                                            document.getElementById('console-content')?.classList.remove('hidden');
-                                            document.getElementById('code-content')?.classList.add('hidden');
-                                            document.getElementById('console-tab')?.classList.add('border-blue-400', 'text-blue-400');
-                                            document.getElementById('console-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                            document.getElementById('code-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
-                                          }}>
-                                          Console Output
-                                        </div>
-                                        <div id="code-tab" 
-                                          className="px-4 py-2 text-blue-400 font-medium cursor-pointer border-b-2 border-blue-400"
-                                          onClick={() => {
-                                            document.getElementById('console-content')?.classList.add('hidden');
-                                            document.getElementById('code-content')?.classList.remove('hidden');
-                                            document.getElementById('console-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('console-tab')?.classList.add('border-transparent', 'text-gray-400');
-                                            document.getElementById('code-tab')?.classList.add('border-blue-400', 'text-blue-400');
-                                            document.getElementById('code-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                          }}>
-                                          Code Files
-                                        </div>
-                                        <div className="ml-auto flex space-x-2">
-                                          <button 
-                                            className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded"
-                                            onClick={() => {
-                                              const allContents = document.querySelectorAll('.test-env-content');
-                                              allContents.forEach(el => el.classList.remove('hidden'));
-                                              
-                                              // Add the active styling to all tabs
-                                              document.getElementById('console-tab')?.classList.add('border-blue-400', 'text-blue-400');
-                                              document.getElementById('console-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                              document.getElementById('chat-tab')?.classList.add('border-blue-400', 'text-blue-400');
-                                              document.getElementById('chat-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                              document.getElementById('code-tab')?.classList.add('border-blue-400', 'text-blue-400');
-                                              document.getElementById('code-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                            }}>
-                                            Show All
-                                          </button>
-                                        </div>
-                                      </div>
-                                      
                                       {/* Network info panel */}
                                       <div className="bg-gray-900 p-3 rounded-md mb-4">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -939,37 +887,9 @@ export default function AnalysisPage() {
                                           </div>
                                         </div>
                                       </div>
-
                                       
-                                      {/* Console Output Section */}
-                                      <div id="console-content" className="test-env-content hidden">
-                                        <div className="p-3 font-mono text-sm">
-                                          <div className="text-green-400">
-                                            <p>// Test Environment Setup</p>
-                                            <p>$ npm install hardhat @nomiclabs/hardhat-ethers ethers</p>
-                                            <p className="text-cyan-300">+ @nomiclabs/hardhat-ethers@2.2.3</p>
-                                            <p className="text-cyan-300">+ ethers@5.7.2</p>
-                                            <p className="text-cyan-300">+ hardhat@2.14.0</p>
-                                            <p>// Creating Hardhat project</p>
-                                            <p>$ npx hardhat init</p>
-                                            <br />
-                                            <p className="text-yellow-300">✓ Project initialized</p>
-                                            <p className="text-yellow-300">✓ Contract files imported</p>
-                                            <p className="text-yellow-300">✓ Test accounts generated</p>
-                                            <br />
-                                            <p>// Setting up test environment</p>
-                                            <p className="text-green-300">✓ Compiling contracts</p>
-                                            <p className="text-green-300">✓ Deploying mock tokens</p>
-                                            <p className="text-green-300">✓ Setting up market fixtures</p>
-                                            <br />
-                                            <p className="text-blue-300">Environment ready for testing</p>
-                                            <p className="text-blue-300">Use the chat interface to modify tests or contract implementations</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Code Hierarchy */}
-                                      <div id="code-content" className="test-env-content">
+                                      {/* Code Viewer and AI Assistant */}
+                                      <div id="code-content">
                                         <div className="flex flex-col gap-4">
                                           {/* Main code viewer */}
                                           <div className="w-full overflow-hidden">
