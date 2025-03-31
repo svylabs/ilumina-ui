@@ -547,6 +547,22 @@ export default function AnalysisPage() {
     // Code content is always visible now
   }, []);
 
+  // Add smooth scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Hook to watch for step changes
+  useEffect(() => {
+    // Scroll to top when step changes
+    if (selectedStep) {
+      scrollToTop();
+    }
+  }, [selectedStep]);
+
   useEffect(() => {
     if (analysis && analysis.steps) {
       // Type safety: Explicitly cast entries to the right type
@@ -652,7 +668,10 @@ export default function AnalysisPage() {
           {analysisSteps.map((step, index) => (
             <div 
               key={step.id}
-              onClick={() => setSelectedStep(step.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                setSelectedStep(step.id);
+              }}
               className={`flex items-center px-4 py-2 cursor-pointer border-b-2 ${
                 selectedStep === step.id 
                   ? 'border-primary text-primary' 
