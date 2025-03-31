@@ -5,6 +5,8 @@ import { Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight } fro
 import { Button } from "@/components/ui/button";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
+import GitHubCodeViewer from "@/components/github-code-viewer";
+import TestEnvironmentChat from "@/components/test-environment-chat";
 
 type StepStatus = "pending" | "in_progress" | "completed" | "failed";
 
@@ -407,7 +409,7 @@ export default function AnalysisPage() {
                                   <div className="space-y-4">
                                     <h3 className="text-lg font-semibold text-green-400">Smart Contracts</h3>
                                     <div className="space-y-3">
-                                      {projectData.contracts.map((contract, index) => (
+                                      {projectData.contracts.map((contract: { name: string; summary: string; interfaces: string[]; libraries: string[] }, index: number) => (
                                         <div key={index} className="bg-gray-900 p-3 rounded-md">
                                           <div className="flex justify-between items-start">
                                             <h4 className="font-medium text-yellow-300">{contract.name}</h4>
@@ -418,7 +420,7 @@ export default function AnalysisPage() {
                                               <div>
                                                 <span className="text-xs text-gray-400">Interfaces: </span>
                                                 <div className="inline-flex flex-wrap gap-1 ml-1">
-                                                  {contract.interfaces.map((iface, i) => (
+                                                  {contract.interfaces.map((iface: string, i: number) => (
                                                     <span key={i} className="text-xs bg-blue-900 px-2 py-0.5 rounded-full text-blue-300">{iface}</span>
                                                   ))}
                                                 </div>
@@ -428,7 +430,7 @@ export default function AnalysisPage() {
                                               <div className="ml-3">
                                                 <span className="text-xs text-gray-400">Libraries: </span>
                                                 <div className="inline-flex flex-wrap gap-1 ml-1">
-                                                  {contract.libraries.map((lib, i) => (
+                                                  {contract.libraries.map((lib: string, i: number) => (
                                                     <span key={i} className="text-xs bg-purple-900 px-2 py-0.5 rounded-full text-purple-300">{lib}</span>
                                                   ))}
                                                 </div>
@@ -444,10 +446,10 @@ export default function AnalysisPage() {
                                     <h3 className="text-lg font-semibold text-green-400 mb-3">Dependencies</h3>
                                     <div className="bg-gray-900 p-3 rounded-md">
                                       <div className="grid grid-cols-2 gap-2">
-                                        {Object.entries(projectData.dependencies).map(([name, version]) => (
+                                        {Object.entries(projectData.dependencies).map(([name, version]: [string, unknown], index: number) => (
                                           <div key={name} className="flex justify-between text-sm">
                                             <span className="text-blue-300">{name}</span>
-                                            <span className="text-gray-400">{version}</span>
+                                            <span className="text-gray-400">{version as string}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -546,69 +548,53 @@ export default function AnalysisPage() {
                                             )}
                                           </div>
                                         ))}
-
-                                        {/* Chat Interface Preview */}
-                                        <div className="bg-gray-900 p-4 rounded-md mt-6">
-                                          <h4 className="text-lg font-medium text-blue-400 mb-3">Chat Interface</h4>
-                                          
-                                          <div className="bg-black/60 p-4 rounded-md space-y-4 max-h-[300px] overflow-auto">
-                                            <div className="flex items-start">
-                                              <div className="bg-blue-900/50 p-2 rounded-lg max-w-[80%]">
-                                                <p className="text-sm text-blue-200">How would you like to modify the test environment?</p>
-                                              </div>
-                                            </div>
-                                            
-                                            <div className="flex items-start justify-end">
-                                              <div className="bg-gray-800 p-2 rounded-lg max-w-[80%]">
-                                                <p className="text-sm text-gray-200">Add a new test case for flash loan attack simulation</p>
-                                              </div>
-                                            </div>
-                                            
-                                            <div className="flex items-start">
-                                              <div className="bg-blue-900/50 p-2 rounded-lg max-w-[80%]">
-                                                <p className="text-sm text-blue-200">I've created a new test case for flash loan attack simulation. Here's the implementation:</p>
-                                                <pre className="text-xs text-blue-300 mt-2 overflow-auto">
-{`describe("Flash Loan Attack", function() {
-  it("should verify contract behavior under flash loan conditions", async function() {
-    // Arrange: Setup flash loan provider and attacker
-    const attackerContract = await deployAttackerContract();
-    
-    // Act: Execute flash loan attack
-    await attackerContract.executeAttack();
-    
-    // Assert: Verify contract is resilient against the attack
-    expect(await contract.isSecure()).to.be.true;
-  });
-});`}
-                                                </pre>
-                                              </div>
-                                            </div>
-                                            
-                                            <div className="flex items-start justify-end">
-                                              <div className="bg-gray-800 p-2 rounded-lg max-w-[80%]">
-                                                <p className="text-sm text-gray-200">Can you add a price manipulation check to this test case?</p>
-                                              </div>
-                                            </div>
-                                          </div>
-                                          
-                                          <div className="mt-4 flex">
-                                            <input
-                                              type="text"
-                                              placeholder="Type your instructions here..."
-                                              className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-md text-sm border border-gray-700 focus:outline-none focus:border-blue-500"
-                                              disabled
-                                            />
-                                            <button
-                                              className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm disabled:opacity-50"
-                                              disabled
-                                            >
-                                              Send
-                                            </button>
-                                          </div>
-                                        </div>
                                       </div>
                                     </div>
                                   )}
+
+                                  {/* Code Viewer and Chat Interface */}
+                                  <div className="mt-8 space-y-6">
+                                    <h3 className="text-xl font-semibold text-blue-400">Test Environment Editor</h3>
+                                    
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                      {/* GitHub Code Viewer */}
+                                      <div className="h-[450px] bg-gray-900 rounded-md overflow-hidden">
+                                        <div className="text-lg font-medium text-white p-3 bg-gray-800 border-b border-gray-700">
+                                          Contract Repository
+                                        </div>
+                                        <div className="h-[calc(450px-48px)]">
+                                          {/* Dynamically get repository from submission */}
+                                          <GitHubCodeViewer 
+                                            owner="ethereum"
+                                            repo="solidity"
+                                            branch="develop"
+                                            path="docs/examples"
+                                            showBreadcrumb={true}
+                                          />
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Test Environment Chat */}
+                                      <div className="h-[450px] bg-gray-900 rounded-md overflow-hidden">
+                                        <TestEnvironmentChat 
+                                          submissionId={id || ""}
+                                          projectName={testSetupData.projectName || "Smart Contract Project"}
+                                          onCodeUpdate={(code: string, path?: string) => {
+                                            console.log("Code update requested:", { code, path });
+                                            // Here you would implement the code update logic
+                                          }}
+                                          initialMessages={[
+                                            {
+                                              id: "welcome",
+                                              role: "assistant",
+                                              content: "Welcome to the Test Environment Editor. How would you like to modify the test environment?",
+                                              timestamp: new Date()
+                                            }
+                                          ]}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
                                   
                                   <div className="space-y-2">
                                     <h3 className="text-xl font-semibold text-green-400">Test Accounts</h3>

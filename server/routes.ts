@@ -19,6 +19,67 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
 
+  // GitHub API proxy endpoints
+  app.get('/api/github/contents/:owner/:repo/:path(*)', async (req, res) => {
+    try {
+      const { owner, repo, path } = req.params;
+      const branch = req.query.ref as string || 'main';
+      
+      // Build GitHub API URL
+      const url = path 
+        ? `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`
+        : `https://api.github.com/repos/${owner}/${repo}/contents?ref=${branch}`;
+      
+      // GitHub API requires a User-Agent header
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Ilumina-App',
+          'Accept': 'application/vnd.github.v3+json',
+          // Add authorization if you have a GitHub token
+          ...(process.env.GITHUB_TOKEN ? { 'Authorization': `token ${process.env.GITHUB_TOKEN}` } : {})
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error('GitHub API error:', error);
+      res.status(500).json({ error: 'Failed to fetch from GitHub' });
+    }
+  });
+  
+  app.get('/api/github/content/:owner/:repo/:path(*)', async (req, res) => {
+    try {
+      const { owner, repo, path } = req.params;
+      const branch = req.query.ref as string || 'main';
+      
+      // Build GitHub API URL for file content
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Ilumina-App',
+          'Accept': 'application/vnd.github.v3+json',
+          ...(process.env.GITHUB_TOKEN ? { 'Authorization': `token ${process.env.GITHUB_TOKEN}` } : {})
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error('GitHub API error:', error);
+      res.status(500).json({ error: 'Failed to fetch file from GitHub' });
+    }
+  });
+
   // Get user's projects
   app.get("/api/projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -545,7 +606,7 @@ export function registerRoutes(app: Express): Server {
                   },
                   {
                     "name": "Market Resolver",
-                    "summary": "Entity responsible for resolving the market based on a predefined resolution strategy. This may be done manually or automatically.",
+                    "summary": "Entity responsible for resolving the market based on a predefined resolution strategy.  This may be done manually or automatically.",
                     "actions": [
                       {
                         "name": "Resolve Market",
@@ -553,6 +614,40 @@ export function registerRoutes(app: Express): Server {
                         "contract_name": "Predify",
                         "function_name": "resolveMarket",
                         "probability": 1.0
+                      },
+                      {
+                        "name": "Register Outcome",
+                        "summary": "Registers a possible outcome for a given market.",
+                        "contract_name": "ManualResolutionStrategy",
+                        "function_name": "registerOutcome",
+                        "probability": 0.5
+                      },
+                      {
+                        "name": "Resolve Market (Manual)",
+                        "summary": "Resolves a given market with provided resolution data to determine the winning outcome.",
+                        "contract_name": "ManualResolutionStrategy",
+                        "function_name": "resolve",
+                        "probability": 1.0
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Token Manager",
+                    "summary": "Can mint or burn tokens in the Predify ecosystem, if a mock token is used. This role manages the supply of the betting token.",
+                    "actions": [
+                      {
+                        "name": "Mint Tokens",
+                        "summary": "Mints new tokens to the specified address.",
+                        "contract_name": "MockERC20",
+                        "function_name": "mint",
+                        "probability": 0.5
+                      },
+                      {
+                        "name": "Burn Tokens",
+                        "summary": "Burns tokens from the specified address.",
+                        "contract_name": "MockERC20",
+                        "function_name": "burn",
+                        "probability": 0.5
                       }
                     ]
                   }
