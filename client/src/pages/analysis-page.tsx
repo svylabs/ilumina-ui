@@ -121,7 +121,7 @@ function SimulationsComponent() {
         {simulationRuns.length > 0 ? (
           <div className="bg-gray-900 rounded-md">
             <div className="border-b border-gray-800 p-4">
-              <div className="grid grid-cols-12 text-sm text-gray-400 font-medium">
+              <div className="hidden md:grid md:grid-cols-12 text-sm text-gray-400 font-medium">
                 <div className="col-span-3">Run ID</div>
                 <div className="col-span-3">Status</div>
                 <div className="col-span-3">Date</div>
@@ -132,9 +132,13 @@ function SimulationsComponent() {
             <div className="divide-y divide-gray-800">
               {simulationRuns.map((run) => (
                 <div key={run.id} className="p-4 hover:bg-gray-800/50 transition-colors">
-                  <div className="grid grid-cols-12 items-center">
-                    <div className="col-span-3 font-mono text-white">{run.id}</div>
-                    <div className="col-span-3">
+                  <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0">
+                    <div className="md:col-span-3 font-mono text-white">
+                      <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
+                      {run.id}
+                    </div>
+                    <div className="md:col-span-3">
+                      <div className="md:hidden text-xs text-gray-400 mb-1">Status</div>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                         ${run.status === 'success' 
                           ? 'bg-green-900/50 text-green-300' 
@@ -144,10 +148,11 @@ function SimulationsComponent() {
                         {run.status === 'success' ? '✓ Success' : '✗ Failed'}
                       </span>
                     </div>
-                    <div className="col-span-3 text-gray-300">
+                    <div className="md:col-span-3 text-gray-300">
+                      <div className="md:hidden text-xs text-gray-400 mb-1">Date</div>
                       {new Date(run.date).toLocaleString()}
                     </div>
-                    <div className="col-span-3 flex space-x-2">
+                    <div className="md:col-span-3 flex flex-wrap gap-2 md:space-x-2">
                       <a 
                         href={run.logUrl} 
                         className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
