@@ -31,9 +31,14 @@ export default function TestEnvironmentChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Ensure messages end is scrolled into view
+  // Ensure messages container is scrolled into view but only scroll the chat container itself
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      const container = messagesEndRef.current.closest('.chat-messages-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
   }, [messages]);
 
   // Function to generate a unique message ID

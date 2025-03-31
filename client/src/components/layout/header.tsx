@@ -21,10 +21,8 @@ export default function Header() {
       setLocation('/#' + id);
       return;
     }
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    // Don't auto-scroll to elements as this can interfere with user experience
+    // Removed: element.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleHomeClick = (e: React.MouseEvent) => {
