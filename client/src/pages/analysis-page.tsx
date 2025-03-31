@@ -365,9 +365,114 @@ export default function AnalysisPage() {
                       <p className="ml-2 text-primary">Processing...</p>
                     </div>
                   ) : getStepStatus(currentStep.id) === "completed" ? (
-                    <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono">
-                      {currentStep.output || getStepDetails(currentStep.id) || "No output available"}
-                    </pre>
+                    <div>
+                      {currentStep.id === "files" && getStepStatus(currentStep.id) === "completed" ? (
+                        <div className="text-white font-mono">
+                          {(() => {
+                            try {
+                              const details = getStepDetails(currentStep.id);
+                              if (!details) return <p>No details available</p>;
+                              
+                              const projectData = JSON.parse(details);
+                              return (
+                                <div className="space-y-6">
+                                  <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-green-400">Project Overview</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-900 p-4 rounded-md">
+                                      <div>
+                                        <p className="text-gray-400">Project Name:</p>
+                                        <p className="text-white">{projectData.projectName}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-gray-400">Development Environment:</p>
+                                        <p className="text-white">{projectData.devEnvironment}</p>
+                                      </div>
+                                      <div className="md:col-span-2">
+                                        <p className="text-gray-400">Summary:</p>
+                                        <p className="text-white">{projectData.projectSummary}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-gray-400">Compiler Version:</p>
+                                        <p className="text-white">{projectData.compiler}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-green-400">Smart Contracts</h3>
+                                    <div className="space-y-4">
+                                      {projectData.contracts.map((contract, index) => (
+                                        <div key={index} className="bg-gray-900 p-4 rounded-md">
+                                          <div className="flex items-center justify-between">
+                                            <h4 className="text-lg font-medium text-blue-400">{contract.name}</h4>
+                                          </div>
+                                          <p className="mt-1 text-white">{contract.summary}</p>
+                                          
+                                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                              <p className="text-gray-400">Interfaces:</p>
+                                              <div className="flex flex-wrap gap-2 mt-1">
+                                                {contract.interfaces.map((iface, i) => (
+                                                  <span key={i} className="px-2 py-1 bg-gray-800 text-green-300 rounded text-xs">
+                                                    {iface}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <p className="text-gray-400">Libraries:</p>
+                                              <div className="flex flex-col gap-1 mt-1">
+                                                {contract.libraries.map((lib, i) => (
+                                                  <span key={i} className="text-yellow-300 text-xs truncate">
+                                                    {lib}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-green-400">Dependencies</h3>
+                                    <div className="bg-gray-900 p-4 rounded-md">
+                                      <table className="w-full text-left">
+                                        <thead>
+                                          <tr className="border-b border-gray-800">
+                                            <th className="py-2 text-gray-400">Package</th>
+                                            <th className="py-2 text-gray-400">Version</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {Object.entries(projectData.dependencies).map(([pkg, version], i) => (
+                                            <tr key={i} className="border-b border-gray-800">
+                                              <td className="py-2 text-cyan-300">{pkg}</td>
+                                              <td className="py-2 text-white">{version}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            } catch (e) {
+                              return (
+                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
+                                  {getStepDetails(currentStep.id) || currentStep.output || "No output available"}
+                                </pre>
+                              );
+                            }
+                          })()}
+                        </div>
+                      ) : (
+                        <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono">
+                          {currentStep.output || getStepDetails(currentStep.id) || "No output available"}
+                        </pre>
+                      )}
+                    </div>
                   ) : getStepStatus(currentStep.id) === "failed" ? (
                     <pre className="text-sm text-red-400 whitespace-pre-wrap font-mono">
                       Analysis failed: {getStepDetails(currentStep.id) || "Unknown error occurred"}
