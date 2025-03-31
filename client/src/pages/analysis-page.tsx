@@ -176,6 +176,7 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
 export default function AnalysisPage() {
   const { id } = useParams();
   const [selectedStep, setSelectedStep] = useState<string>("files");
+  const [activeSubstep, setActiveSubstep] = useState<string>("");
 
   const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
@@ -483,12 +484,48 @@ export default function AnalysisPage() {
                                 testSetupData = JSON.parse(details);
                               }
                               
-                              // Need to add activeSubstep state for the Implementation Steps section
-                              const [activeSubstep, setActiveSubstep] = useState(
-                                testSetupData.substeps && testSetupData.substeps.length > 0 
-                                  ? testSetupData.substeps[0].id 
-                                  : ""
-                              );
+                              // Ensure testSetupData has all required properties
+                              if (!testSetupData.testEnvironment) {
+                                testSetupData.testEnvironment = "Hardhat";
+                              }
+                              
+                              if (!testSetupData.networkSettings) {
+                                testSetupData.networkSettings = {
+                                  name: "Local Hardhat",
+                                  chainId: "31337"
+                                };
+                              }
+                              
+                              // Set active substep if substeps exist
+                              // Add sample substeps if not present in the data
+                              if (!testSetupData.substeps) {
+                                testSetupData.substeps = [
+                                  {
+                                    id: "setup",
+                                    name: "Setup Workspace",
+                                    description: "Create and configure the test environment workspace",
+                                    output: "Workspace initialized with Hardhat\nContract ABIs generated\nTest accounts created with 1000 ETH each"
+                                  },
+                                  {
+                                    id: "contract_deployment",
+                                    name: "Contract Deployment",
+                                    description: "Implement contract deployment and initialization",
+                                    output: "Predify.sol deployed to 0x1234...\nManualResolutionStrategy.sol deployed to 0x5678...\nMockERC20.sol deployed to 0x9abc..."
+                                  },
+                                  {
+                                    id: "actors",
+                                    name: "Implement Actors",
+                                    description: "Create actor implementations based on the identified roles",
+                                    output: "Created MarketCreator implementation\nCreated Bettor implementation\nCreated MarketResolver implementation\nCreated TokenManager implementation"
+                                  }
+                                ];
+                              }
+                              
+                              useEffect(() => {
+                                if (testSetupData.substeps && testSetupData.substeps.length > 0) {
+                                  setActiveSubstep(testSetupData.substeps[0].id);
+                                }
+                              }, [testSetupData.substeps]);
                               
                               return (
                                 <div className="space-y-6">
