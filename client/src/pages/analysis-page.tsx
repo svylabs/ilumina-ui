@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
 import { useAuth } from "@/lib/auth";
@@ -522,6 +522,9 @@ export default function AnalysisPage() {
   const { id } = useParams();
   const [selectedStep, setSelectedStep] = useState<string>("files");
   const [activeSubstep, setActiveSubstep] = useState<string>("");
+  
+  // Create a ref for the content top
+  const contentTopRef = useRef<HTMLDivElement>(null);
 
   const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
@@ -547,19 +550,31 @@ export default function AnalysisPage() {
     // Code content is always visible now
   }, []);
 
-  // Add smooth scroll to top function
+  // Add scroll functions
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   };
+  
+  // Function to scroll to content top ref
+  const scrollToContentTop = () => {
+    if (contentTopRef.current) {
+      contentTopRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    } else {
+      scrollToTop();
+    }
+  };
 
   // Hook to watch for step changes
   useEffect(() => {
-    // Scroll to top when step changes
+    // Scroll to content top when step changes
     if (selectedStep) {
-      scrollToTop();
+      scrollToContentTop();
     }
   }, [selectedStep]);
 
@@ -671,6 +686,7 @@ export default function AnalysisPage() {
               onClick={(e) => {
                 e.preventDefault();
                 setSelectedStep(step.id);
+                scrollToContentTop(); // Scroll to the content area immediately
               }}
               className={`flex items-center px-4 py-2 cursor-pointer border-b-2 ${
                 selectedStep === step.id 
@@ -696,7 +712,7 @@ export default function AnalysisPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div ref={contentTopRef} className="grid grid-cols-1 gap-6">
           {/* Main content with output */}
           <div className="w-full">
             <Card className="h-full">
