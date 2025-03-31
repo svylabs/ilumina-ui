@@ -7,6 +7,13 @@ import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { analysisSteps } from "@db/schema";
 
+// Define the type for analysis step status
+type AnalysisStepStatus = {
+  status: "pending" | "in_progress" | "completed" | "failed";
+  details: string | null;
+  startTime: string | null;
+};
+
 export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
@@ -78,15 +85,40 @@ export function registerRoutes(app: Express): Server {
         })
         .returning();
 
+      // Insert "files" step as in progress
       await tx
         .insert(analysisSteps)
         .values({
           submissionId: submission.id,
           stepId: "files",
           status: "in_progress",
-          details: "Starting file analysis...",
+          details: "Analyzing project structure and smart contracts...",
         })
         .returning();
+      
+      // Insert other steps as pending
+      await tx
+        .insert(analysisSteps)
+        .values([
+          {
+            submissionId: submission.id,
+            stepId: "actors",
+            status: "pending",
+            details: "Waiting to analyze actors and interactions...",
+          },
+          {
+            submissionId: submission.id,
+            stepId: "test_setup",
+            status: "pending",
+            details: "Waiting to set up test environment...",
+          },
+          {
+            submissionId: submission.id,
+            stepId: "simulations",
+            status: "pending",
+            details: "Waiting to run simulations...",
+          }
+        ]);
 
       await tx
         .insert(runs)
@@ -185,16 +217,40 @@ export function registerRoutes(app: Express): Server {
       return [submission];
     });
 
-    // Add this after creating the submission
+    // Insert steps for this submission
     const [initialStep] = await db
       .insert(analysisSteps)
       .values({
         submissionId: submission.id,
         stepId: "files",
         status: "in_progress",
-        details: "Starting file analysis...",
+        details: "Analyzing project structure and smart contracts...",
       })
       .returning();
+      
+    // Insert other steps as pending
+    await db
+      .insert(analysisSteps)
+      .values([
+        {
+          submissionId: submission.id,
+          stepId: "actors",
+          status: "pending",
+          details: "Waiting to analyze actors and interactions...",
+        },
+        {
+          submissionId: submission.id,
+          stepId: "test_setup",
+          status: "pending",
+          details: "Waiting to set up test environment...",
+        },
+        {
+          submissionId: submission.id,
+          stepId: "simulations",
+          status: "pending",
+          details: "Waiting to run simulations...",
+        }
+      ]);
 
     const [run] = await db
       .insert(runs)
@@ -264,13 +320,16 @@ export function registerRoutes(app: Express): Server {
         .where(eq(analysisSteps.submissionId, submission[0].id))
         .orderBy(analysisSteps.createdAt);
 
-      const stepsStatus = {
+      // Support both old and new step IDs for backwards compatibility
+      const stepsStatus: Record<string, AnalysisStepStatus> = {
+        // New step IDs
         files: { status: "pending", details: null, startTime: null },
-        abi: { status: "pending", details: null, startTime: null },
-        workspace: { status: "pending", details: null, startTime: null },
-        test_setup: { status: "pending", details: null, startTime: null },
         actors: { status: "pending", details: null, startTime: null },
-        simulations: { status: "pending", details: null, startTime: null }
+        test_setup: { status: "pending", details: null, startTime: null },
+        simulations: { status: "pending", details: null, startTime: null },
+        // Legacy step IDs (for backwards compatibility)
+        workspace: { status: "pending", details: null, startTime: null },
+        abi: { status: "pending", details: null, startTime: null }
       };
 
       steps.forEach(step => {
