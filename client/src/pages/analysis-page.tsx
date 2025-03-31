@@ -967,10 +967,10 @@ export default function AnalysisPage() {
                                       </div>
                                       
                                       {/* Code Hierarchy */}
-                                      <div id="code-content" className="test-env-content hidden">
+                                      <div id="code-content" className="test-env-content">
                                         <div className="flex flex-col md:flex-row gap-4">
                                           {/* Main code viewer */}
-                                          <div className="flex-1">
+                                          <div className="flex-1 overflow-hidden">
                                             {/* Dynamically get repository from submission */}
                                             <GitHubCodeViewer 
                                               owner="ethereum"
@@ -989,7 +989,7 @@ export default function AnalysisPage() {
                                             // Only render the assistant for pro and teams plans
                                             if (user && (user.plan === "pro" || user.plan === "teams")) {
                                               return (
-                                                <div className="md:w-1/3 min-w-[300px] bg-gray-800 rounded-lg p-2">
+                                                <div className="w-full md:w-1/3 lg:w-1/4 bg-gray-800 rounded-lg p-2 h-fit">
                                                   <div className="mb-2 p-2 bg-blue-500/10 rounded flex items-center">
                                                     <span className="text-blue-400 font-semibold">AI Assistant</span>
                                                     <Badge className="ml-2 bg-blue-500 text-xs" variant="default">
@@ -1018,14 +1018,16 @@ export default function AnalysisPage() {
                                             
                                             // For free plan users, show upgrade prompt
                                             return (
-                                              <div className="md:w-1/3 min-w-[300px] bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center">
+                                              <div className="w-full md:w-1/3 lg:w-1/4 bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center h-auto md:h-fit">
                                                 <h3 className="text-white font-semibold mb-2">AI Assistant</h3>
                                                 <p className="text-gray-400 text-sm text-center mb-4">
                                                   Upgrade to Pro or Teams plan to access the AI Assistant and get help with your smart contracts.
                                                 </p>
-                                                <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
-                                                  Upgrade Plan
-                                                </Button>
+                                                <Link href="/pricing">
+                                                  <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
+                                                    Upgrade Plan
+                                                  </Button>
+                                                </Link>
                                               </div>
                                             );
                                           })()}
