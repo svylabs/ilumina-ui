@@ -543,24 +543,6 @@ export default function AnalysisPage() {
                                     
                                     {/* Main container with three sections */}
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-2">
-                                      {/* Network info panel */}
-                                      <div className="bg-gray-900 p-3 rounded-md mb-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                          <div>
-                                            <span className="text-gray-400">Runtime:</span>
-                                            <p className="text-white">{testSetupData.testEnvironment}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-gray-400">Network:</span>
-                                            <p className="text-cyan-300">{testSetupData.networkSettings.name}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-gray-400">Chain ID:</span>
-                                            <p className="text-white">{testSetupData.networkSettings.chainId}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    
                                       {/* Top row with tabs for main sections */}
                                       <div className="flex border-b border-gray-800 mb-2">
                                         <div id="chat-tab" 
@@ -625,6 +607,24 @@ export default function AnalysisPage() {
                                             }}>
                                             Show All
                                           </button>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Network info panel */}
+                                      <div className="bg-gray-900 p-3 rounded-md mb-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                          <div>
+                                            <span className="text-gray-400">Runtime:</span>
+                                            <p className="text-white">{testSetupData.testEnvironment}</p>
+                                          </div>
+                                          <div>
+                                            <span className="text-gray-400">Network:</span>
+                                            <p className="text-cyan-300">{testSetupData.networkSettings.name}</p>
+                                          </div>
+                                          <div>
+                                            <span className="text-gray-400">Chain ID:</span>
+                                            <p className="text-white">{testSetupData.networkSettings.chainId}</p>
+                                          </div>
                                         </div>
                                       </div>
                                       
