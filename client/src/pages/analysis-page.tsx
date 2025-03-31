@@ -7,6 +7,8 @@ import { format, addMinutes, formatDistanceToNow } from "date-fns";
 import { useEffect, useState, useCallback } from "react";
 import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 // Simulation run type definition
 type SimulationRun = {
@@ -27,6 +29,51 @@ function SimulationsComponent() {
   const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [simStatus, setSimStatus] = useState<{
+    canRun: boolean;
+    message: string;
+    plan?: string;
+    runsUsed?: number;
+    runsLimit?: number | string;
+  } | null>(null);
+  const [showUpgradeMessage, setShowUpgradeMessage] = useState(false);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // Fetch simulation status on component mount or when user changes
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchSimStatus = async () => {
+      try {
+        const response = await fetch('/api/can-run-simulation');
+        if (!response.ok) {
+          if (response.status === 401) {
+            setSimStatus({
+              canRun: false,
+              message: "Please login to run simulations"
+            });
+            return;
+          }
+          throw new Error('Failed to fetch simulation status');
+        }
+        
+        const data = await response.json();
+        setSimStatus(data);
+        setShowUpgradeMessage(!data.canRun);
+      } catch (error) {
+        console.error('Error fetching simulation status:', error);
+        toast({
+          title: "Error",
+          description: "Could not check simulation limits. Please try again.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    fetchSimStatus();
+  }, [user, toast]);
   
   // Generate a new simulation ID
   const generateSimId = () => {
@@ -34,65 +81,120 @@ function SimulationsComponent() {
   };
   
   // Start a new simulation
-  const startSimulation = () => {
-    if (isRunningSimulation) return;
+  const startSimulation = async () => {
+    if (isRunningSimulation || !simStatus?.canRun) return;
     
-    setIsRunningSimulation(true);
-    setProgress(0);
-    
-    // Mock progress updates
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          
-          // Add a new simulation with randomized success/failure
-          setTimeout(() => {
-            const isSuccess = Math.random() > 0.3; // 70% success rate
-            const totalTests = Math.floor(Math.random() * 20) + 30; // 30-50 tests
-            const passedTests = isSuccess 
-              ? totalTests 
-              : Math.floor(totalTests * (Math.random() * 0.4 + 0.5)); // 50-90% pass rate for failures
-            
-            const newRun: SimulationRun = {
-              id: generateSimId(),
-              status: isSuccess ? "success" : "failure",
-              date: new Date().toISOString(),
-              logUrl: "#log",
-              summary: {
-                totalTests,
-                passed: passedTests,
-                failed: totalTests - passedTests
-              }
-            };
-            
-            setSimulationRuns(prev => [newRun, ...prev]);
-            setIsRunningSimulation(false);
-          }, 500);
-          
-          return 100;
+    try {
+      setIsRunningSimulation(true);
+      setProgress(0);
+      
+      // First log the simulation
+      const logResponse = await fetch('/api/log-simulation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         }
-        return prev + 5;
       });
-    }, 300);
+      
+      if (!logResponse.ok) {
+        if (logResponse.status === 401) {
+          toast({
+            title: "Authentication Required",
+            description: "Please login to run simulations",
+            variant: "destructive"
+          });
+          setIsRunningSimulation(false);
+          return;
+        }
+        throw new Error('Failed to log simulation');
+      }
+      
+      // Get updated simulation status
+      const statusResponse = await fetch('/api/can-run-simulation');
+      if (statusResponse.ok) {
+        const newStatus = await statusResponse.json();
+        setSimStatus(newStatus);
+      }
+      
+      // Mock progress updates
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            
+            // Add a new simulation with randomized success/failure
+            setTimeout(() => {
+              const isSuccess = Math.random() > 0.3; // 70% success rate
+              const totalTests = Math.floor(Math.random() * 20) + 30; // 30-50 tests
+              const passedTests = isSuccess 
+                ? totalTests 
+                : Math.floor(totalTests * (Math.random() * 0.4 + 0.5)); // 50-90% pass rate for failures
+              
+              const newRun: SimulationRun = {
+                id: generateSimId(),
+                status: isSuccess ? "success" : "failure",
+                date: new Date().toISOString(),
+                logUrl: "#log",
+                summary: {
+                  totalTests,
+                  passed: passedTests,
+                  failed: totalTests - passedTests
+                }
+              };
+              
+              setSimulationRuns(prev => [newRun, ...prev]);
+              setIsRunningSimulation(false);
+            }, 500);
+            
+            return 100;
+          }
+          return prev + 5;
+        });
+      }, 300);
+    } catch (error) {
+      console.error('Error running simulation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to run simulation. Please try again.",
+        variant: "destructive"
+      });
+      setIsRunningSimulation(false);
+    }
   };
   
   return (
     <div className="text-white">
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-blue-400">Simulations</h3>
-          <button
-            onClick={startSimulation}
-            disabled={isRunningSimulation}
-            className={`px-4 py-2 rounded-md font-medium ${
-              isRunningSimulation 
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-          >
-            {isRunningSimulation ? 'Running...' : 'Run Simulation'}
-          </button>
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-blue-400">Simulations</h3>
+            {simStatus && (
+              <p className="text-sm text-gray-400 mt-1">
+                {simStatus.canRun 
+                  ? `${simStatus.message}`
+                  : `${simStatus.message}`
+                }
+              </p>
+            )}
+          </div>
+          <div className="flex gap-3 items-center">
+            {showUpgradeMessage && (
+              <Link href="/pricing" className="text-sm text-yellow-400 hover:text-yellow-300 underline">
+                Upgrade Plan
+              </Link>
+            )}
+            <button
+              onClick={startSimulation}
+              disabled={isRunningSimulation || !simStatus?.canRun}
+              className={`px-4 py-2 rounded-md font-medium ${
+                isRunningSimulation || !simStatus?.canRun
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {isRunningSimulation ? 'Running...' : 'Run Simulation'}
+            </button>
+          </div>
         </div>
         
         {isRunningSimulation && (

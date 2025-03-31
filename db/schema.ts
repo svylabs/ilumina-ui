@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   plan: text("plan", { enum: ["free", "pro", "teams"] }).default("free").notNull(),
   simulationsUsed: integer("simulations_used").default(0).notNull(),
+  // Field to track the last date simulations were used for daily limit reset
+  lastSimulationDate: timestamp("last_simulation_date"),
 });
 
 // New pricing tables

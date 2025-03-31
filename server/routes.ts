@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { submissions, runs, projects, insertSubmissionSchema, contacts, insertContactSchema, pricingPlans, planFeatures } from "@db/schema";
+import { submissions, runs, projects, insertSubmissionSchema, contacts, insertContactSchema, pricingPlans, planFeatures, users } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
@@ -18,6 +18,115 @@ type AnalysisStepStatus = {
 export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
+  
+  // Check if user can run a simulation
+  app.get("/api/can-run-simulation", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ 
+      canRun: false,
+      message: "You must be logged in to run simulations"
+    });
+    
+    const user = req.user;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let limit: number;
+    switch (user.plan) {
+      case "free":
+        limit = 1;
+        break;
+      case "pro":
+        limit = 20;
+        break;
+      case "teams":
+        // Unlimited
+        return res.json({ 
+          canRun: true,
+          message: "You have unlimited simulation runs",
+          plan: user.plan,
+          runsUsed: user.simulationsUsed,
+          runsLimit: "Unlimited"
+        });
+      default:
+        limit = 1; // Default to free plan limit
+    }
+    
+    // Check if the last simulation date is from a different day
+    if (user.lastSimulationDate) {
+      const lastSimDate = new Date(user.lastSimulationDate);
+      lastSimDate.setHours(0, 0, 0, 0);
+      
+      // If it's a new day, reset the counter
+      if (lastSimDate < today) {
+        // Reset counter in database
+        await db.update(users)
+          .set({ 
+            simulationsUsed: 0,
+            lastSimulationDate: new Date()
+          })
+          .where(eq(users.id, user.id));
+        
+        return res.json({ 
+          canRun: true, 
+          message: "New day, simulations reset",
+          plan: user.plan,
+          runsUsed: 0,
+          runsLimit: limit
+        });
+      }
+    }
+    
+    // Check if user has reached their daily limit
+    if (user.simulationsUsed >= limit) {
+      return res.json({
+        canRun: false,
+        message: `You have reached your daily limit of ${limit} simulation runs. Upgrade to run more simulations.`,
+        plan: user.plan,
+        runsUsed: user.simulationsUsed,
+        runsLimit: limit
+      });
+    }
+    
+    return res.json({
+      canRun: true,
+      message: `You have ${limit - user.simulationsUsed} simulation runs remaining today.`,
+      plan: user.plan,
+      runsUsed: user.simulationsUsed,
+      runsLimit: limit
+    });
+  });
+  
+  // Log a simulation run
+  app.post("/api/log-simulation", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
+    
+    try {
+      // Increment the counter
+      await db.update(users)
+        .set({ 
+          simulationsUsed: sql`${users.simulationsUsed} + 1`,
+          lastSimulationDate: new Date()
+        })
+        .where(eq(users.id, req.user.id));
+      
+      // Return updated user data
+      const [updatedUser] = await db.select()
+        .from(users)
+        .where(eq(users.id, req.user.id))
+        .limit(1);
+      
+      return res.json({ 
+        success: true, 
+        simulationsUsed: updatedUser.simulationsUsed 
+      });
+    } catch (error) {
+      console.error("Error logging simulation:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to log simulation run" 
+      });
+    }
+  });
 
   // GitHub API proxy endpoints
   app.get('/api/github/contents/:owner/:repo/:path(*)', async (req, res) => {
