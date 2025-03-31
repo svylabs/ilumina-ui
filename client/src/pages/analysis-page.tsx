@@ -122,10 +122,9 @@ function SimulationsComponent() {
           <div className="bg-gray-900 rounded-md">
             <div className="border-b border-gray-800 p-4">
               <div className="grid grid-cols-12 text-sm text-gray-400 font-medium">
-                <div className="col-span-2">Run ID</div>
-                <div className="col-span-2">Status</div>
+                <div className="col-span-3">Run ID</div>
+                <div className="col-span-3">Status</div>
                 <div className="col-span-3">Date</div>
-                <div className="col-span-2">Tests</div>
                 <div className="col-span-3">Actions</div>
               </div>
             </div>
@@ -134,8 +133,8 @@ function SimulationsComponent() {
               {simulationRuns.map((run) => (
                 <div key={run.id} className="p-4 hover:bg-gray-800/50 transition-colors">
                   <div className="grid grid-cols-12 items-center">
-                    <div className="col-span-2 font-mono text-white">{run.id}</div>
-                    <div className="col-span-2">
+                    <div className="col-span-3 font-mono text-white">{run.id}</div>
+                    <div className="col-span-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                         ${run.status === 'success' 
                           ? 'bg-green-900/50 text-green-300' 
@@ -147,16 +146,6 @@ function SimulationsComponent() {
                     </div>
                     <div className="col-span-3 text-gray-300">
                       {new Date(run.date).toLocaleString()}
-                    </div>
-                    <div className="col-span-2">
-                      <div className="flex space-x-1 text-sm">
-                        <span className="text-green-400">{run.summary.passed}</span>
-                        <span className="text-gray-500">/</span>
-                        <span className="text-gray-300">{run.summary.totalTests}</span>
-                        {run.summary.failed > 0 && (
-                          <span className="text-red-400 ml-1">({run.summary.failed} failed)</span>
-                        )}
-                      </div>
                     </div>
                     <div className="col-span-3 flex space-x-2">
                       <a 
@@ -297,7 +286,7 @@ Test scenario scripts generated:
   },
   {
     id: "simulations",
-    title: "Run Simulation",
+    title: "Simulations",
     description: "Running test simulations with identified actors",
     status: "pending",
     link: "/results",
@@ -538,7 +527,6 @@ export default function AnalysisPage() {
                 </CardTitle>
                 <CardDescription>
                   {getStepStatus(currentStep.id) === "in_progress" ? "Analysis in progress..." : 
-                   getStepStatus(currentStep.id) === "completed" ? "Analysis completed" :
                    getStepStatus(currentStep.id) === "failed" ? "Analysis failed" : "Waiting to start..."}
                 </CardDescription>
               </CardHeader>
