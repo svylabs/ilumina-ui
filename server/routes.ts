@@ -105,7 +105,35 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
     
     try {
-      const { submissionId, runId, status, logUrl, summary } = req.body;
+      const { submissionId: rawId, runId, status, logUrl, summary } = req.body;
+      
+      // Find the actual UUID for this submission based on project ID or UUID
+      let actualSubmissionId: string | null = null;
+      
+      // First, check if this is a project ID
+      if (/^\d+$/.test(rawId)) {
+        // It's a number, probably a project ID
+        const projectSubmission = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.projectId, parseInt(rawId)))
+          .orderBy(submissions.createdAt, "desc")
+          .limit(1);
+        
+        if (projectSubmission.length > 0) {
+          actualSubmissionId = projectSubmission[0].id;
+        }
+      } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId)) {
+        // It's a UUID format, use it directly
+        actualSubmissionId = rawId;
+      }
+      
+      if (!actualSubmissionId) {
+        return res.status(404).json({
+          success: false,
+          message: "No submission found for the given ID"
+        });
+      }
       
       // Start transaction
       const result = await db.transaction(async (tx) => {
@@ -121,7 +149,7 @@ export function registerRoutes(app: Express): Server {
         const [simRun] = await tx.insert(simulationRuns)
           .values({
             userId: req.user.id,
-            submissionId,
+            submissionId: actualSubmissionId,
             runId,
             status,
             logUrl,
