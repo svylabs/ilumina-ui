@@ -385,84 +385,416 @@ export default function AnalysisPage() {
                               }
                               return (
                                 <div className="space-y-6">
-                                  <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Project Overview</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-900 p-4 rounded-md">
+                                  <div className="bg-gray-900 p-4 rounded-md">
+                                    <div className="flex justify-between items-start mb-4">
                                       <div>
-                                        <p className="text-gray-400">Project Name:</p>
-                                        <p className="text-white">{projectData.projectName}</p>
+                                        <h3 className="text-xl font-semibold text-blue-400">{projectData.projectName}</h3>
+                                        <p className="text-gray-300 mt-1">{projectData.projectSummary}</p>
                                       </div>
-                                      <div>
-                                        <p className="text-gray-400">Development Environment:</p>
-                                        <p className="text-white">{projectData.devEnvironment}</p>
-                                      </div>
-                                      <div className="md:col-span-2">
-                                        <p className="text-gray-400">Summary:</p>
-                                        <p className="text-white">{projectData.projectSummary}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-gray-400">Compiler Version:</p>
-                                        <p className="text-white">{projectData.compiler}</p>
+                                      <div className="bg-gray-800 px-3 py-2 rounded-md text-sm">
+                                        <div className="flex gap-2 items-center">
+                                          <span className="text-gray-400">Environment:</span>
+                                          <span className="text-green-400">{projectData.devEnvironment}</span>
+                                        </div>
+                                        <div className="flex gap-2 items-center mt-1">
+                                          <span className="text-gray-400">Compiler:</span>
+                                          <span className="text-cyan-300">v{projectData.compiler}</span>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Smart Contracts</h3>
-                                    <div className="space-y-4">
+                                  <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-green-400">Smart Contracts</h3>
+                                    <div className="space-y-3">
                                       {projectData.contracts.map((contract, index) => (
-                                        <div key={index} className="bg-gray-900 p-4 rounded-md">
-                                          <div className="flex items-center justify-between">
-                                            <h4 className="text-lg font-medium text-blue-400">{contract.name}</h4>
+                                        <div key={index} className="bg-gray-900 p-3 rounded-md">
+                                          <div className="flex justify-between items-start">
+                                            <h4 className="font-medium text-yellow-300">{contract.name}</h4>
                                           </div>
-                                          <p className="mt-1 text-white">{contract.summary}</p>
-                                          
-                                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                              <p className="text-gray-400">Interfaces:</p>
-                                              <div className="flex flex-wrap gap-2 mt-1">
-                                                {contract.interfaces.map((iface, i) => (
-                                                  <span key={i} className="px-2 py-1 bg-gray-800 text-green-300 rounded text-xs">
-                                                    {iface}
-                                                  </span>
-                                                ))}
+                                          <p className="text-sm text-gray-300 mt-1">{contract.summary}</p>
+                                          <div className="mt-3 flex flex-wrap gap-2">
+                                            {contract.interfaces && contract.interfaces.length > 0 && (
+                                              <div>
+                                                <span className="text-xs text-gray-400">Interfaces: </span>
+                                                <div className="inline-flex flex-wrap gap-1 ml-1">
+                                                  {contract.interfaces.map((iface, i) => (
+                                                    <span key={i} className="text-xs bg-blue-900 px-2 py-0.5 rounded-full text-blue-300">{iface}</span>
+                                                  ))}
+                                                </div>
                                               </div>
-                                            </div>
-                                            <div>
-                                              <p className="text-gray-400">Libraries:</p>
-                                              <div className="flex flex-col gap-1 mt-1">
-                                                {contract.libraries.map((lib, i) => (
-                                                  <span key={i} className="text-yellow-300 text-xs truncate">
-                                                    {lib}
-                                                  </span>
-                                                ))}
+                                            )}
+                                            {contract.libraries && contract.libraries.length > 0 && (
+                                              <div className="ml-3">
+                                                <span className="text-xs text-gray-400">Libraries: </span>
+                                                <div className="inline-flex flex-wrap gap-1 ml-1">
+                                                  {contract.libraries.map((lib, i) => (
+                                                    <span key={i} className="text-xs bg-purple-900 px-2 py-0.5 rounded-full text-purple-300">{lib}</span>
+                                                  ))}
+                                                </div>
                                               </div>
-                                            </div>
+                                            )}
                                           </div>
                                         </div>
                                       ))}
                                     </div>
                                   </div>
                                   
+                                  <div>
+                                    <h3 className="text-lg font-semibold text-green-400 mb-3">Dependencies</h3>
+                                    <div className="bg-gray-900 p-3 rounded-md">
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {Object.entries(projectData.dependencies).map(([name, version]) => (
+                                          <div key={name} className="flex justify-between text-sm">
+                                            <span className="text-blue-300">{name}</span>
+                                            <span className="text-gray-400">{version}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            } catch (e) {
+                              return (
+                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
+                                  {getStepDetails(currentStep.id) || currentStep.output || "No output available"}
+                                </pre>
+                              );
+                            }
+                          })()}
+                        </div>
+                      ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
+                        <div className="text-white font-mono">
+                          {(() => {
+                            try {
+                              // First try to use the jsonData field directly from the API
+                              const stepData = analysis?.steps[currentStep.id];
+                              
+                              // Fall back to parsing the details field if jsonData is not available
+                              let testSetupData;
+                              if (stepData?.jsonData) {
+                                testSetupData = stepData.jsonData;
+                              } else {
+                                const details = getStepDetails(currentStep.id);
+                                if (!details) return <p>No details available</p>;
+                                testSetupData = JSON.parse(details);
+                              }
+                              
+                              return (
+                                <div className="space-y-6">
                                   <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Dependencies</h3>
+                                    <h3 className="text-xl font-semibold text-green-400">Test Environment</h3>
                                     <div className="bg-gray-900 p-4 rounded-md">
-                                      <table className="w-full text-left">
+                                      <p className="text-gray-400 mb-1">Runtime:</p>
+                                      <p className="text-white">{testSetupData.testEnvironment}</p>
+                                      
+                                      <p className="text-gray-400 mt-3 mb-1">Network Settings:</p>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                          <p className="text-cyan-300">{testSetupData.networkSettings.name}</p>
+                                          <p className="text-white">Chain ID: {testSetupData.networkSettings.chainId}</p>
+                                          <p className="text-white">Gas Limit: {testSetupData.networkSettings.gasLimit}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-green-400">Test Accounts</h3>
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full bg-gray-900 rounded-md text-sm">
                                         <thead>
                                           <tr className="border-b border-gray-800">
-                                            <th className="py-2 text-gray-400">Package</th>
-                                            <th className="py-2 text-gray-400">Version</th>
+                                            <th className="py-2 px-3 text-left text-gray-400">Role</th>
+                                            <th className="py-2 px-3 text-left text-gray-400">Address</th>
+                                            <th className="py-2 px-3 text-left text-gray-400">Balance</th>
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          {Object.entries(projectData.dependencies).map(([pkg, version], i) => (
+                                          {testSetupData.networkSettings.accounts.map((account: any, i: number) => (
                                             <tr key={i} className="border-b border-gray-800">
-                                              <td className="py-2 text-cyan-300">{pkg}</td>
-                                              <td className="py-2 text-white">{version}</td>
+                                              <td className="py-2 px-3 text-yellow-300">{account.name}</td>
+                                              <td className="py-2 px-3 font-mono text-blue-300">{account.address}</td>
+                                              <td className="py-2 px-3 text-green-300">{account.balance}</td>
                                             </tr>
                                           ))}
                                         </tbody>
                                       </table>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-green-400">Test Cases</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      {testSetupData.testCases.map((testCase: any, i: number) => (
+                                        <div key={i} className="bg-gray-900 p-3 rounded-md">
+                                          <h4 className="text-blue-400 font-medium">{testCase.name}</h4>
+                                          <p className="text-gray-400 text-xs mt-1">{testCase.file}</p>
+                                          <p className="text-white text-sm mt-1">{testCase.description}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-green-400">Test Fixtures</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <h4 className="text-blue-400 text-base font-medium mb-2">Mock Tokens</h4>
+                                        <div className="space-y-2">
+                                          {testSetupData.fixtures.tokens.map((token: any, i: number) => (
+                                            <div key={i} className="bg-gray-800 p-2 rounded-md">
+                                              <div className="flex justify-between">
+                                                <span className="text-yellow-300">{token.name}</span>
+                                                <span className="text-cyan-300">{token.symbol}</span>
+                                              </div>
+                                              <div className="text-xs text-gray-300 mt-1">
+                                                <p>Decimals: {token.decimals}</p>
+                                                <p>Supply: {token.initialSupply}</p>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      
+                                      <div>
+                                        <h4 className="text-blue-400 text-base font-medium mb-2">Test Markets</h4>
+                                        <div className="space-y-2">
+                                          {testSetupData.fixtures.markets.map((market: any, i: number) => (
+                                            <div key={i} className="bg-gray-800 p-2 rounded-md">
+                                              <p className="text-white">{market.description}</p>
+                                              <div className="flex flex-wrap gap-1 mt-1">
+                                                {market.outcomes.map((outcome: string, j: number) => (
+                                                  <span key={j} className="px-2 py-0.5 bg-blue-900 text-blue-200 rounded-full text-xs">
+                                                    {outcome}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                              <p className="text-xs text-gray-300 mt-1">
+                                                Resolution: {market.resolutionStrategy}
+                                              </p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            } catch (e) {
+                              return (
+                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
+                                  {getStepDetails(currentStep.id) || currentStep.output || "No output available"}
+                                </pre>
+                              );
+                            }
+                          })()}
+                        </div>
+                      ) : currentStep.id === "simulations" && getStepStatus(currentStep.id) === "completed" ? (
+                        <div className="text-white font-mono">
+                          {(() => {
+                            try {
+                              // First try to use the jsonData field directly from the API
+                              const stepData = analysis?.steps[currentStep.id];
+                              
+                              // Fall back to parsing the details field if jsonData is not available
+                              let simulationData;
+                              if (stepData?.jsonData) {
+                                simulationData = stepData.jsonData;
+                              } else {
+                                const details = getStepDetails(currentStep.id);
+                                if (!details) return <p>No details available</p>;
+                                simulationData = JSON.parse(details);
+                              }
+                              
+                              return (
+                                <div className="space-y-6">
+                                  <div className="bg-gray-900 p-4 rounded-md">
+                                    <h3 className="text-xl font-semibold text-green-400 mb-4">Test Summary</h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <p className="text-gray-400 text-sm">Total Tests</p>
+                                        <p className="text-white text-xl font-bold">{simulationData.summary.totalTests}</p>
+                                      </div>
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <p className="text-gray-400 text-sm">Passed</p>
+                                        <p className="text-green-400 text-xl font-bold">{simulationData.summary.passed}</p>
+                                      </div>
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <p className="text-gray-400 text-sm">Failed</p>
+                                        <p className="text-red-400 text-xl font-bold">{simulationData.summary.failed}</p>
+                                      </div>
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <p className="text-gray-400 text-sm">Warnings</p>
+                                        <p className="text-yellow-400 text-xl font-bold">{simulationData.summary.warnings}</p>
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <p className="text-gray-400 text-sm">Duration</p>
+                                        <p className="text-white text-lg font-bold">{simulationData.summary.duration}</p>
+                                      </div>
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <p className="text-gray-400 text-sm">Coverage</p>
+                                        <p className="text-blue-400 text-lg font-bold">{simulationData.summary.coverage}</p>
+                                      </div>
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <p className="text-gray-400 text-sm">Security Score</p>
+                                        <div className="flex items-center">
+                                          <p className={`text-lg font-bold ${
+                                            simulationData.summary.securityScore > 85 ? 'text-green-400' : 
+                                            simulationData.summary.securityScore > 70 ? 'text-yellow-400' : 'text-red-400'
+                                          }`}>
+                                            {simulationData.summary.securityScore}
+                                          </p>
+                                          <p className="text-gray-400 text-sm ml-1">/100</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <h3 className="text-xl font-semibold text-green-400 mb-4">Test Results</h3>
+                                    <div className="space-y-4">
+                                      {simulationData.testResults.map((suite: any, suiteIndex: number) => (
+                                        <div key={suiteIndex} className={`border-l-4 ${
+                                          suite.status === 'passed' ? 'border-green-500' : 'border-red-500'
+                                        } bg-gray-900 rounded-r-md overflow-hidden`}>
+                                          <div className="p-3 flex justify-between items-center bg-gray-800">
+                                            <h4 className="font-medium text-white">{suite.name}</h4>
+                                            <span className={`text-xs px-2 py-1 rounded-full ${
+                                              suite.status === 'passed' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+                                            }`}>
+                                              {suite.status.toUpperCase()}
+                                            </span>
+                                          </div>
+                                          <div className="py-1">
+                                            {suite.tests.map((test: any, testIndex: number) => (
+                                              <div key={testIndex} className="border-b border-gray-800 px-3 py-2">
+                                                <div className="flex justify-between items-center">
+                                                  <span className="text-sm text-gray-200">{test.description}</span>
+                                                  <div className="flex items-center">
+                                                    {test.gas && (
+                                                      <span className="text-xs text-cyan-300 mr-2">Gas: {test.gas.toLocaleString()}</span>
+                                                    )}
+                                                    <span className={`flex-shrink-0 w-3 h-3 rounded-full ${
+                                                      test.status === 'passed' ? 'bg-green-400' : 'bg-red-400'
+                                                    }`}></span>
+                                                  </div>
+                                                </div>
+                                                {test.reason && (
+                                                  <p className="text-xs text-red-400 mt-1 pl-4 border-l-2 border-red-800">
+                                                    {test.reason}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <h3 className="text-xl font-semibold text-red-400 mb-4">Vulnerabilities</h3>
+                                    <div className="space-y-3">
+                                      {simulationData.vulnerabilities.map((vuln: any, vulnIndex: number) => (
+                                        <div key={vulnIndex} className="bg-gray-900 rounded-md p-3">
+                                          <div className="flex justify-between items-start">
+                                            <h4 className="font-medium text-white">{vuln.description}</h4>
+                                            <span className={`text-xs px-2 py-1 rounded-full ${
+                                              vuln.severity === 'high' ? 'bg-red-900 text-red-300' : 
+                                              vuln.severity === 'medium' ? 'bg-yellow-900 text-yellow-300' : 
+                                              'bg-blue-900 text-blue-300'
+                                            }`}>
+                                              {vuln.severity.toUpperCase()}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-gray-300 mt-2">{vuln.details}</p>
+                                          <div className="mt-2">
+                                            <span className="text-xs text-gray-400">Affected: </span>
+                                            <code className="text-xs text-cyan-300">{vuln.affected}</code>
+                                          </div>
+                                          <div className="mt-2 border-t border-gray-800 pt-2">
+                                            <span className="text-xs text-gray-400">Recommendation: </span>
+                                            <span className="text-xs text-green-300">{vuln.recommendation}</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <h3 className="text-xl font-semibold text-green-400 mb-4">Recommendations</h3>
+                                    <ul className="list-disc list-inside space-y-2 text-gray-200">
+                                      {simulationData.recommendations.map((rec: string, recIndex: number) => (
+                                        <li key={recIndex} className="text-sm">{rec}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              );
+                            } catch (e) {
+                              return (
+                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
+                                  {getStepDetails(currentStep.id) || currentStep.output || "No output available"}
+                                </pre>
+                              );
+                            }
+                          })()}
+                        </div>
+                      ) : currentStep.id === "actors" && getStepStatus(currentStep.id) === "completed" ? (
+                        <div className="text-white font-mono">
+                          {(() => {
+                            try {
+                              // First try to use the jsonData field directly from the API
+                              const stepData = analysis?.steps[currentStep.id];
+                              
+                              // Fall back to parsing the details field if jsonData is not available
+                              let actorsData;
+                              if (stepData?.jsonData) {
+                                actorsData = stepData.jsonData;
+                              } else {
+                                const details = getStepDetails(currentStep.id);
+                                if (!details) return <p>No details available</p>;
+                                actorsData = JSON.parse(details);
+                              }
+                              
+                              return (
+                                <div className="space-y-6">
+                                  <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-green-400">Market Participants</h3>
+                                    <div className="space-y-4">
+                                      {actorsData.actors.map((actor: any, index: number) => (
+                                        <div key={index} className="bg-gray-900 p-4 rounded-md">
+                                          <div className="flex items-center justify-between">
+                                            <h4 className="text-lg font-medium text-blue-400">{actor.name}</h4>
+                                          </div>
+                                          <p className="mt-1 text-white">{actor.summary}</p>
+                                          
+                                          <div className="mt-3">
+                                            <p className="text-gray-400 mb-2">Possible Actions:</p>
+                                            <div className="space-y-2">
+                                              {actor.actions.map((action: any, i: number) => (
+                                                <div key={i} className="bg-gray-800 p-3 rounded">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-yellow-300 font-medium">{action.name}</span>
+                                                    <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
+                                                      {action.contract_name}
+                                                    </span>
+                                                  </div>
+                                                  <p className="text-sm text-gray-300 mt-1">{action.summary}</p>
+                                                  <div className="mt-2 flex text-xs text-gray-400 space-x-4">
+                                                    <span>Function: <code className="text-cyan-300">{action.function_name}</code></span>
+                                                    <span>Probability: <span className="text-green-300">{action.probability * 100}%</span></span>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
                                     </div>
                                   </div>
                                 </div>

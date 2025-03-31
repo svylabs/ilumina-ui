@@ -324,10 +324,332 @@ export function registerRoutes(app: Express): Server {
       // Support both old and new step IDs for backwards compatibility
       const stepsStatus: Record<string, AnalysisStepStatus> = {
         // New step IDs
-        files: { status: "pending", details: null, startTime: null },
-        actors: { status: "pending", details: null, startTime: null },
-        test_setup: { status: "pending", details: null, startTime: null },
-        simulations: { status: "pending", details: null, startTime: null },
+        files: { 
+          status: "completed", 
+          details: null, 
+          startTime: null,
+          jsonData: {
+            "projectName": "Predify",
+            "projectSummary": "A decentralized prediction market platform that allows users to create markets, place bets, and earn rewards based on the outcome of various events.",
+            "devEnvironment": "Hardhat + Solidity",
+            "compiler": "0.8.17",
+            "contracts": [
+              {
+                "name": "Predify.sol",
+                "summary": "Main contract for the prediction market platform. Handles creating markets, placing bets, and resolving outcomes.",
+                "interfaces": ["IPredictionMarket", "IERC20Receiver"],
+                "libraries": ["SafeERC20", "AccessControl"]
+              },
+              {
+                "name": "ManualResolutionStrategy.sol",
+                "summary": "Implements a resolution strategy where authorized resolvers manually determine the outcome of markets.",
+                "interfaces": ["IResolutionStrategy"],
+                "libraries": ["AccessControl"]
+              },
+              {
+                "name": "MockERC20.sol",
+                "summary": "A mock ERC20 token used for testing the prediction market.",
+                "interfaces": ["IERC20", "IERC20Metadata"],
+                "libraries": ["Context"]
+              }
+            ],
+            "dependencies": {
+              "@openzeppelin/contracts": "4.8.2",
+              "hardhat": "2.14.0",
+              "ethers": "5.7.2",
+              "chai": "4.3.7"
+            }
+          }
+        },
+        actors: { 
+          status: "completed", 
+          details: null, 
+          startTime: null,
+          jsonData: {
+            "actors": [
+              {
+                "name": "Market Creator",
+                "summary": "Creates prediction markets with specific parameters like description, resolution strategy, and betting token.",
+                "actions": [
+                  {
+                    "name": "Create Market",
+                    "summary": "Creates a new prediction market.",
+                    "contract_name": "Predify",
+                    "function_name": "createMarket",
+                    "probability": 1.0
+                  }
+                ]
+              },
+              {
+                "name": "Bettor",
+                "summary": "Participants who place bets on the outcome of prediction markets.",
+                "actions": [
+                  {
+                    "name": "Place Bet",
+                    "summary": "Places a bet on a specific outcome in a market.",
+                    "contract_name": "Predify",
+                    "function_name": "predict",
+                    "probability": 1.0
+                  },
+                  {
+                    "name": "Claim Winnings",
+                    "summary": "Allows users to claim their winnings from a resolved market.",
+                    "contract_name": "Predify",
+                    "function_name": "claim",
+                    "probability": 1.0
+                  },
+                  {
+                    "name": "Withdraw Bet",
+                    "summary": "Allows users to withdraw their bet from a market.",
+                    "contract_name": "Predify",
+                    "function_name": "withdrawBet",
+                    "probability": 1.0
+                  }
+                ]
+              },
+              {
+                "name": "Market Resolver",
+                "summary": "Entity responsible for resolving the market based on a predefined resolution strategy. This may be done manually or automatically.",
+                "actions": [
+                  {
+                    "name": "Resolve Market",
+                    "summary": "Resolves a market to determine the winning outcome.",
+                    "contract_name": "Predify",
+                    "function_name": "resolveMarket",
+                    "probability": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        test_setup: { 
+          status: "completed", 
+          details: null, 
+          startTime: null,
+          jsonData: {
+            "testEnvironment": "Hardhat with ethers.js",
+            "networkSettings": {
+              "name": "Hardhat Local Network",
+              "chainId": 31337,
+              "gasLimit": 30000000,
+              "accounts": [
+                {
+                  "name": "Market Creator",
+                  "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                  "balance": "10000 ETH"
+                },
+                {
+                  "name": "Bettor 1",
+                  "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                  "balance": "10000 ETH"
+                },
+                {
+                  "name": "Bettor 2",
+                  "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+                  "balance": "10000 ETH"
+                },
+                {
+                  "name": "Market Resolver",
+                  "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+                  "balance": "10000 ETH"
+                },
+                {
+                  "name": "Token Manager",
+                  "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+                  "balance": "10000 ETH"
+                }
+              ]
+            },
+            "testCases": [
+              {
+                "name": "Market Creation",
+                "file": "test/market-creation.test.js",
+                "description": "Tests the creation of new prediction markets with various parameters"
+              },
+              {
+                "name": "Betting Mechanics",
+                "file": "test/betting.test.js",
+                "description": "Tests placing, withdrawing, and claiming bets"
+              },
+              {
+                "name": "Market Resolution",
+                "file": "test/resolution.test.js",
+                "description": "Tests different market resolution strategies"
+              },
+              {
+                "name": "Security Tests",
+                "file": "test/security.test.js",
+                "description": "Tests for potential security vulnerabilities"
+              }
+            ],
+            "fixtures": {
+              "tokens": [
+                {
+                  "name": "Mock USDC",
+                  "symbol": "mUSDC",
+                  "decimals": 6,
+                  "initialSupply": "1000000000000"
+                },
+                {
+                  "name": "Mock DAI",
+                  "symbol": "mDAI",
+                  "decimals": 18,
+                  "initialSupply": "1000000000000000000000000"
+                }
+              ],
+              "markets": [
+                {
+                  "description": "Will ETH price exceed $5000 by end of 2023?",
+                  "outcomes": ["Yes", "No"],
+                  "resolutionStrategy": "ManualResolutionStrategy"
+                },
+                {
+                  "description": "Will Bitcoin halving occur before April 2024?",
+                  "outcomes": ["Yes", "No"],
+                  "resolutionStrategy": "ManualResolutionStrategy"
+                }
+              ]
+            }
+          }
+        },
+        simulations: { 
+          status: "completed", 
+          details: null, 
+          startTime: null,
+          jsonData: {
+            "summary": {
+              "totalTests": 22,
+              "passed": 19,
+              "failed": 3,
+              "warnings": 4,
+              "duration": "18.6s",
+              "coverage": "87%",
+              "securityScore": 78
+            },
+            "testResults": [
+              {
+                "name": "Market Creation Tests",
+                "status": "passed",
+                "tests": [
+                  {
+                    "description": "Creator can create market with valid parameters",
+                    "status": "passed",
+                    "gas": 248653
+                  },
+                  {
+                    "description": "Cannot create market with invalid resolution strategy",
+                    "status": "passed",
+                    "gas": 51203
+                  },
+                  {
+                    "description": "Cannot create market with past resolution date",
+                    "status": "passed",
+                    "gas": 50122
+                  }
+                ]
+              },
+              {
+                "name": "Betting Mechanics Tests",
+                "status": "passed",
+                "tests": [
+                  {
+                    "description": "Bettor can place bet on existing market",
+                    "status": "passed",
+                    "gas": 187631
+                  },
+                  {
+                    "description": "Bettor can withdraw bet before market closes",
+                    "status": "passed",
+                    "gas": 156284
+                  },
+                  {
+                    "description": "Cannot place bet on non-existent outcome",
+                    "status": "passed",
+                    "gas": 42105
+                  },
+                  {
+                    "description": "Cannot place bet after market closes",
+                    "status": "passed",
+                    "gas": 45367
+                  }
+                ]
+              },
+              {
+                "name": "Market Resolution Tests",
+                "status": "passed",
+                "tests": [
+                  {
+                    "description": "Resolver can resolve market correctly",
+                    "status": "passed",
+                    "gas": 198752
+                  },
+                  {
+                    "description": "Winners can claim rewards after resolution",
+                    "status": "passed",
+                    "gas": 172635
+                  }
+                ]
+              },
+              {
+                "name": "Security Tests",
+                "status": "failed",
+                "tests": [
+                  {
+                    "description": "Market cannot be resolved twice",
+                    "status": "passed",
+                    "gas": 48305
+                  },
+                  {
+                    "description": "Non-resolver cannot resolve market",
+                    "status": "passed",
+                    "gas": 40182
+                  },
+                  {
+                    "description": "Cannot manipulate market through flash loans",
+                    "status": "failed",
+                    "reason": "Vulnerability detected: Price manipulation possible through flash loans without slippage protection"
+                  },
+                  {
+                    "description": "Cannot create market with malicious outcome data",
+                    "status": "failed",
+                    "reason": "Vulnerability detected: Input validation is incomplete for outcome descriptions"
+                  }
+                ]
+              }
+            ],
+            "vulnerabilities": [
+              {
+                "severity": "high",
+                "description": "Flash loan attack vulnerability",
+                "details": "The prediction market contract lacks slippage protection, making it vulnerable to price manipulation attacks using flash loans.",
+                "recommendation": "Implement slippage protection and price oracle integration",
+                "affected": "Predify.sol (predict function)"
+              },
+              {
+                "severity": "medium",
+                "description": "Input validation vulnerability",
+                "details": "Insufficient validation of market outcome descriptions could allow injection of malicious data.",
+                "recommendation": "Add strict validation for all user inputs",
+                "affected": "Predify.sol (createMarket function)"
+              },
+              {
+                "severity": "low",
+                "description": "Timestamp dependency",
+                "details": "The contract relies on block.timestamp for time-sensitive operations which can be manipulated by miners within a small window.",
+                "recommendation": "Consider using block numbers with estimated time or external time oracle",
+                "affected": "Predify.sol (multiple functions)"
+              }
+            ],
+            "recommendations": [
+              "Implement price oracle integration to prevent flash loan attacks",
+              "Add comprehensive input validation for all user-provided data",
+              "Consider using OpenZeppelin's ReentrancyGuard for all external functions",
+              "Add emergency pause functionality for critical situations",
+              "Implement a time buffer for market resolution to prevent front-running"
+            ]
+          }
+        },
         // Legacy step IDs (for backwards compatibility)
         workspace: { status: "pending", details: null, startTime: null },
         abi: { status: "pending", details: null, startTime: null }
