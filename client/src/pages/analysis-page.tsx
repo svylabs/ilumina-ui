@@ -523,8 +523,7 @@ export default function AnalysisPage() {
   const [selectedStep, setSelectedStep] = useState<string>("files");
   const [activeSubstep, setActiveSubstep] = useState<string>("");
   
-  // Create a ref for the content top
-  const contentTopRef = useRef<HTMLDivElement>(null);
+  // No content ref needed
 
   const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
@@ -550,32 +549,9 @@ export default function AnalysisPage() {
     // Code content is always visible now
   }, []);
 
-  // Add scroll functions
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
-  
-  // Function to scroll to content top ref
-  const scrollToContentTop = () => {
-    if (contentTopRef.current) {
-      contentTopRef.current.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      });
-    } else {
-      scrollToTop();
-    }
-  };
-
-  // Hook to watch for step changes
+  // No scroll effect needed
   useEffect(() => {
-    // Scroll to content top when step changes
-    if (selectedStep) {
-      scrollToContentTop();
-    }
+    // No scrolling when step changes
   }, [selectedStep]);
 
   useEffect(() => {
@@ -686,7 +662,6 @@ export default function AnalysisPage() {
               onClick={(e) => {
                 e.preventDefault();
                 setSelectedStep(step.id);
-                scrollToContentTop(); // Scroll to the content area immediately
               }}
               className={`flex items-center px-4 py-2 cursor-pointer border-b-2 ${
                 selectedStep === step.id 
@@ -712,7 +687,7 @@ export default function AnalysisPage() {
           ))}
         </div>
 
-        <div ref={contentTopRef} className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Main content with output */}
           <div className="w-full">
             <Card className="h-full">
@@ -1012,8 +987,7 @@ export default function AnalysisPage() {
                                           onClick={(e) => {
                                             e.preventDefault();
                                             setActiveSubstep(substep.id);
-                                            // Make sure we stay at the top of the content
-                                            scrollToTop();
+                                            // No explicit scrolling needed
                                           }}
                                           className={`px-3 py-2 text-sm font-medium border-b-2 ${
                                             activeSubstep === substep.id 
