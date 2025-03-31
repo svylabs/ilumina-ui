@@ -552,30 +552,33 @@ export default function AnalysisPage() {
                                     </div>
                                   )}
 
-                                  {/* Code Viewer and Chat Interface */}
-                                  <div className="mt-8 space-y-6">
-                                    <h3 className="text-xl font-semibold text-blue-400">Test Environment Editor</h3>
-                                    
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                      {/* GitHub Code Viewer */}
-                                      <div className="h-[450px] bg-gray-900 rounded-md overflow-hidden">
-                                        <div className="text-lg font-medium text-white p-3 bg-gray-800 border-b border-gray-700">
-                                          Contract Repository
-                                        </div>
-                                        <div className="h-[calc(450px-48px)]">
-                                          {/* Dynamically get repository from submission */}
-                                          <GitHubCodeViewer 
-                                            owner="ethereum"
-                                            repo="solidity"
-                                            branch="develop"
-                                            path="docs/examples"
-                                            showBreadcrumb={true}
-                                          />
+                                  {/* Chat Interface - Outside of the output block */}
+                                  <div className="mt-8 mb-8">
+                                    <div className="bg-gray-900 rounded-md overflow-hidden">
+                                      {/* Collapsible Chat Header */}
+                                      <div className="flex items-center justify-between bg-gray-800 px-4 py-2 cursor-pointer"
+                                        onClick={() => {
+                                          // Toggle chat visibility
+                                          const chatBody = document.getElementById('test-environment-chat-body');
+                                          if (chatBody) {
+                                            const isHidden = chatBody.classList.contains('hidden');
+                                            if (isHidden) {
+                                              chatBody.classList.remove('hidden');
+                                            } else {
+                                              chatBody.classList.add('hidden');
+                                            }
+                                          }
+                                        }}>
+                                        <h3 className="text-xl font-semibold text-blue-400">AI Assistant for Code Modification</h3>
+                                        <div className="p-1 rounded-full hover:bg-gray-700">
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                          </svg>
                                         </div>
                                       </div>
                                       
-                                      {/* Test Environment Chat */}
-                                      <div className="h-[450px] bg-gray-900 rounded-md overflow-hidden">
+                                      {/* Chat Body - Initially Visible */}
+                                      <div id="test-environment-chat-body" className="h-[300px]">
                                         <TestEnvironmentChat 
                                           submissionId={id || ""}
                                           projectName={testSetupData.projectName || "Smart Contract Project"}
@@ -591,6 +594,26 @@ export default function AnalysisPage() {
                                               timestamp: new Date()
                                             }
                                           ]}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Code Repository Viewer */}
+                                  <div className="mt-6">
+                                    <h3 className="text-xl font-semibold text-blue-400 mb-4">Code Repository</h3>
+                                    <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
+                                      <div className="text-lg font-medium text-white p-3 bg-gray-800 border-b border-gray-700">
+                                        Contract Source Files
+                                      </div>
+                                      <div className="h-[calc(500px-48px)]">
+                                        {/* Dynamically get repository from submission */}
+                                        <GitHubCodeViewer 
+                                          owner="ethereum"
+                                          repo="solidity"
+                                          branch="develop"
+                                          path="docs/examples"
+                                          showBreadcrumb={true}
                                         />
                                       </div>
                                     </div>
