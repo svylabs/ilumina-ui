@@ -84,8 +84,8 @@ Security Analysis:
   },
   {
     id: "test_setup",
-    title: "Setup Test Environment",
-    description: "Configuring test workspace with simulation library",
+    title: "Test Environment",
+    description: "Configuring and implementing the simulation environment",
     status: "pending",
     output: `// Test Environment Setup
 Setting up Hardhat environment...
@@ -499,6 +499,116 @@ export default function AnalysisPage() {
                                       </div>
                                     </div>
                                   </div>
+                                  
+                                  {/* Substeps Section */}
+                                  {testSetupData.substeps && (
+                                    <div className="space-y-4">
+                                      <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
+                                      
+                                      {/* Substep Navigation Tabs */}
+                                      <div className="flex space-x-2 border-b border-gray-800">
+                                        {testSetupData.substeps.map((substep: any) => (
+                                          <button
+                                            key={substep.id}
+                                            onClick={() => {
+                                              const element = document.getElementById(`substep-${substep.id}`);
+                                              if (element) {
+                                                element.scrollIntoView({ behavior: 'smooth' });
+                                              }
+                                            }}
+                                            className="px-4 py-2 text-sm rounded-t-md hover:bg-gray-800 focus:outline-none"
+                                          >
+                                            {substep.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Substep Content */}
+                                      <div className="space-y-6">
+                                        {testSetupData.substeps.map((substep: any) => (
+                                          <div id={`substep-${substep.id}`} key={substep.id} className="bg-gray-900 p-4 rounded-md">
+                                            <div className="flex items-center justify-between mb-3">
+                                              <h4 className="text-lg font-medium text-yellow-300">{substep.name}</h4>
+                                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                                substep.status === 'completed' ? 'bg-green-900 text-green-300' : 
+                                                substep.status === 'in_progress' ? 'bg-blue-900 text-blue-300' : 
+                                                'bg-gray-800 text-gray-300'
+                                              }`}>
+                                                {substep.status.charAt(0).toUpperCase() + substep.status.slice(1)}
+                                              </span>
+                                            </div>
+                                            <p className="text-gray-300 mb-3">{substep.description}</p>
+                                            
+                                            {substep.output && (
+                                              <div className="mt-2 bg-black/60 p-3 rounded-md overflow-auto max-h-[300px]">
+                                                <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+
+                                        {/* Chat Interface Preview */}
+                                        <div className="bg-gray-900 p-4 rounded-md mt-6">
+                                          <h4 className="text-lg font-medium text-blue-400 mb-3">Chat Interface</h4>
+                                          
+                                          <div className="bg-black/60 p-4 rounded-md space-y-4 max-h-[300px] overflow-auto">
+                                            <div className="flex items-start">
+                                              <div className="bg-blue-900/50 p-2 rounded-lg max-w-[80%]">
+                                                <p className="text-sm text-blue-200">How would you like to modify the test environment?</p>
+                                              </div>
+                                            </div>
+                                            
+                                            <div className="flex items-start justify-end">
+                                              <div className="bg-gray-800 p-2 rounded-lg max-w-[80%]">
+                                                <p className="text-sm text-gray-200">Add a new test case for flash loan attack simulation</p>
+                                              </div>
+                                            </div>
+                                            
+                                            <div className="flex items-start">
+                                              <div className="bg-blue-900/50 p-2 rounded-lg max-w-[80%]">
+                                                <p className="text-sm text-blue-200">I've created a new test case for flash loan attack simulation. Here's the implementation:</p>
+                                                <pre className="text-xs text-blue-300 mt-2 overflow-auto">
+{`describe("Flash Loan Attack", function() {
+  it("should verify contract behavior under flash loan conditions", async function() {
+    // Arrange: Setup flash loan provider and attacker
+    const attackerContract = await deployAttackerContract();
+    
+    // Act: Execute flash loan attack
+    await attackerContract.executeAttack();
+    
+    // Assert: Verify contract is resilient against the attack
+    expect(await contract.isSecure()).to.be.true;
+  });
+});`}
+                                                </pre>
+                                              </div>
+                                            </div>
+                                            
+                                            <div className="flex items-start justify-end">
+                                              <div className="bg-gray-800 p-2 rounded-lg max-w-[80%]">
+                                                <p className="text-sm text-gray-200">Can you add a price manipulation check to this test case?</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          
+                                          <div className="mt-4 flex">
+                                            <input
+                                              type="text"
+                                              placeholder="Type your instructions here..."
+                                              className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-md text-sm border border-gray-700 focus:outline-none focus:border-blue-500"
+                                              disabled
+                                            />
+                                            <button
+                                              className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm disabled:opacity-50"
+                                              disabled
+                                            >
+                                              Send
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                   
                                   <div className="space-y-2">
                                     <h3 className="text-xl font-semibold text-green-400">Test Accounts</h3>
