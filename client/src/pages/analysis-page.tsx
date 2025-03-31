@@ -361,7 +361,7 @@ export default function AnalysisPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[500px] overflow-auto rounded-md bg-black/90 p-4">
+                <div className="rounded-md bg-black/90 p-4">
                   {getStepStatus(currentStep.id) === "in_progress" ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -578,7 +578,7 @@ export default function AnalysisPage() {
                                       
                                       {/* Console Output Section */}
                                       <div id="console-content" className="test-env-content">
-                                        <div className="h-[350px] overflow-auto p-3 font-mono text-sm">
+                                        <div className="p-3 font-mono text-sm">
                                           <div className="text-green-400">
                                             <p>// Test Environment Setup</p>
                                             <p>$ npm install hardhat @nomiclabs/hardhat-ethers ethers</p>
@@ -605,7 +605,7 @@ export default function AnalysisPage() {
                                       
                                       {/* Chat Bot Interface */}
                                       <div id="chat-content" className="test-env-content hidden">
-                                        <div className="h-[350px]">
+                                        <div>
                                           <TestEnvironmentChat 
                                             submissionId={id || ""}
                                             projectName={testSetupData.projectName || "Smart Contract Project"}
@@ -627,7 +627,7 @@ export default function AnalysisPage() {
                                       
                                       {/* Code Hierarchy */}
                                       <div id="code-content" className="test-env-content hidden">
-                                        <div className="h-[350px]">
+                                        <div>
                                           {/* Dynamically get repository from submission */}
                                           <GitHubCodeViewer 
                                             owner="ethereum"
@@ -681,7 +681,7 @@ export default function AnalysisPage() {
                                             <p className="text-gray-300 mb-3">{substep.description}</p>
                                             
                                             {substep.output && (
-                                              <div className="mt-2 bg-black/60 p-3 rounded-md overflow-auto max-h-[300px]">
+                                              <div className="mt-2 bg-black/60 p-3 rounded-md">
                                                 <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
                                               </div>
                                             )}
@@ -766,7 +766,7 @@ export default function AnalysisPage() {
                                       
                                       {/* Console Output Section */}
                                       <div id="console-content" className="test-env-content">
-                                        <div className="h-[400px] overflow-auto p-3 font-mono text-sm">
+                                        <div className="p-3 font-mono text-sm">
                                           <div className="text-green-400">
                                             <p>// Test Environment Setup</p>
                                             <p>$ npm install hardhat @nomiclabs/hardhat-ethers ethers</p>
@@ -793,7 +793,7 @@ export default function AnalysisPage() {
                                       
                                       {/* Chat Bot Interface */}
                                       <div id="chat-content" className="test-env-content hidden">
-                                        <div className="h-[400px]">
+                                        <div>
                                           <TestEnvironmentChat 
                                             submissionId={id || ""}
                                             projectName={testSetupData.projectName || "Smart Contract Project"}
@@ -815,7 +815,7 @@ export default function AnalysisPage() {
                                       
                                       {/* Code Hierarchy */}
                                       <div id="code-content" className="test-env-content hidden">
-                                        <div className="h-[400px]">
+                                        <div>
                                           {/* Dynamically get repository from submission */}
                                           <GitHubCodeViewer 
                                             owner="ethereum"
