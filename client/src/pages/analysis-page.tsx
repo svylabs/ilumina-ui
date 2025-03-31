@@ -702,7 +702,12 @@ export default function AnalysisPage() {
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>{currentStep.id === "files" ? "Project Summary" : `${currentStep.title} Output`}</span>
+                  <span>
+                    {currentStep.id === "files" ? "Project Summary" : 
+                     currentStep.id === "actors" ? "Actor Summary" :
+                     currentStep.id === "test_setup" ? "Simulation Setup" :
+                     "Simulation Results"}
+                  </span>
                   {currentStep.link && getStepStatus(currentStep.id) === "completed" && (
                     <Button
                       variant="outline"
