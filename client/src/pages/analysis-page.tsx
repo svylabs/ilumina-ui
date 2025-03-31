@@ -880,8 +880,53 @@ export default function AnalysisPage() {
                               return (
                                 <div className="space-y-6">
 
+                                  {/* Implementation Steps Section */}
+                                  <div className="space-y-4" id="implementation-steps">
+                                    <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
+                                    
+                                    {/* Substep Navigation Tabs */}
+                                    <div className="flex space-x-2 border-b border-gray-800">
+                                      {enhancedTestSetupData.substeps.map((substep: any) => (
+                                        <button
+                                          key={substep.id}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            setActiveSubstep(substep.id);
+                                          }}
+                                          className={`px-3 py-2 text-sm font-medium border-b-2 ${
+                                            activeSubstep === substep.id 
+                                              ? 'border-blue-400 text-blue-400' 
+                                              : 'border-transparent text-gray-400 hover:text-gray-300'
+                                          }`}
+                                        >
+                                          {substep.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    
+                                    {/* Substep Content */}
+                                    <div className="space-y-6">
+                                      {enhancedTestSetupData.substeps.map((substep: any) => (
+                                        <div 
+                                          key={substep.id} 
+                                          className={activeSubstep === substep.id ? 'block' : 'hidden'}
+                                        >
+                                          <div className="mb-4">
+                                            <p className="text-gray-300">{substep.description}</p>
+                                          </div>
+                                          
+                                          {substep.output && (
+                                            <div className="mt-2 bg-black/60 p-3 rounded-md">
+                                              <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
                                   {/* Test Environment with file viewer and AI assistant */}
-                                  <div className="mb-8">
+                                  <div className="mt-8 mb-8">
                                     <h3 className="text-xl font-semibold text-blue-400 mb-2">Test Environment</h3>
                                     
                                     {/* Main container with code files and AI assistant */}
@@ -973,51 +1018,6 @@ export default function AnalysisPage() {
                                           })()}
                                         </div>
                                       </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Implementation Steps Section */}
-                                  <div className="space-y-4 mt-8" id="implementation-steps">
-                                    <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
-                                    
-                                    {/* Substep Navigation Tabs */}
-                                    <div className="flex space-x-2 border-b border-gray-800">
-                                      {enhancedTestSetupData.substeps.map((substep: any) => (
-                                        <button
-                                          key={substep.id}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            setActiveSubstep(substep.id);
-                                          }}
-                                          className={`px-3 py-2 text-sm font-medium border-b-2 ${
-                                            activeSubstep === substep.id 
-                                              ? 'border-blue-400 text-blue-400' 
-                                              : 'border-transparent text-gray-400 hover:text-gray-300'
-                                          }`}
-                                        >
-                                          {substep.name}
-                                        </button>
-                                      ))}
-                                    </div>
-                                    
-                                    {/* Substep Content */}
-                                    <div className="space-y-6">
-                                      {enhancedTestSetupData.substeps.map((substep: any) => (
-                                        <div 
-                                          key={substep.id} 
-                                          className={activeSubstep === substep.id ? 'block' : 'hidden'}
-                                        >
-                                          <div className="mb-4">
-                                            <p className="text-gray-300">{substep.description}</p>
-                                          </div>
-                                          
-                                          {substep.output && (
-                                            <div className="mt-2 bg-black/60 p-3 rounded-md">
-                                              <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
                                     </div>
                                   </div>
                                 </div>
