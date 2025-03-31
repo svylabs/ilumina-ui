@@ -9,6 +9,7 @@ import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 // Simulation run type definition
 type SimulationRun = {
@@ -875,46 +876,25 @@ export default function AnalysisPage() {
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-2">
                                       {/* Top row with tabs for main sections */}
                                       <div className="flex border-b border-gray-800 mb-2">
-                                        <div id="chat-tab" 
-                                          className="px-4 py-2 text-blue-400 font-medium cursor-pointer border-b-2 border-blue-400"
-                                          onClick={() => {
-                                            document.getElementById('console-content')?.classList.add('hidden');
-                                            document.getElementById('chat-content')?.classList.remove('hidden');
-                                            document.getElementById('code-content')?.classList.add('hidden');
-                                            document.getElementById('console-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('console-tab')?.classList.add('border-transparent', 'text-gray-400');
-                                            document.getElementById('chat-tab')?.classList.add('border-blue-400', 'text-blue-400');
-                                            document.getElementById('chat-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                            document.getElementById('code-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
-                                          }}>
-                                          AI Assistant
-                                        </div>
                                         <div id="console-tab" 
                                           className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
                                           onClick={() => {
                                             document.getElementById('console-content')?.classList.remove('hidden');
-                                            document.getElementById('chat-content')?.classList.add('hidden');
                                             document.getElementById('code-content')?.classList.add('hidden');
                                             document.getElementById('console-tab')?.classList.add('border-blue-400', 'text-blue-400');
                                             document.getElementById('console-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                            document.getElementById('chat-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('chat-tab')?.classList.add('border-transparent', 'text-gray-400');
                                             document.getElementById('code-tab')?.classList.remove('border-blue-400', 'text-blue-400');
                                             document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
                                           }}>
                                           Console Output
                                         </div>
                                         <div id="code-tab" 
-                                          className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
+                                          className="px-4 py-2 text-blue-400 font-medium cursor-pointer border-b-2 border-blue-400"
                                           onClick={() => {
                                             document.getElementById('console-content')?.classList.add('hidden');
-                                            document.getElementById('chat-content')?.classList.add('hidden');
                                             document.getElementById('code-content')?.classList.remove('hidden');
                                             document.getElementById('console-tab')?.classList.remove('border-blue-400', 'text-blue-400');
                                             document.getElementById('console-tab')?.classList.add('border-transparent', 'text-gray-400');
-                                            document.getElementById('chat-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('chat-tab')?.classList.add('border-transparent', 'text-gray-400');
                                             document.getElementById('code-tab')?.classList.add('border-blue-400', 'text-blue-400');
                                             document.getElementById('code-tab')?.classList.remove('border-transparent', 'text-gray-400');
                                           }}>
@@ -957,28 +937,7 @@ export default function AnalysisPage() {
                                           </div>
                                         </div>
                                       </div>
-                                      
-                                      {/* Chat Bot Interface - Made it the default visible tab */}
-                                      <div id="chat-content" className="test-env-content">
-                                        <div>
-                                          <TestEnvironmentChat 
-                                            submissionId={id || ""}
-                                            projectName={enhancedTestSetupData.projectName || "Smart Contract Project"}
-                                            onCodeUpdate={(code: string, path?: string) => {
-                                              console.log("Code update requested:", { code, path });
-                                              // Here you would implement the code update logic
-                                            }}
-                                            initialMessages={[
-                                              {
-                                                id: "welcome",
-                                                role: "assistant",
-                                                content: "Welcome to the Test Environment Editor. How would you like to modify the test environment?",
-                                                timestamp: new Date()
-                                              }
-                                            ]}
-                                          />
-                                        </div>
-                                      </div>
+
                                       
                                       {/* Console Output Section */}
                                       <div id="console-content" className="test-env-content hidden">
@@ -1009,15 +968,67 @@ export default function AnalysisPage() {
                                       
                                       {/* Code Hierarchy */}
                                       <div id="code-content" className="test-env-content hidden">
-                                        <div>
-                                          {/* Dynamically get repository from submission */}
-                                          <GitHubCodeViewer 
-                                            owner="ethereum"
-                                            repo="solidity"
-                                            branch="develop"
-                                            path="docs/examples"
-                                            showBreadcrumb={true}
-                                          />
+                                        <div className="flex flex-col md:flex-row gap-4">
+                                          {/* Main code viewer */}
+                                          <div className="flex-1">
+                                            {/* Dynamically get repository from submission */}
+                                            <GitHubCodeViewer 
+                                              owner="ethereum"
+                                              repo="solidity"
+                                              branch="develop"
+                                              path="docs/examples"
+                                              showBreadcrumb={true}
+                                            />
+                                          </div>
+                                          
+                                          {/* AI Assistant for Pro and Teams plans only */}
+                                          {(() => {
+                                            // Get the current user from auth context
+                                            const { user } = useAuth();
+                                            
+                                            // Only render the assistant for pro and teams plans
+                                            if (user && (user.plan === "pro" || user.plan === "teams")) {
+                                              return (
+                                                <div className="md:w-1/3 min-w-[300px] bg-gray-800 rounded-lg p-2">
+                                                  <div className="mb-2 p-2 bg-blue-500/10 rounded flex items-center">
+                                                    <span className="text-blue-400 font-semibold">AI Assistant</span>
+                                                    <Badge className="ml-2 bg-blue-500 text-xs" variant="default">
+                                                      {user.plan === "pro" ? "Pro" : "Teams"}
+                                                    </Badge>
+                                                  </div>
+                                                  <TestEnvironmentChat 
+                                                    submissionId={id || ""}
+                                                    projectName={enhancedTestSetupData.projectName || "Smart Contract Project"}
+                                                    onCodeUpdate={(code: string, path?: string) => {
+                                                      console.log("Code update requested:", { code, path });
+                                                      // Here you would implement the code update logic
+                                                    }}
+                                                    initialMessages={[
+                                                      {
+                                                        id: "welcome",
+                                                        role: "assistant",
+                                                        content: "Welcome to the AI Code Assistant. I can help you understand and modify the code. What questions do you have?",
+                                                        timestamp: new Date()
+                                                      }
+                                                    ]}
+                                                  />
+                                                </div>
+                                              );
+                                            }
+                                            
+                                            // For free plan users, show upgrade prompt
+                                            return (
+                                              <div className="md:w-1/3 min-w-[300px] bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center">
+                                                <h3 className="text-white font-semibold mb-2">AI Assistant</h3>
+                                                <p className="text-gray-400 text-sm text-center mb-4">
+                                                  Upgrade to Pro or Teams plan to access the AI Assistant and get help with your smart contracts.
+                                                </p>
+                                                <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
+                                                  Upgrade Plan
+                                                </Button>
+                                              </div>
+                                            );
+                                          })()}
                                         </div>
                                       </div>
                                     </div>
