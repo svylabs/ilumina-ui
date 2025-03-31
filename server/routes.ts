@@ -12,6 +12,7 @@ type AnalysisStepStatus = {
   status: "pending" | "in_progress" | "completed" | "failed";
   details: string | null;
   startTime: string | null;
+  jsonData?: any; // Add support for JSON data
 };
 
 export function registerRoutes(app: Express): Server {
@@ -337,7 +338,8 @@ export function registerRoutes(app: Express): Server {
           stepsStatus[step.stepId] = {
             status: step.status,
             details: step.details,
-            startTime: step.status === 'in_progress' ? step.createdAt.toISOString() : null
+            startTime: step.status === 'in_progress' ? step.createdAt.toISOString() : null,
+            jsonData: step.json_data // Include the JSON data if available
           };
         }
       });

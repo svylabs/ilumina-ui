@@ -24,6 +24,7 @@ type AnalysisStepStatus = {
   status: StepStatus;
   details: string | null;
   startTime: string | null;
+  jsonData?: any; // Match server-side type definition
 };
 
 type AnalysisResponse = {
@@ -338,7 +339,7 @@ export default function AnalysisPage() {
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>{currentStep.title} Output</span>
+                  <span>{currentStep.id === "files" ? "Project Summary" : `${currentStep.title} Output`}</span>
                   {currentStep.link && getStepStatus(currentStep.id) === "completed" && (
                     <Button
                       variant="outline"
@@ -370,10 +371,18 @@ export default function AnalysisPage() {
                         <div className="text-white font-mono">
                           {(() => {
                             try {
-                              const details = getStepDetails(currentStep.id);
-                              if (!details) return <p>No details available</p>;
+                              // First try to use the jsonData field directly from the API
+                              const stepData = analysis?.steps[currentStep.id];
                               
-                              const projectData = JSON.parse(details);
+                              // Fall back to parsing the details field if jsonData is not available
+                              let projectData;
+                              if (stepData?.jsonData) {
+                                projectData = stepData.jsonData;
+                              } else {
+                                const details = getStepDetails(currentStep.id);
+                                if (!details) return <p>No details available</p>;
+                                projectData = JSON.parse(details);
+                              }
                               return (
                                 <div className="space-y-6">
                                   <div className="space-y-2">
