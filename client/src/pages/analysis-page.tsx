@@ -552,69 +552,101 @@ export default function AnalysisPage() {
                                     </div>
                                   )}
 
-                                  {/* Chat Interface - Outside of the output block */}
-                                  <div className="mt-8 mb-8">
-                                    <div className="bg-gray-900 rounded-md overflow-hidden">
-                                      {/* Collapsible Chat Header */}
-                                      <div className="flex items-center justify-between bg-gray-800 px-4 py-2 cursor-pointer"
-                                        onClick={() => {
-                                          // Toggle chat visibility
-                                          const chatBody = document.getElementById('test-environment-chat-body');
-                                          if (chatBody) {
-                                            const isHidden = chatBody.classList.contains('hidden');
-                                            if (isHidden) {
-                                              chatBody.classList.remove('hidden');
-                                            } else {
-                                              chatBody.classList.add('hidden');
-                                            }
-                                          }
-                                        }}>
-                                        <h3 className="text-xl font-semibold text-blue-400">AI Assistant for Code Modification</h3>
-                                        <div className="p-1 rounded-full hover:bg-gray-700">
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                          </svg>
+                                  {/* Test Environment with 3 sections in a grid layout */}
+                                  <div className="mt-8">
+                                    <h3 className="text-xl font-semibold text-blue-400 mb-4">Test Environment</h3>
+                                    
+                                    {/* Three-section grid layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      
+                                      {/* Section 1: Console Output */}
+                                      <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
+                                        <div className="text-lg font-medium text-white p-2 bg-gray-800 border-b border-gray-700">
+                                          Console Output
+                                        </div>
+                                        <div className="h-[calc(500px-40px)] overflow-auto p-3 font-mono text-sm">
+                                          <div className="text-green-400">
+                                            <p>// Test Environment Setup</p>
+                                            <p>$ npm install hardhat @nomiclabs/hardhat-ethers ethers</p>
+                                            <p className="text-cyan-300">+ @nomiclabs/hardhat-ethers@2.2.3</p>
+                                            <p className="text-cyan-300">+ ethers@5.7.2</p>
+                                            <p className="text-cyan-300">+ hardhat@2.14.0</p>
+                                            <p>// Creating Hardhat project</p>
+                                            <p>$ npx hardhat init</p>
+                                            <br />
+                                            <p className="text-yellow-300">✓ Project initialized</p>
+                                            <p className="text-yellow-300">✓ Contract files imported</p>
+                                            <p className="text-yellow-300">✓ Test accounts generated</p>
+                                            <br />
+                                            <p>// Setting up test environment</p>
+                                            <p className="text-green-300">✓ Compiling contracts</p>
+                                            <p className="text-green-300">✓ Deploying mock tokens</p>
+                                            <p className="text-green-300">✓ Setting up market fixtures</p>
+                                            <br />
+                                            <p className="text-blue-300">Environment ready for testing</p>
+                                            <p className="text-blue-300">Use the chat interface to modify tests or contract implementations</p>
+                                          </div>
                                         </div>
                                       </div>
                                       
-                                      {/* Chat Body - Initially Visible */}
-                                      <div id="test-environment-chat-body" className="h-[300px]">
-                                        <TestEnvironmentChat 
-                                          submissionId={id || ""}
-                                          projectName={testSetupData.projectName || "Smart Contract Project"}
-                                          onCodeUpdate={(code: string, path?: string) => {
-                                            console.log("Code update requested:", { code, path });
-                                            // Here you would implement the code update logic
-                                          }}
-                                          initialMessages={[
-                                            {
-                                              id: "welcome",
-                                              role: "assistant",
-                                              content: "Welcome to the Test Environment Editor. How would you like to modify the test environment?",
-                                              timestamp: new Date()
+                                      {/* Section 2: Chat Bot Interface */}
+                                      <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
+                                        <div className="flex items-center justify-between text-lg font-medium text-white p-2 bg-gray-800 border-b border-gray-700 cursor-pointer"
+                                          onClick={() => {
+                                            // Toggle chat visibility
+                                            const chatBody = document.getElementById('test-environment-chat-body');
+                                            if (chatBody) {
+                                              const isHidden = chatBody.classList.contains('hidden');
+                                              if (isHidden) {
+                                                chatBody.classList.remove('hidden');
+                                              } else {
+                                                chatBody.classList.add('hidden');
+                                              }
                                             }
-                                          ]}
-                                        />
+                                          }}>
+                                          <span>AI Assistant</span>
+                                          <div className="p-1 rounded-full hover:bg-gray-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                        
+                                        <div id="test-environment-chat-body" className="h-[calc(500px-40px)]">
+                                          <TestEnvironmentChat 
+                                            submissionId={id || ""}
+                                            projectName={testSetupData.projectName || "Smart Contract Project"}
+                                            onCodeUpdate={(code: string, path?: string) => {
+                                              console.log("Code update requested:", { code, path });
+                                              // Here you would implement the code update logic
+                                            }}
+                                            initialMessages={[
+                                              {
+                                                id: "welcome",
+                                                role: "assistant",
+                                                content: "Welcome to the Test Environment Editor. How would you like to modify the test environment?",
+                                                timestamp: new Date()
+                                              }
+                                            ]}
+                                          />
+                                        </div>
                                       </div>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Code Repository Viewer */}
-                                  <div className="mt-6">
-                                    <h3 className="text-xl font-semibold text-blue-400 mb-4">Code Repository</h3>
-                                    <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
-                                      <div className="text-lg font-medium text-white p-3 bg-gray-800 border-b border-gray-700">
-                                        Contract Source Files
-                                      </div>
-                                      <div className="h-[calc(500px-48px)]">
-                                        {/* Dynamically get repository from submission */}
-                                        <GitHubCodeViewer 
-                                          owner="ethereum"
-                                          repo="solidity"
-                                          branch="develop"
-                                          path="docs/examples"
-                                          showBreadcrumb={true}
-                                        />
+                                      
+                                      {/* Section 3: Code Hierarchy */}
+                                      <div className="h-[500px] bg-gray-900 rounded-md overflow-hidden">
+                                        <div className="text-lg font-medium text-white p-2 bg-gray-800 border-b border-gray-700">
+                                          Code Files
+                                        </div>
+                                        <div className="h-[calc(500px-40px)]">
+                                          {/* Dynamically get repository from submission */}
+                                          <GitHubCodeViewer 
+                                            owner="ethereum"
+                                            repo="solidity"
+                                            branch="develop"
+                                            path="docs/examples"
+                                            showBreadcrumb={true}
+                                          />
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
