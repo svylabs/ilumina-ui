@@ -697,25 +697,28 @@ export default function AnalysisPage() {
                                     
                                     {/* Main container with three sections */}
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-2">
+                                      {/* Network info panel */}
+                                      <div className="bg-gray-900 p-3 rounded-md mb-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                          <div>
+                                            <span className="text-gray-400">Runtime:</span>
+                                            <p className="text-white">{testSetupData.testEnvironment}</p>
+                                          </div>
+                                          <div>
+                                            <span className="text-gray-400">Network:</span>
+                                            <p className="text-cyan-300">{testSetupData.networkSettings.name}</p>
+                                          </div>
+                                          <div>
+                                            <span className="text-gray-400">Chain ID:</span>
+                                            <p className="text-white">{testSetupData.networkSettings.chainId}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    
                                       {/* Top row with tabs for main sections */}
                                       <div className="flex border-b border-gray-800 mb-2">
-                                        <div id="console-tab" 
-                                          className="px-4 py-2 text-blue-400 font-medium cursor-pointer border-b-2 border-blue-400"
-                                          onClick={() => {
-                                            document.getElementById('console-content')?.classList.remove('hidden');
-                                            document.getElementById('chat-content')?.classList.add('hidden');
-                                            document.getElementById('code-content')?.classList.add('hidden');
-                                            document.getElementById('console-tab')?.classList.add('border-blue-400', 'text-blue-400');
-                                            document.getElementById('console-tab')?.classList.remove('border-transparent', 'text-gray-400');
-                                            document.getElementById('chat-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('chat-tab')?.classList.add('border-transparent', 'text-gray-400');
-                                            document.getElementById('code-tab')?.classList.remove('border-blue-400', 'text-blue-400');
-                                            document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
-                                          }}>
-                                          Console Output
-                                        </div>
                                         <div id="chat-tab" 
-                                          className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
+                                          className="px-4 py-2 text-blue-400 font-medium cursor-pointer border-b-2 border-blue-400"
                                           onClick={() => {
                                             document.getElementById('console-content')?.classList.add('hidden');
                                             document.getElementById('chat-content')?.classList.remove('hidden');
@@ -728,6 +731,21 @@ export default function AnalysisPage() {
                                             document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
                                           }}>
                                           AI Assistant
+                                        </div>
+                                        <div id="console-tab" 
+                                          className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
+                                          onClick={() => {
+                                            document.getElementById('console-content')?.classList.remove('hidden');
+                                            document.getElementById('chat-content')?.classList.add('hidden');
+                                            document.getElementById('code-content')?.classList.add('hidden');
+                                            document.getElementById('console-tab')?.classList.add('border-blue-400', 'text-blue-400');
+                                            document.getElementById('console-tab')?.classList.remove('border-transparent', 'text-gray-400');
+                                            document.getElementById('chat-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('chat-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                            document.getElementById('code-tab')?.classList.remove('border-blue-400', 'text-blue-400');
+                                            document.getElementById('code-tab')?.classList.add('border-transparent', 'text-gray-400');
+                                          }}>
+                                          Console Output
                                         </div>
                                         <div id="code-tab" 
                                           className="px-4 py-2 text-gray-400 font-medium cursor-pointer border-b-2 border-transparent"
@@ -764,8 +782,30 @@ export default function AnalysisPage() {
                                         </div>
                                       </div>
                                       
+                                      {/* Chat Bot Interface - Made it the default visible tab */}
+                                      <div id="chat-content" className="test-env-content">
+                                        <div>
+                                          <TestEnvironmentChat 
+                                            submissionId={id || ""}
+                                            projectName={testSetupData.projectName || "Smart Contract Project"}
+                                            onCodeUpdate={(code: string, path?: string) => {
+                                              console.log("Code update requested:", { code, path });
+                                              // Here you would implement the code update logic
+                                            }}
+                                            initialMessages={[
+                                              {
+                                                id: "welcome",
+                                                role: "assistant",
+                                                content: "Welcome to the Test Environment Editor. How would you like to modify the test environment?",
+                                                timestamp: new Date()
+                                              }
+                                            ]}
+                                          />
+                                        </div>
+                                      </div>
+                                      
                                       {/* Console Output Section */}
-                                      <div id="console-content" className="test-env-content">
+                                      <div id="console-content" className="test-env-content hidden">
                                         <div className="p-3 font-mono text-sm">
                                           <div className="text-green-400">
                                             <p>// Test Environment Setup</p>
@@ -791,28 +831,6 @@ export default function AnalysisPage() {
                                         </div>
                                       </div>
                                       
-                                      {/* Chat Bot Interface */}
-                                      <div id="chat-content" className="test-env-content hidden">
-                                        <div>
-                                          <TestEnvironmentChat 
-                                            submissionId={id || ""}
-                                            projectName={testSetupData.projectName || "Smart Contract Project"}
-                                            onCodeUpdate={(code: string, path?: string) => {
-                                              console.log("Code update requested:", { code, path });
-                                              // Here you would implement the code update logic
-                                            }}
-                                            initialMessages={[
-                                              {
-                                                id: "welcome",
-                                                role: "assistant",
-                                                content: "Welcome to the Test Environment Editor. How would you like to modify the test environment?",
-                                                timestamp: new Date()
-                                              }
-                                            ]}
-                                          />
-                                        </div>
-                                      </div>
-                                      
                                       {/* Code Hierarchy */}
                                       <div id="code-content" className="test-env-content hidden">
                                         <div>
@@ -824,87 +842,6 @@ export default function AnalysisPage() {
                                             path="docs/examples"
                                             showBreadcrumb={true}
                                           />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Test Accounts</h3>
-                                    <div className="overflow-x-auto">
-                                      <table className="w-full bg-gray-900 rounded-md text-sm">
-                                        <thead>
-                                          <tr className="border-b border-gray-800">
-                                            <th className="py-2 px-3 text-left text-gray-400">Role</th>
-                                            <th className="py-2 px-3 text-left text-gray-400">Address</th>
-                                            <th className="py-2 px-3 text-left text-gray-400">Balance</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {testSetupData.networkSettings.accounts.map((account: any, i: number) => (
-                                            <tr key={i} className="border-b border-gray-800">
-                                              <td className="py-2 px-3 text-yellow-300">{account.name}</td>
-                                              <td className="py-2 px-3 font-mono text-blue-300">{account.address}</td>
-                                              <td className="py-2 px-3 text-green-300">{account.balance}</td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Test Cases</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                      {testSetupData.testCases.map((testCase: any, i: number) => (
-                                        <div key={i} className="bg-gray-900 p-3 rounded-md">
-                                          <h4 className="text-blue-400 font-medium">{testCase.name}</h4>
-                                          <p className="text-gray-400 text-xs mt-1">{testCase.file}</p>
-                                          <p className="text-white text-sm mt-1">{testCase.description}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Test Fixtures</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div>
-                                        <h4 className="text-blue-400 text-base font-medium mb-2">Mock Tokens</h4>
-                                        <div className="space-y-2">
-                                          {testSetupData.fixtures.tokens.map((token: any, i: number) => (
-                                            <div key={i} className="bg-gray-800 p-2 rounded-md">
-                                              <div className="flex justify-between">
-                                                <span className="text-yellow-300">{token.name}</span>
-                                                <span className="text-cyan-300">{token.symbol}</span>
-                                              </div>
-                                              <div className="text-xs text-gray-300 mt-1">
-                                                <p>Decimals: {token.decimals}</p>
-                                                <p>Supply: {token.initialSupply}</p>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                      
-                                      <div>
-                                        <h4 className="text-blue-400 text-base font-medium mb-2">Test Markets</h4>
-                                        <div className="space-y-2">
-                                          {testSetupData.fixtures.markets.map((market: any, i: number) => (
-                                            <div key={i} className="bg-gray-800 p-2 rounded-md">
-                                              <p className="text-white">{market.description}</p>
-                                              <div className="flex flex-wrap gap-1 mt-1">
-                                                {market.outcomes.map((outcome: string, j: number) => (
-                                                  <span key={j} className="px-2 py-0.5 bg-blue-900 text-blue-200 rounded-full text-xs">
-                                                    {outcome}
-                                                  </span>
-                                                ))}
-                                              </div>
-                                              <p className="text-xs text-gray-300 mt-1">
-                                                Resolution: {market.resolutionStrategy}
-                                              </p>
-                                            </div>
-                                          ))}
                                         </div>
                                       </div>
                                     </div>
