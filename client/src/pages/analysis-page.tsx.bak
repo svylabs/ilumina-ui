@@ -485,14 +485,21 @@ export default function AnalysisPage() {
                               }
                               
                               // Ensure testSetupData has all required properties
-                              const enhancedTestSetupData = {
-                                ...testSetupData,
-                                testEnvironment: testSetupData.testEnvironment || "Hardhat",
-                                networkSettings: testSetupData.networkSettings || {
+                              if (!testSetupData.testEnvironment) {
+                                testSetupData.testEnvironment = "Hardhat";
+                              }
+                              
+                              if (!testSetupData.networkSettings) {
+                                testSetupData.networkSettings = {
                                   name: "Local Hardhat",
                                   chainId: "31337"
-                                },
-                                substeps: testSetupData.substeps || [
+                                };
+                              }
+                              
+                              // Set active substep if substeps exist
+                              // Add sample substeps if not present in the data
+                              if (!testSetupData.substeps) {
+                                testSetupData.substeps = [
                                   {
                                     id: "setup",
                                     name: "Setup Workspace",
@@ -511,15 +518,14 @@ export default function AnalysisPage() {
                                     description: "Create actor implementations based on the identified roles",
                                     output: "Created MarketCreator implementation\nCreated Bettor implementation\nCreated MarketResolver implementation\nCreated TokenManager implementation"
                                   }
-                                ]
-                              };
-                              
-                              // Since we already have activeSubstep at the component level, 
-                              // we just need to ensure it has a valid value
-                              if (activeSubstep === "" && enhancedTestSetupData.substeps.length > 0) {
-                                // This is safe because we're just updating state without a hook
-                                setActiveSubstep(enhancedTestSetupData.substeps[0].id);
+                                ];
                               }
+                              
+                              useEffect(() => {
+                                if (testSetupData.substeps && testSetupData.substeps.length > 0) {
+                                  setActiveSubstep(testSetupData.substeps[0].id);
+                                }
+                              }, [testSetupData.substeps]);
                               
                               return (
                                 <div className="space-y-6">
@@ -602,15 +608,15 @@ export default function AnalysisPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                           <div>
                                             <span className="text-gray-400">Runtime:</span>
-                                            <p className="text-white">{enhancedTestSetupData.testEnvironment}</p>
+                                            <p className="text-white">{testSetupData.testEnvironment}</p>
                                           </div>
                                           <div>
                                             <span className="text-gray-400">Network:</span>
-                                            <p className="text-cyan-300">{enhancedTestSetupData.networkSettings.name}</p>
+                                            <p className="text-cyan-300">{testSetupData.networkSettings.name}</p>
                                           </div>
                                           <div>
                                             <span className="text-gray-400">Chain ID:</span>
-                                            <p className="text-white">{enhancedTestSetupData.networkSettings.chainId}</p>
+                                            <p className="text-white">{testSetupData.networkSettings.chainId}</p>
                                           </div>
                                         </div>
                                       </div>
@@ -620,7 +626,7 @@ export default function AnalysisPage() {
                                         <div>
                                           <TestEnvironmentChat 
                                             submissionId={id || ""}
-                                            projectName={enhancedTestSetupData.projectName || "Smart Contract Project"}
+                                            projectName={testSetupData.projectName || "Smart Contract Project"}
                                             onCodeUpdate={(code: string, path?: string) => {
                                               console.log("Code update requested:", { code, path });
                                               // Here you would implement the code update logic
@@ -681,48 +687,50 @@ export default function AnalysisPage() {
                                   </div>
 
                                   {/* Implementation Steps Section */}
-                                  <div className="space-y-4 mt-8">
-                                    <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
-                                    
-                                    {/* Substep Navigation Tabs */}
-                                    <div className="flex space-x-2 border-b border-gray-800">
-                                      {enhancedTestSetupData.substeps.map((substep: any) => (
-                                        <button
-                                          key={substep.id}
-                                          onClick={() => {
-                                            setActiveSubstep(substep.id);
-                                          }}
-                                          className={`px-3 py-2 text-sm font-medium border-b-2 ${
-                                            activeSubstep === substep.id 
-                                              ? 'border-blue-400 text-blue-400' 
-                                              : 'border-transparent text-gray-400 hover:text-gray-300'
-                                          }`}
-                                        >
-                                          {substep.name}
-                                        </button>
-                                      ))}
-                                    </div>
-                                    
-                                    {/* Substep Content */}
-                                    <div className="space-y-6">
-                                      {enhancedTestSetupData.substeps.map((substep: any) => (
-                                        <div 
-                                          key={substep.id} 
-                                          className={activeSubstep === substep.id ? 'block' : 'hidden'}
-                                        >
-                                          <div className="mb-4">
-                                            <p className="text-gray-300">{substep.description}</p>
-                                          </div>
-                                          
-                                          {substep.output && (
-                                            <div className="mt-2 bg-black/60 p-3 rounded-md">
-                                              <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
+                                  {testSetupData.substeps && (
+                                    <div className="space-y-4 mt-8">
+                                      <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
+                                      
+                                      {/* Substep Navigation Tabs */}
+                                      <div className="flex space-x-2 border-b border-gray-800">
+                                        {testSetupData.substeps.map((substep: any) => (
+                                          <button
+                                            key={substep.id}
+                                            onClick={() => {
+                                              setActiveSubstep(substep.id);
+                                            }}
+                                            className={`px-3 py-2 text-sm font-medium border-b-2 ${
+                                              activeSubstep === substep.id 
+                                                ? 'border-blue-400 text-blue-400' 
+                                                : 'border-transparent text-gray-400 hover:text-gray-300'
+                                            }`}
+                                          >
+                                            {substep.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Substep Content */}
+                                      <div className="space-y-6">
+                                        {testSetupData.substeps.map((substep: any) => (
+                                          <div 
+                                            key={substep.id} 
+                                            className={activeSubstep === substep.id ? 'block' : 'hidden'}
+                                          >
+                                            <div className="mb-4">
+                                              <p className="text-gray-300">{substep.description}</p>
                                             </div>
-                                          )}
-                                        </div>
-                                      ))}
+                                            
+                                            {substep.output && (
+                                              <div className="mt-2 bg-black/60 p-3 rounded-md">
+                                                <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
                                     </div>
-                                  </div>
+                                  )}
                                 </div>
                               );
                             } catch (e) {
