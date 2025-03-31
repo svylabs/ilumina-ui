@@ -734,155 +734,182 @@ export default function AnalysisPage() {
                             }
                           })()}
                         </div>
-                      ) : currentStep.id === "simulations" && getStepStatus(currentStep.id) === "completed" ? (
-                        <div className="text-white font-mono">
+                      ) : currentStep.id === "simulations" ? (
+                        <div className="text-white">
                           {(() => {
                             try {
-                              // First try to use the jsonData field directly from the API
-                              const stepData = analysis?.steps[currentStep.id];
+                              // Create mock simulation runs for the interface
+                              const simulationRuns = [
+                                {
+                                  id: "sim-001",
+                                  status: "success",
+                                  date: "2025-03-28T14:30:00",
+                                  logUrl: "#log-001",
+                                  summary: {
+                                    totalTests: 42,
+                                    passed: 38,
+                                    failed: 4
+                                  }
+                                },
+                                {
+                                  id: "sim-002",
+                                  status: "failure",
+                                  date: "2025-03-29T09:15:00",
+                                  logUrl: "#log-002",
+                                  summary: {
+                                    totalTests: 42,
+                                    passed: 35,
+                                    failed: 7
+                                  }
+                                },
+                                {
+                                  id: "sim-003",
+                                  status: "success",
+                                  date: "2025-03-30T11:45:00",
+                                  logUrl: "#log-003",
+                                  summary: {
+                                    totalTests: 42,
+                                    passed: 42,
+                                    failed: 0
+                                  }
+                                }
+                              ];
                               
-                              // Fall back to parsing the details field if jsonData is not available
-                              let simulationData;
-                              if (stepData?.jsonData) {
-                                simulationData = stepData.jsonData;
-                              } else {
-                                const details = getStepDetails(currentStep.id);
-                                if (!details) return <p>No details available</p>;
-                                simulationData = JSON.parse(details);
-                              }
+                              // Simulation run in progress state
+                              const [isRunningSimulation, setIsRunningSimulation] = useState(false);
+                              const [progress, setProgress] = useState(0);
+                              
+                              // Start a new simulation
+                              const startSimulation = () => {
+                                setIsRunningSimulation(true);
+                                setProgress(0);
+                                
+                                // Mock progress updates
+                                const interval = setInterval(() => {
+                                  setProgress(prev => {
+                                    if (prev >= 100) {
+                                      clearInterval(interval);
+                                      setTimeout(() => setIsRunningSimulation(false), 500);
+                                      return 100;
+                                    }
+                                    return prev + 5;
+                                  });
+                                }, 300);
+                              };
                               
                               return (
                                 <div className="space-y-6">
-                                  <div className="bg-gray-900 p-4 rounded-md">
-                                    <h3 className="text-xl font-semibold text-green-400 mb-4">Test Summary</h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                      <div className="bg-gray-800 p-3 rounded-md">
-                                        <p className="text-gray-400 text-sm">Total Tests</p>
-                                        <p className="text-white text-xl font-bold">{simulationData.summary.totalTests}</p>
-                                      </div>
-                                      <div className="bg-gray-800 p-3 rounded-md">
-                                        <p className="text-gray-400 text-sm">Passed</p>
-                                        <p className="text-green-400 text-xl font-bold">{simulationData.summary.passed}</p>
-                                      </div>
-                                      <div className="bg-gray-800 p-3 rounded-md">
-                                        <p className="text-gray-400 text-sm">Failed</p>
-                                        <p className="text-red-400 text-xl font-bold">{simulationData.summary.failed}</p>
-                                      </div>
-                                      <div className="bg-gray-800 p-3 rounded-md">
-                                        <p className="text-gray-400 text-sm">Warnings</p>
-                                        <p className="text-yellow-400 text-xl font-bold">{simulationData.summary.warnings}</p>
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                                      <div className="bg-gray-800 p-3 rounded-md">
-                                        <p className="text-gray-400 text-sm">Duration</p>
-                                        <p className="text-white text-lg font-bold">{simulationData.summary.duration}</p>
-                                      </div>
-                                      <div className="bg-gray-800 p-3 rounded-md">
-                                        <p className="text-gray-400 text-sm">Coverage</p>
-                                        <p className="text-blue-400 text-lg font-bold">{simulationData.summary.coverage}</p>
-                                      </div>
-                                      <div className="bg-gray-800 p-3 rounded-md">
-                                        <p className="text-gray-400 text-sm">Security Score</p>
-                                        <div className="flex items-center">
-                                          <p className={`text-lg font-bold ${
-                                            simulationData.summary.securityScore > 85 ? 'text-green-400' : 
-                                            simulationData.summary.securityScore > 70 ? 'text-yellow-400' : 'text-red-400'
-                                          }`}>
-                                            {simulationData.summary.securityScore}
-                                          </p>
-                                          <p className="text-gray-400 text-sm ml-1">/100</p>
-                                        </div>
-                                      </div>
-                                    </div>
+                                  <div className="flex justify-between items-center">
+                                    <h3 className="text-xl font-semibold text-blue-400">Simulation Runs</h3>
+                                    <button
+                                      onClick={startSimulation}
+                                      disabled={isRunningSimulation}
+                                      className={`px-4 py-2 rounded-md font-medium ${
+                                        isRunningSimulation 
+                                          ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                      }`}
+                                    >
+                                      {isRunningSimulation ? 'Running...' : 'Run Simulation'}
+                                    </button>
                                   </div>
                                   
-                                  <div>
-                                    <h3 className="text-xl font-semibold text-green-400 mb-4">Test Results</h3>
-                                    <div className="space-y-4">
-                                      {simulationData.testResults.map((suite: any, suiteIndex: number) => (
-                                        <div key={suiteIndex} className={`border-l-4 ${
-                                          suite.status === 'passed' ? 'border-green-500' : 'border-red-500'
-                                        } bg-gray-900 rounded-r-md overflow-hidden`}>
-                                          <div className="p-3 flex justify-between items-center bg-gray-800">
-                                            <h4 className="font-medium text-white">{suite.name}</h4>
-                                            <span className={`text-xs px-2 py-1 rounded-full ${
-                                              suite.status === 'passed' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                                            }`}>
-                                              {suite.status.toUpperCase()}
-                                            </span>
-                                          </div>
-                                          <div className="py-1">
-                                            {suite.tests.map((test: any, testIndex: number) => (
-                                              <div key={testIndex} className="border-b border-gray-800 px-3 py-2">
-                                                <div className="flex justify-between items-center">
-                                                  <span className="text-sm text-gray-200">{test.description}</span>
-                                                  <div className="flex items-center">
-                                                    {test.gas && (
-                                                      <span className="text-xs text-cyan-300 mr-2">Gas: {test.gas.toLocaleString()}</span>
-                                                    )}
-                                                    <span className={`flex-shrink-0 w-3 h-3 rounded-full ${
-                                                      test.status === 'passed' ? 'bg-green-400' : 'bg-red-400'
-                                                    }`}></span>
-                                                  </div>
-                                                </div>
-                                                {test.reason && (
-                                                  <p className="text-xs text-red-400 mt-1 pl-4 border-l-2 border-red-800">
-                                                    {test.reason}
-                                                  </p>
+                                  {isRunningSimulation && (
+                                    <div className="bg-gray-900 p-4 rounded-md">
+                                      <div className="flex items-center mb-2">
+                                        <div className="w-4 h-4 rounded-full bg-blue-500 animate-pulse mr-2"></div>
+                                        <span className="text-blue-400 font-medium">Simulation in progress</span>
+                                      </div>
+                                      <div className="w-full bg-gray-800 rounded-full h-2.5 mb-2">
+                                        <div 
+                                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                                          style={{ width: `${progress}%` }}
+                                        ></div>
+                                      </div>
+                                      <div className="text-right text-xs text-gray-400">{progress}% complete</div>
+                                      <div className="mt-2 text-sm text-gray-300">
+                                        <p>• Preparing test environment</p>
+                                        {progress > 20 && <p>• Deploying contracts</p>}
+                                        {progress > 40 && <p>• Initializing actor agents</p>}
+                                        {progress > 60 && <p>• Running test scenarios</p>}
+                                        {progress > 80 && <p>• Analyzing results</p>}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="bg-gray-900 rounded-md">
+                                    <div className="border-b border-gray-800 p-4">
+                                      <div className="grid grid-cols-12 text-sm text-gray-400 font-medium">
+                                        <div className="col-span-2">Run ID</div>
+                                        <div className="col-span-2">Status</div>
+                                        <div className="col-span-3">Date</div>
+                                        <div className="col-span-2">Tests</div>
+                                        <div className="col-span-3">Actions</div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="divide-y divide-gray-800">
+                                      {simulationRuns.map((run) => (
+                                        <div key={run.id} className="p-4 hover:bg-gray-800/50 transition-colors">
+                                          <div className="grid grid-cols-12 items-center">
+                                            <div className="col-span-2 font-mono text-white">{run.id}</div>
+                                            <div className="col-span-2">
+                                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                                ${run.status === 'success' 
+                                                  ? 'bg-green-900/50 text-green-300' 
+                                                  : 'bg-red-900/50 text-red-300'
+                                                }`}
+                                              >
+                                                {run.status === 'success' ? '✓ Success' : '✗ Failed'}
+                                              </span>
+                                            </div>
+                                            <div className="col-span-3 text-gray-300">
+                                              {new Date(run.date).toLocaleString()}
+                                            </div>
+                                            <div className="col-span-2">
+                                              <div className="flex space-x-1 text-sm">
+                                                <span className="text-green-400">{run.summary.passed}</span>
+                                                <span className="text-gray-500">/</span>
+                                                <span className="text-gray-300">{run.summary.totalTests}</span>
+                                                {run.summary.failed > 0 && (
+                                                  <span className="text-red-400 ml-1">({run.summary.failed} failed)</span>
                                                 )}
                                               </div>
-                                            ))}
+                                            </div>
+                                            <div className="col-span-3 flex space-x-2">
+                                              <a 
+                                                href={run.logUrl} 
+                                                className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                                              >
+                                                <span className="mr-1">📝</span> View Log
+                                              </a>
+                                              <a 
+                                                href={`#details-${run.id}`} 
+                                                className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                                              >
+                                                <span className="mr-1">📊</span> Details
+                                              </a>
+                                            </div>
                                           </div>
                                         </div>
                                       ))}
                                     </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <h3 className="text-xl font-semibold text-red-400 mb-4">Vulnerabilities</h3>
-                                    <div className="space-y-3">
-                                      {simulationData.vulnerabilities.map((vuln: any, vulnIndex: number) => (
-                                        <div key={vulnIndex} className="bg-gray-900 rounded-md p-3">
-                                          <div className="flex justify-between items-start">
-                                            <h4 className="font-medium text-white">{vuln.description}</h4>
-                                            <span className={`text-xs px-2 py-1 rounded-full ${
-                                              vuln.severity === 'high' ? 'bg-red-900 text-red-300' : 
-                                              vuln.severity === 'medium' ? 'bg-yellow-900 text-yellow-300' : 
-                                              'bg-blue-900 text-blue-300'
-                                            }`}>
-                                              {vuln.severity.toUpperCase()}
-                                            </span>
-                                          </div>
-                                          <p className="text-sm text-gray-300 mt-2">{vuln.details}</p>
-                                          <div className="mt-2">
-                                            <span className="text-xs text-gray-400">Affected: </span>
-                                            <code className="text-xs text-cyan-300">{vuln.affected}</code>
-                                          </div>
-                                          <div className="mt-2 border-t border-gray-800 pt-2">
-                                            <span className="text-xs text-gray-400">Recommendation: </span>
-                                            <span className="text-xs text-green-300">{vuln.recommendation}</span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <h3 className="text-xl font-semibold text-green-400 mb-4">Recommendations</h3>
-                                    <ul className="list-disc list-inside space-y-2 text-gray-200">
-                                      {simulationData.recommendations.map((rec: string, recIndex: number) => (
-                                        <li key={recIndex} className="text-sm">{rec}</li>
-                                      ))}
-                                    </ul>
                                   </div>
                                 </div>
                               );
                             } catch (e) {
                               return (
-                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
-                                  {getStepDetails(currentStep.id) || currentStep.output || "No output available"}
-                                </pre>
+                                <div className="p-4 bg-gray-900 rounded-md">
+                                  <h3 className="text-xl font-semibold text-blue-400 mb-4">Simulation Runs</h3>
+                                  <div className="text-gray-300 mb-4">
+                                    No simulation runs available yet. Click the button below to start a simulation.
+                                  </div>
+                                  <button 
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
+                                  >
+                                    Run Simulation
+                                  </button>
+                                </div>
                               );
                             }
                           })()}
