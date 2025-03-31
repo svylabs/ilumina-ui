@@ -993,8 +993,11 @@ export default function AnalysisPage() {
                                       {enhancedTestSetupData.substeps.map((substep: any) => (
                                         <button
                                           key={substep.id}
-                                          onClick={() => {
+                                          onClick={(e) => {
+                                            e.preventDefault();
                                             setActiveSubstep(substep.id);
+                                            // Make sure we stay at the top of the content
+                                            scrollToTop();
                                           }}
                                           className={`px-3 py-2 text-sm font-medium border-b-2 ${
                                             activeSubstep === substep.id 
