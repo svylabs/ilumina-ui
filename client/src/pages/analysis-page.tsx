@@ -661,6 +661,7 @@ export default function AnalysisPage() {
               key={step.id}
               onClick={(e) => {
                 e.preventDefault();
+                // Just change the selected step - no scrolling needed
                 setSelectedStep(step.id);
               }}
               className={`flex items-center px-4 py-2 cursor-pointer border-b-2 ${
@@ -976,7 +977,7 @@ export default function AnalysisPage() {
                                   </div>
 
                                   {/* Implementation Steps Section */}
-                                  <div className="space-y-4 mt-8">
+                                  <div className="space-y-4 mt-8" id="implementation-steps">
                                     <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
                                     
                                     {/* Substep Navigation Tabs */}
@@ -987,7 +988,6 @@ export default function AnalysisPage() {
                                           onClick={(e) => {
                                             e.preventDefault();
                                             setActiveSubstep(substep.id);
-                                            // No explicit scrolling needed
                                           }}
                                           className={`px-3 py-2 text-sm font-medium border-b-2 ${
                                             activeSubstep === substep.id 
