@@ -704,11 +704,8 @@ export function registerRoutes(app: Express): Server {
         .where(eq(analysisSteps.submissionId, submission[0].id))
         .orderBy(analysisSteps.createdAt);
 
-      // Check which project we're looking at based on the projectId (or other identifier)
-      const isStableBaseProject = submission[0].projectId === 24;
-
-      // Create sample data for each project type
-      const sampleData = {
+      // Return steps data
+      res.json({ steps });
         // New step IDs
         files: { 
           status: "completed", 
