@@ -1144,7 +1144,7 @@ export default function AnalysisPage() {
                                           </CollapsibleTrigger>
                                           <CollapsibleContent className="px-4 pb-4">
                                             <div className="mt-3">
-                                              <Collapsible>
+                                              <Collapsible defaultOpen>
                                                 <CollapsibleTrigger className="flex items-center gap-2 text-gray-400 mb-2">
                                                   <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
                                                   <span>Possible Actions</span>
