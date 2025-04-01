@@ -690,6 +690,20 @@ export default function AnalysisPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6 pt-28">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Project Details */}
+        <div className="bg-black/40 rounded-lg p-4 border border-primary/20">
+          <div className="flex flex-col md:flex-row justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-primary">Project Details</h2>
+              <div className="mt-2 space-y-1">
+                <p className="text-sm text-gray-300">Project: <span className="text-white font-medium">{analysis?.project?.name || "N/A"}</span></p>
+                <p className="text-sm text-gray-300">GitHub: <a href={analysis?.project?.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">{analysis?.project?.githubUrl || "N/A"}</a></p>
+                <p className="text-sm text-gray-300">Created: <span className="text-white">{analysis?.project?.createdAt ? format(new Date(analysis.project.createdAt), 'MMM d, yyyy h:mm a') : "N/A"}</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
             <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
