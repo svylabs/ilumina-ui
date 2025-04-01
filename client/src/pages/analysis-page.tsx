@@ -1050,7 +1050,7 @@ export default function AnalysisPage() {
                                     
                                     {/* Code Viewer */}
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
-                                      <h4 className="text-lg font-medium text-blue-400 mb-3">Contract Code</h4>
+                                      <h4 className="text-lg font-medium text-blue-400 mb-3">Simulation Code</h4>
                                       <div className="w-full overflow-hidden">
                                         {/* Dynamically get repository from submission */}
                                         <GitHubCodeViewer 
