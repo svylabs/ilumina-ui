@@ -19,7 +19,7 @@ export const users = pgTable("users", {
 export const pricingPlans = pgTable("pricing_plans", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  price: integer("price").notNull(),
+  price: integer("price").notNull(), // Price set to 39 for pro plan in the database
   period: text("period").notNull(),
   description: text("description").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
