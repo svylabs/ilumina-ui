@@ -612,28 +612,35 @@ export default function AnalysisPage() {
     // No scrolling when step changes
   }, [selectedStep]);
 
+  // This effect only runs once on initial load and whenever analysis changes,
+  // and only sets the selected step if not manually selected by the user
+  const userSelectedRef = useRef(false);
+  
   useEffect(() => {
     if (analysis && analysis.steps) {
-      // Type safety: Explicitly cast entries to the right type
-      const entries = Object.entries(analysis.steps) as [string, AnalysisStepStatus][];
-      
-      // Find any in-progress step
-      const inProgressStep = entries.find(
-        ([_, step]) => step.status === "in_progress"
-      );
-      
-      if (inProgressStep) {
-        setSelectedStep(inProgressStep[0]);
-      } else {
-        // Find the last completed step
-        const completedSteps = entries.filter(
-          ([_, step]) => step.status === "completed"
+      // Only auto-select a step if the user hasn't manually selected one yet
+      if (!userSelectedRef.current) {
+        // Type safety: Explicitly cast entries to the right type
+        const entries = Object.entries(analysis.steps) as [string, AnalysisStepStatus][];
+        
+        // Find any in-progress step
+        const inProgressStep = entries.find(
+          ([_, step]) => step.status === "in_progress"
         );
         
-        const lastCompletedStep = completedSteps.length > 0 ? completedSteps[completedSteps.length - 1] : null;
+        if (inProgressStep) {
+          setSelectedStep(inProgressStep[0]);
+        } else {
+          // Find the last completed step
+          const completedSteps = entries.filter(
+            ([_, step]) => step.status === "completed"
+          );
           
-        if (lastCompletedStep) {
-          setSelectedStep(lastCompletedStep[0]);
+          const lastCompletedStep = completedSteps.length > 0 ? completedSteps[completedSteps.length - 1] : null;
+            
+          if (lastCompletedStep) {
+            setSelectedStep(lastCompletedStep[0]);
+          }
         }
       }
     }
@@ -719,7 +726,9 @@ export default function AnalysisPage() {
               key={step.id}
               onClick={(e) => {
                 e.preventDefault();
-                // Just change the selected step - no scrolling needed
+                // Mark that user has manually selected a step
+                userSelectedRef.current = true;
+                // Change the selected step - no scrolling needed
                 setSelectedStep(step.id);
               }}
               className={`flex items-center px-4 py-2 cursor-pointer border-b-2 ${
