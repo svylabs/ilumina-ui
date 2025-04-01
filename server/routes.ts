@@ -1856,24 +1856,35 @@ export function registerRoutes(app: Express): Server {
         if (stepsStatus.files.status === "in_progress") {
           try {
             // Try to fetch from projectFiles table
-            // Ensure submissionId is a valid UUID string
-            const validSubmissionId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId) 
-              ? submissionId 
-              : null;
+            // We need to handle both UUID and project ID format cases
+            let actualSubmissionId = submissionId;
 
-            if (!validSubmissionId) {
-              console.warn(`Invalid UUID format for submission ID: ${submissionId}`);
-              // If there is sample data, use it
-              if (sampleData?.files?.jsonData) {
-                stepsStatus.files.jsonData = sampleData.files.jsonData;
-                return;
+            // If this is a project ID (number), we need to get the actual submission ID
+            if (/^\d+$/.test(submissionId)) {
+              // Find the submission associated with this project ID
+              const projectSubmission = await db
+                .select()
+                .from(submissions)
+                .where(eq(submissions.projectId, parseInt(submissionId)))
+                .orderBy(submissions.createdAt, "desc")
+                .limit(1);
+                
+              if (projectSubmission.length > 0) {
+                actualSubmissionId = projectSubmission[0].id;
+              } else {
+                console.warn(`No submission found for project ID: ${submissionId}`);
+                // If there is sample data, use it
+                if (sampleData?.files?.jsonData) {
+                  stepsStatus.files.jsonData = sampleData.files.jsonData;
+                  return;
+                }
               }
             }
 
             const projectFilesData = await db
               .select()
               .from(projectFiles)
-              .where(eq(projectFiles.submissionId, validSubmissionId))
+              .where(eq(projectFiles.submissionId, actualSubmissionId))
               .limit(1);
             
             if (projectFilesData.length > 0) {
