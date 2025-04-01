@@ -98,19 +98,6 @@ export const simulationRuns = pgTable("simulation_runs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Table to store project files information
-export const projectFiles = pgTable("project_files", {
-  id: serial("id").primaryKey(),
-  submissionId: uuid("submission_id").notNull(),
-  projectName: text("project_name").notNull(),
-  projectSummary: text("project_summary").notNull(),
-  devEnvironment: text("dev_environment").notNull(),
-  compiler: text("compiler").notNull(),
-  contracts: jsonb("contracts").notNull(), // Will store array of contract info 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
   name: z.string().min(1),
@@ -151,9 +138,6 @@ export const selectPlanFeatureSchema = createSelectSchema(planFeatures);
 export const insertSimulationRunSchema = createInsertSchema(simulationRuns);
 export const selectSimulationRunSchema = createSelectSchema(simulationRuns);
 
-export const insertProjectFilesSchema = createInsertSchema(projectFiles);
-export const selectProjectFilesSchema = createSelectSchema(projectFiles);
-
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;
 export type InsertRun = typeof runs.$inferInsert;
@@ -176,5 +160,3 @@ export type InsertPricingPlan = typeof pricingPlans.$inferInsert;
 export type SelectPricingPlan = typeof pricingPlans.$inferSelect;
 export type InsertPlanFeature = typeof planFeatures.$inferInsert;
 export type SelectPlanFeature = typeof planFeatures.$inferSelect;
-export type InsertProjectFiles = typeof projectFiles.$inferInsert;
-export type SelectProjectFiles = typeof projectFiles.$inferSelect;

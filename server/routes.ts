@@ -1,25 +1,15 @@
-import type { Express, Request, Response } from "express";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { 
-  users, 
-  pricingPlans, 
-  planFeatures, 
-  projects, 
-  submissions, 
-  analysisSteps, 
-  runs,
-  simulationRuns,
-  contacts,
-  projectFiles,
-  insertSubmissionSchema, 
-  insertContactSchema
+  submissions, runs, projects, simulationRuns, users,
+  insertSubmissionSchema, insertContactSchema, 
+  pricingPlans, planFeatures 
 } from "@db/schema";
-import * as schema from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import fs from 'fs';
+import { analysisSteps } from "@db/schema";
 
 // Define the type for analysis step status
 type AnalysisStepStatus = {
@@ -714,163 +704,284 @@ export function registerRoutes(app: Express): Server {
         .where(eq(analysisSteps.submissionId, submission[0].id))
         .orderBy(analysisSteps.createdAt);
 
-      // Return steps data
-      res.json({ steps });
-    } catch (error) {
-      console.error("Error fetching analysis:", error);
-      res.status(500).json({ message: "Failed to fetch analysis data" });
-    }
-  });
+      // Check which project we're looking at based on the projectId (or other identifier)
+      const isStableBaseProject = submission[0].projectId === 24;
 
-  // New step IDs route
-  // Get project files and actors
-  app.get("/api/files", async (req: Request, res: Response) => {
-    try {
-      const submissionId = req.query.submissionId as string;
-      
-      if (!submissionId) {
-        return res.status(400).json({ error: "Missing submissionId parameter" });
-      }
-      
-      // Project type flag - will be determined from the database
-      let isStableBaseProject = false;
-
-      // First check if we have project files for this submission
-      const projectFiles = await db
-        .select()
-        .from(schema.projectFiles)
-        .where(eq(schema.projectFiles.submissionId, submissionId))
-        .limit(1);
-
-      // If no project files exist, we'll create default ones
-      if (projectFiles.length === 0) {
-        // Default to Predify project for new submissions
-        const defaultProjectFiles = {
-          submissionId: submissionId,
-          projectName: "Predify",
-          projectSummary: "A decentralized prediction market platform that allows users to create markets, place bets, and earn rewards based on the outcome of various events.",
-          devEnvironment: "Hardhat + Solidity",
-          compiler: "0.8.17",
-          contracts: [
-            {
-              name: "Predify.sol",
-              summary: "Main contract for the prediction market platform. Handles creating markets, placing bets, and resolving outcomes.",
-              interfaces: ["IPredictionMarket", "IERC20Receiver"],
-              libraries: ["SafeERC20", "AccessControl"]
-            },
-            {
-              name: "ManualResolutionStrategy.sol",
-              summary: "Implements a resolution strategy where authorized resolvers manually determine the outcome of markets.",
-              interfaces: ["IResolutionStrategy"],
-              libraries: ["AccessControl"]
-            },
-            {
-              name: "MockERC20.sol",
-              summary: "A mock ERC20 token used for testing the prediction market.",
-              interfaces: ["IERC20", "IERC20Metadata"],
-              libraries: ["Context"]
-            }
-          ]
-        };
-
-        // Insert the default project files into the database
-        await db.insert(schema.projectFiles).values(defaultProjectFiles);
-
-        // Fetch the newly inserted project files
-        const newProjectFiles = await db
-          .select()
-          .from(schema.projectFiles)
-          .where(eq(schema.projectFiles.submissionId, submissionId))
-          .limit(1);
-
-        if (newProjectFiles.length === 0) {
-          return res.status(500).json({ error: "Failed to create project files" });
-        }
-
-        const projectFilesData = newProjectFiles[0];
-        
-        // Now we need to prepare the response format
-        const files = {
+      // Create sample data for each project type
+      const sampleData = {
+        // New step IDs
+        files: { 
           status: "completed", 
           details: null, 
           startTime: null,
           jsonData: {
-            projectName: projectFilesData.projectName,
-            projectSummary: projectFilesData.projectSummary,
-            devEnvironment: projectFilesData.devEnvironment,
-            compiler: projectFilesData.compiler,
-            contracts: projectFilesData.contracts,
-            dependencies: {
-              "@openzeppelin/contracts": "4.8.2",
-              "hardhat": "2.14.0",
-              "ethers": "5.7.2",
-              "chai": "4.3.7"
-            }
+            "projectName": isStableBaseProject ? "StableBase" : "Predify",
+            "projectSummary": isStableBaseProject 
+              ? "A stablecoin protocol that maintains price stability through algorithmic mechanisms and collateral management."
+              : "A decentralized prediction market platform that allows users to create markets, place bets, and earn rewards based on the outcome of various events.",
+            "devEnvironment": "Hardhat + Solidity",
+            "compiler": "0.8.17",
+            "contracts": [
+              {
+                "name": isStableBaseProject ? "StableBase.sol" : "Predify.sol",
+                "summary": isStableBaseProject 
+                  ? "Main contract for the stablecoin protocol. Manages minting, redeeming, and stability mechanisms." 
+                  : "Main contract for the prediction market platform. Handles creating markets, placing bets, and resolving outcomes.",
+                "interfaces": isStableBaseProject 
+                  ? ["IStablecoin", "IERC20"] 
+                  : ["IPredictionMarket", "IERC20Receiver"],
+                "libraries": isStableBaseProject 
+                  ? ["SafeERC20", "SafeMath", "Ownable"] 
+                  : ["SafeERC20", "AccessControl"]
+              },
+              {
+                "name": isStableBaseProject ? "StabilityPool.sol" : "ManualResolutionStrategy.sol",
+                "summary": isStableBaseProject 
+                  ? "Manages a pool of funds for stability operations and liquidation protection." 
+                  : "Implements a resolution strategy where authorized resolvers manually determine the outcome of markets.",
+                "interfaces": isStableBaseProject 
+                  ? ["IPool", "IRewardDistributor"] 
+                  : ["IResolutionStrategy"],
+                "libraries": isStableBaseProject 
+                  ? ["SafeERC20", "ReentrancyGuard"] 
+                  : ["AccessControl"]
+              },
+              {
+                "name": isStableBaseProject ? "Oracle.sol" : "MockERC20.sol",
+                "summary": isStableBaseProject 
+                  ? "Price feed for collateral assets used by the protocol." 
+                  : "A mock ERC20 token used for testing the prediction market.",
+                "interfaces": isStableBaseProject 
+                  ? ["AggregatorV3Interface"] 
+                  : ["IERC20", "IERC20Metadata"],
+                "libraries": isStableBaseProject 
+                  ? ["Ownable"] 
+                  : ["Context"]
+              }
+            ],
+            "dependencies": isStableBaseProject 
+              ? {
+                  "@openzeppelin/contracts": "4.8.2",
+                  "hardhat": "2.14.0",
+                  "ethers": "5.7.2",
+                  "chai": "4.3.7",
+                  "@chainlink/contracts": "0.6.1"
+                }
+              : {
+                  "@openzeppelin/contracts": "4.8.2",
+                  "hardhat": "2.14.0",
+                  "ethers": "5.7.2",
+                  "chai": "4.3.7"
+                }
           }
-        };
-
-        // Load actors from the asset file for Predify project
-        const actorsData = JSON.parse(fs.readFileSync('./attached_assets/Pasted--actors-name-Market-Creator-summary-Creates-prediction-markets-with-specific-paramete-1743407911398.txt', 'utf8'));
-        
-        const actors = {
-          status: "completed",
-          details: null,
-          startTime: null,
-          jsonData: actorsData
-        };
-
-        return res.json({ files, actors });
-      }
-      
-      // If we already have project files, return them
-      const projectFilesData = projectFiles[0];
-      
-      const files = {
-        status: "completed", 
-        details: null, 
-        startTime: null,
-        jsonData: {
-          projectName: projectFilesData.projectName,
-          projectSummary: projectFilesData.projectSummary,
-          devEnvironment: projectFilesData.devEnvironment,
-          compiler: projectFilesData.compiler,
-          contracts: projectFilesData.contracts,
-          dependencies: {
-            "@openzeppelin/contracts": "4.8.2",
-            "hardhat": "2.14.0",
-            "ethers": "5.7.2",
-            "chai": "4.3.7"
-          }
-        }
-      };
-      
-      // Load actors from the asset file for Predify project (fixed default)
-      const actorsData = JSON.parse(fs.readFileSync('./attached_assets/Pasted--actors-name-Market-Creator-summary-Creates-prediction-markets-with-specific-paramete-1743407911398.txt', 'utf8'));
-      
-      const actors = {
-        status: "completed",
-        details: null,
-        startTime: null,
-        jsonData: actorsData
-      };
-      
-      return res.json({ files, actors });
-    } catch (error) {
-      console.error("Error in /api/files:", error);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.get("/api/test-setup", (req: Request, res: Response) => {
-    // Determine project type - defaulting to false (Predify project)
-    // Use simple boolean variable without comparison
-    const isStableBaseProject = false;
-    
-    const test_setup = { 
+        },
+        actors: { 
           status: "completed", 
           details: null, 
           startTime: null,
-          jsonData: isStableBaseProject ? {
+          jsonData: isStableBaseProject 
+            ? {
+                "actors": [
+                  {
+                    "name": "Stablecoin Minter",
+                    "summary": "Users who deposit collateral to mint new stablecoins.",
+                    "actions": [
+                      {
+                        "name": "Deposit Collateral",
+                        "summary": "Deposits collateral assets into the protocol.",
+                        "contract_name": "StableBase",
+                        "function_name": "depositCollateral",
+                        "probability": 1.0
+                      },
+                      {
+                        "name": "Mint Stablecoins",
+                        "summary": "Mints new stablecoins against deposited collateral.",
+                        "contract_name": "StableBase",
+                        "function_name": "mintStablecoins",
+                        "probability": 0.9
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Stablecoin Holder",
+                    "summary": "Users who hold stablecoins and may redeem them for collateral.",
+                    "actions": [
+                      {
+                        "name": "Redeem Stablecoins",
+                        "summary": "Redeems stablecoins for underlying collateral.",
+                        "contract_name": "StableBase",
+                        "function_name": "redeemStablecoins",
+                        "probability": 0.6
+                      },
+                      {
+                        "name": "Transfer Stablecoins",
+                        "summary": "Transfers stablecoins to another address.",
+                        "contract_name": "StableBase",
+                        "function_name": "transfer",
+                        "probability": 0.8
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Stability Provider",
+                    "summary": "Users who deposit stablecoins to the stability pool to earn rewards and protect the system.",
+                    "actions": [
+                      {
+                        "name": "Provide Stability",
+                        "summary": "Deposits stablecoins into the stability pool.",
+                        "contract_name": "StabilityPool",
+                        "function_name": "provideToSP",
+                        "probability": 0.7
+                      },
+                      {
+                        "name": "Withdraw From Pool",
+                        "summary": "Withdraws stablecoins from the stability pool.",
+                        "contract_name": "StabilityPool",
+                        "function_name": "withdrawFromSP",
+                        "probability": 0.5
+                      },
+                      {
+                        "name": "Claim Rewards",
+                        "summary": "Claims earned rewards from the stability pool.",
+                        "contract_name": "StabilityPool",
+                        "function_name": "claimRewards",
+                        "probability": 0.8
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Liquidator",
+                    "summary": "Actors who liquidate undercollateralized positions to maintain system solvency.",
+                    "actions": [
+                      {
+                        "name": "Liquidate Position",
+                        "summary": "Liquidates an undercollateralized position.",
+                        "contract_name": "StableBase",
+                        "function_name": "liquidate",
+                        "probability": 0.4
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Protocol Admin",
+                    "summary": "Administrators who manage protocol parameters and emergency functions.",
+                    "actions": [
+                      {
+                        "name": "Update Parameters",
+                        "summary": "Updates protocol parameters like fees or collateral ratios.",
+                        "contract_name": "StableBase",
+                        "function_name": "updateParameters",
+                        "probability": 0.2
+                      },
+                      {
+                        "name": "Pause System",
+                        "summary": "Pauses the system in case of emergency.",
+                        "contract_name": "StableBase",
+                        "function_name": "pauseSystem",
+                        "probability": 0.1
+                      }
+                    ]
+                  }
+                ]
+              }
+            : {
+                "actors": [
+                  {
+                    "name": "Market Creator",
+                    "summary": "Creates prediction markets with specific parameters like description, resolution strategy, and betting token.",
+                    "actions": [
+                      {
+                        "name": "Create Market",
+                        "summary": "Creates a new prediction market.",
+                        "contract_name": "Predify",
+                        "function_name": "createMarket",
+                        "probability": 1.0
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Bettor",
+                    "summary": "Participants who place bets on the outcome of prediction markets.",
+                    "actions": [
+                      {
+                        "name": "Place Bet",
+                        "summary": "Places a bet on a specific outcome in a market.",
+                        "contract_name": "Predify",
+                        "function_name": "predict",
+                        "probability": 1.0
+                      },
+                      {
+                        "name": "Claim Winnings",
+                        "summary": "Allows users to claim their winnings from a resolved market.",
+                        "contract_name": "Predify",
+                        "function_name": "claim",
+                        "probability": 1.0
+                      },
+                      {
+                        "name": "Withdraw Bet",
+                        "summary": "Allows users to withdraw their bet from a market.",
+                        "contract_name": "Predify",
+                        "function_name": "withdrawBet",
+                        "probability": 1.0
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Market Resolver",
+                    "summary": "Entity responsible for resolving the market based on a predefined resolution strategy.  This may be done manually or automatically.",
+                    "actions": [
+                      {
+                        "name": "Resolve Market",
+                        "summary": "Resolves a market to determine the winning outcome.",
+                        "contract_name": "Predify",
+                        "function_name": "resolveMarket",
+                        "probability": 1.0
+                      },
+                      {
+                        "name": "Register Outcome",
+                        "summary": "Registers a possible outcome for a given market.",
+                        "contract_name": "ManualResolutionStrategy",
+                        "function_name": "registerOutcome",
+                        "probability": 0.5
+                      },
+                      {
+                        "name": "Resolve Market (Manual)",
+                        "summary": "Resolves a given market with provided resolution data to determine the winning outcome.",
+                        "contract_name": "ManualResolutionStrategy",
+                        "function_name": "resolve",
+                        "probability": 1.0
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Token Manager",
+                    "summary": "Can mint or burn tokens in the Predify ecosystem, if a mock token is used. This role manages the supply of the betting token.",
+                    "actions": [
+                      {
+                        "name": "Mint Tokens",
+                        "summary": "Mints new tokens to the specified address.",
+                        "contract_name": "MockERC20",
+                        "function_name": "mint",
+                        "probability": 0.5
+                      },
+                      {
+                        "name": "Burn Tokens",
+                        "summary": "Burns tokens from the specified address.",
+                        "contract_name": "MockERC20",
+                        "function_name": "burn",
+                        "probability": 0.5
+                      }
+                    ]
+                  }
+                ]
+              }
+        },
+        test_setup: { 
+          status: "completed", 
+          details: null, 
+          startTime: null,
+          jsonData: isStableBaseProject 
+            ? {
                 "testEnvironment": "Hardhat with ethers.js",
                 "networkSettings": {
                   "name": "Hardhat Local Network",
@@ -1107,7 +1218,8 @@ export function registerRoutes(app: Express): Server {
           status: "completed", 
           details: null, 
           startTime: null,
-          jsonData: isStableBaseProject ? {
+          jsonData: isStableBaseProject 
+            ? {
                 "title": "Deployment Instructions",
                 "description": "Transaction sequence for local network setup",
                 "deploymentSteps": [
@@ -1254,7 +1366,8 @@ export function registerRoutes(app: Express): Server {
           status: "completed", 
           details: null, 
           startTime: null,
-          jsonData: isStableBaseProject ? {
+          jsonData: isStableBaseProject 
+            ? {
                 "summary": {
                   "totalTests": 28,
                   "passed": 24,
