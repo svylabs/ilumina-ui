@@ -68,7 +68,7 @@ export const analysisSteps = pgTable("analysis_steps", {
   submissionId: uuid("submission_id").notNull(),
   stepId: text("step_id", {
     // Updated to match the new step sequence
-    enum: ["files", "actors", "test_setup", "simulations"]
+    enum: ["files", "actors", "deployment", "test_setup", "simulations"]
   }).notNull(),
   status: text("status", {
     enum: ["pending", "in_progress", "completed", "failed"]

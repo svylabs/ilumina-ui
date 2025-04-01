@@ -381,6 +381,12 @@ export function registerRoutes(app: Express): Server {
           },
           {
             submissionId: submission.id,
+            stepId: "deployment",
+            status: "pending",
+            details: "Waiting to generate deployment instructions...",
+          },
+          {
+            submissionId: submission.id,
             stepId: "test_setup",
             status: "pending",
             details: "Waiting to set up test environment...",
@@ -510,6 +516,12 @@ export function registerRoutes(app: Express): Server {
           stepId: "actors",
           status: "pending",
           details: "Waiting to analyze actors and interactions...",
+        },
+        {
+          submissionId: submission.id,
+          stepId: "deployment",
+          status: "pending",
+          details: "Waiting to generate deployment instructions...",
         },
         {
           submissionId: submission.id,
@@ -1177,6 +1189,154 @@ export function registerRoutes(app: Express): Server {
                     "status": "completed",
                     "description": "Implementing test actors and defining their actions in the simulation",
                     "output": "Actor implementations complete:\n\n```javascript\nasync function setupActors(contracts) {\n  const [marketCreator, bettor1, bettor2, resolver, tokenManager] = await ethers.getSigners();\n  \n  // Distribute tokens to actors\n  await contracts.mockUSDC.connect(tokenManager).mint(bettor1.address, ethers.utils.parseUnits(\"10000\", 6));\n  await contracts.mockUSDC.connect(tokenManager).mint(bettor2.address, ethers.utils.parseUnits(\"10000\", 6));\n  await contracts.mockDAI.connect(tokenManager).mint(bettor1.address, ethers.utils.parseEther(\"10000\"));\n  await contracts.mockDAI.connect(tokenManager).mint(bettor2.address, ethers.utils.parseEther(\"10000\"));\n  \n  // Approvals\n  await contracts.mockUSDC.connect(bettor1).approve(contracts.predify.address, ethers.constants.MaxUint256);\n  await contracts.mockUSDC.connect(bettor2).approve(contracts.predify.address, ethers.constants.MaxUint256);\n  await contracts.mockDAI.connect(bettor1).approve(contracts.predify.address, ethers.constants.MaxUint256);\n  await contracts.mockDAI.connect(bettor2).approve(contracts.predify.address, ethers.constants.MaxUint256);\n  \n  // Grant resolver role\n  await contracts.manualResolutionStrategy.grantRole(await contracts.manualResolutionStrategy.RESOLVER_ROLE(), resolver.address);\n  \n  // Define actor actions\n  const actors = {\n    marketCreator: {\n      signer: marketCreator,\n      createMarket: async (description, outcomes, token, resolutionStrategyAddress) => {\n        return contracts.predify.connect(marketCreator).createMarket(\n          description,\n          outcomes,\n          token,\n          resolutionStrategyAddress || contracts.manualResolutionStrategy.address\n        );\n      }\n    },\n    bettor1: {\n      signer: bettor1,\n      placeBet: async (marketId, outcomeIndex, amount, token) => {\n        return contracts.predify.connect(bettor1).predict(\n          marketId,\n          outcomeIndex,\n          token === contracts.mockUSDC.address ? \n            ethers.utils.parseUnits(amount.toString(), 6) : \n            ethers.utils.parseEther(amount.toString()),\n          token\n        );\n      },\n      claimWinnings: async (marketId) => {\n        return contracts.predify.connect(bettor1).claim(marketId);\n      },\n      withdrawBet: async (marketId) => {\n        return contracts.predify.connect(bettor1).withdrawBet(marketId);\n      }\n    },\n    bettor2: {\n      signer: bettor2,\n      placeBet: async (marketId, outcomeIndex, amount, token) => {\n        return contracts.predify.connect(bettor2).predict(\n          marketId,\n          outcomeIndex,\n          token === contracts.mockUSDC.address ? \n            ethers.utils.parseUnits(amount.toString(), 6) : \n            ethers.utils.parseEther(amount.toString()),\n          token\n        );\n      },\n      claimWinnings: async (marketId) => {\n        return contracts.predify.connect(bettor2).claim(marketId);\n      },\n      withdrawBet: async (marketId) => {\n        return contracts.predify.connect(bettor2).withdrawBet(marketId);\n      }\n    },\n    resolver: {\n      signer: resolver,\n      resolveMarket: async (marketId, winningOutcomeIndex) => {\n        return contracts.predify.connect(resolver).resolveMarket(marketId, winningOutcomeIndex);\n      },\n      manualResolve: async (marketId, winningOutcomeIndex) => {\n        return contracts.manualResolutionStrategy.connect(resolver).resolve(marketId, winningOutcomeIndex);\n      }\n    },\n    tokenManager: {\n      signer: tokenManager,\n      mintTokens: async (token, to, amount) => {\n        const decimals = token === contracts.mockUSDC.address ? 6 : 18;\n        return token === contracts.mockUSDC.address ?\n          contracts.mockUSDC.connect(tokenManager).mint(to, ethers.utils.parseUnits(amount.toString(), decimals)) :\n          contracts.mockDAI.connect(tokenManager).mint(to, ethers.utils.parseUnits(amount.toString(), decimals));\n      }\n    }\n  };\n  \n  return actors;\n}\n```\n\nChat interface ready for adjusting market parameters and actor behaviors."
+                  }
+                ]
+              }
+        },
+        deployment: { 
+          status: "completed", 
+          details: null, 
+          startTime: null,
+          jsonData: isStableBaseProject 
+            ? {
+                "title": "Deployment Instructions",
+                "description": "Transaction sequence for local network setup",
+                "deploymentSteps": [
+                  {
+                    "name": "Deploy Token Contract",
+                    "params": {
+                      "constructor": "\"Stablebase Token\", \"SBT\", 18 (decimals)"
+                    },
+                    "gas": "~2,500,000",
+                    "tx": "TokenOwner deploys Token.sol",
+                    "result": "Token contract deployed at 0xToken"
+                  },
+                  {
+                    "name": "Deploy Staking Contract",
+                    "params": {
+                      "constructor": "Token address (0xToken)"
+                    },
+                    "gas": "~3,200,000",
+                    "tx": "TokenOwner deploys Staking.sol with Token address",
+                    "result": "Staking contract deployed at 0xStaking"
+                  },
+                  {
+                    "name": "Deploy StabilityPool Contract",
+                    "params": {
+                      "constructor": "Token address (0xToken), Fee rate (0.3%)"
+                    },
+                    "gas": "~4,100,000",
+                    "tx": "TokenOwner deploys StabilityPool.sol with Token address",
+                    "result": "StabilityPool contract deployed at 0xPool"
+                  },
+                  {
+                    "name": "Configure Token Permissions",
+                    "params": {},
+                    "gas": "~50,000",
+                    "tx": "TokenOwner calls token.setMinter(0xPool, true)",
+                    "result": "StabilityPool can now mint reward tokens"
+                  },
+                  {
+                    "name": "Initialize Staking Parameters",
+                    "params": {},
+                    "gas": "~45,000",
+                    "tx": "TokenOwner calls staking.setRewardRate(100)",
+                    "result": "Staking rewards configured at 100 tokens per block"
+                  },
+                  {
+                    "name": "Setup Initial Liquidity",
+                    "params": {},
+                    "gas": "~250,000",
+                    "tx": "TokenOwner mints 1,000,000 tokens and adds liquidity to the pool",
+                    "result": "Initial liquidity established with 500,000 tokens and 100 ETH"
+                  }
+                ],
+                "networkRecommendations": [
+                  {
+                    "name": "Ethereum Mainnet",
+                    "description": "For production deployment",
+                    "gas": "High gas fees, but strong security"
+                  },
+                  {
+                    "name": "Polygon",
+                    "description": "For lower gas fees and faster transactions",
+                    "gas": "Lower fees than Ethereum mainnet"
+                  },
+                  {
+                    "name": "Arbitrum/Optimism",
+                    "description": "For Layer 2 scaling benefits",
+                    "gas": "Reduced gas costs with Ethereum security"
+                  }
+                ]
+              }
+            : {
+                "title": "Deployment Instructions",
+                "description": "Transaction sequence for local network setup",
+                "deploymentSteps": [
+                  {
+                    "name": "Deploy Token Contract",
+                    "params": {
+                      "constructor": "\"Prediction Token\", \"PRT\", 18 (decimals)"
+                    },
+                    "gas": "~2,500,000",
+                    "tx": "TokenOwner deploys MockERC20.sol",
+                    "result": "Token contract deployed at 0xToken"
+                  },
+                  {
+                    "name": "Deploy Resolution Strategy Contract",
+                    "params": {
+                      "constructor": "No parameters"
+                    },
+                    "gas": "~1,800,000",
+                    "tx": "Admin deploys ManualResolutionStrategy.sol",
+                    "result": "Strategy contract deployed at 0xStrategy"
+                  },
+                  {
+                    "name": "Deploy Predify Contract",
+                    "params": {
+                      "constructor": "No parameters"
+                    },
+                    "gas": "~3,200,000",
+                    "tx": "Admin deploys Predify.sol",
+                    "result": "Predify contract deployed at 0xPredify"
+                  },
+                  {
+                    "name": "Register Resolution Strategy",
+                    "params": {},
+                    "gas": "~50,000",
+                    "tx": "Admin calls predify.addResolutionStrategy(0xStrategy)",
+                    "result": "Manual resolution strategy registered with Predify"
+                  },
+                  {
+                    "name": "Register Token",
+                    "params": {},
+                    "gas": "~45,000",
+                    "tx": "Admin calls predify.addSupportedToken(0xToken)",
+                    "result": "Token can now be used for betting in markets"
+                  },
+                  {
+                    "name": "Setup Test Markets",
+                    "params": {},
+                    "gas": "~150,000 per market",
+                    "tx": "Admin creates test markets with various parameters",
+                    "result": "Initial markets created and ready for betting"
+                  }
+                ],
+                "networkRecommendations": [
+                  {
+                    "name": "Ethereum Mainnet",
+                    "description": "For production deployment",
+                    "gas": "High gas fees, but strong security"
+                  },
+                  {
+                    "name": "Polygon",
+                    "description": "For lower gas fees and faster transactions",
+                    "gas": "Lower fees than Ethereum mainnet"
+                  },
+                  {
+                    "name": "Arbitrum/Optimism",
+                    "description": "For Layer 2 scaling benefits",
+                    "gas": "Reduced gas costs with Ethereum security"
                   }
                 ]
               }
