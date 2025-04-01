@@ -573,6 +573,27 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Update the analysis endpoint
+  app.get("/api/project/:id", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      
+      const [project] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      res.json(project);
+    } catch (error) {
+      console.error('Error fetching project:', error);
+      res.status(500).json({ message: "Failed to fetch project details" });
+    }
+  });
+
   app.get("/api/analysis/:id", async (req, res) => {
     try {
       const submissionId = req.params.id;

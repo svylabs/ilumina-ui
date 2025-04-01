@@ -583,6 +583,11 @@ export default function AnalysisPage() {
   
   // No content ref needed
 
+  const { data: project } = useQuery({
+    queryKey: [`/api/project/${id}`],
+    enabled: !!id
+  });
+
   const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
     refetchInterval: (data: unknown) => {
@@ -693,10 +698,10 @@ export default function AnalysisPage() {
         {/* Project Details */}
         <div className="bg-black/40 rounded-lg p-4 border border-primary/20">
           <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-white">{analysis?.project?.name || "Untitled Project"}</h2>
-            {analysis?.project?.githubUrl && (
-              <a href={analysis.project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mt-2">
-                {analysis.project.githubUrl}
+            <h2 className="text-2xl font-bold text-white">{project?.name || "Untitled Project"}</h2>
+            {project?.githubUrl && (
+              <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mt-2">
+                {project.githubUrl}
               </a>
             )}
           </div>
