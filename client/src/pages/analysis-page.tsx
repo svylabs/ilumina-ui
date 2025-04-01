@@ -445,57 +445,7 @@ Security Analysis:
 - Time lock functionality present in staking contract
 `
   },
-  {
-    id: "deployment",
-    title: "Deployment Instructions",
-    description: "Analyzing deployment process and transaction sequence",
-    status: "pending",
-    output: `// Deployment Instructions
-Recommended deployment sequence:
 
-1. Deploy Token Contract
-   - Constructor params: "Ilumina Token", "ILM", 18 (decimals)
-   - Gas estimate: ~2,500,000
-   - Transaction: TokenOwner deploys Token.sol
-   - Result: Token contract deployed at 0xToken
-
-2. Deploy Staking Contract
-   - Constructor params: Token address (0xToken)
-   - Gas estimate: ~3,200,000
-   - Transaction: TokenOwner deploys Staking.sol with Token address
-   - Result: Staking contract deployed at 0xStaking
-
-3. Deploy DEX Contract
-   - Constructor params: Token address (0xToken), Fee rate (0.3%)
-   - Gas estimate: ~4,100,000
-   - Transaction: TokenOwner deploys DEX.sol with Token address
-   - Result: DEX contract deployed at 0xDEX
-
-4. Configure Token Permissions
-   - Transaction: TokenOwner calls token.setMinter(0xDEX, true)
-   - Gas estimate: ~50,000
-   - Purpose: Allow DEX to mint reward tokens
-
-5. Initialize Staking Parameters
-   - Transaction: TokenOwner calls staking.setRewardRate(100)
-   - Gas estimate: ~45,000
-   - Purpose: Configure tokens awarded per block
-
-6. Setup Initial Liquidity
-   - Transaction 1: TokenOwner calls token.mint(ownerAddress, 1000000)
-   - Transaction 2: TokenOwner calls token.approve(0xDEX, 500000)
-   - Transaction 3: TokenOwner calls dex.addLiquidity with 500000 tokens and 100 ETH
-   - Total gas estimate: ~250,000
-   - Purpose: Initialize trading pool with liquidity
-
-Total deployment cost estimate: ~10.2 million gas
-
-Network Recommendations:
-- Ethereum Mainnet: For production deployment
-- Polygon: For lower gas fees and faster transactions
-- Arbitrum/Optimism: For Layer 2 scaling benefits
-`
-  },
   {
     id: "test_setup",
     title: "Setup Simulation",
@@ -765,12 +715,12 @@ export default function AnalysisPage() {
                     <span>
                       {currentStep.id === "files" ? "Project Summary" : 
                        currentStep.id === "actors" ? "Actor Summary" :
-                       currentStep.id === "deployment" ? "Deployment Instructions" :
                        currentStep.id === "test_setup" ? "Simulation Setup" :
-                       "Simulation Results"}
+                       currentStep.id === "simulations" ? "Simulation Results" :
+                       currentStep.id}
                     </span>
                     <div className="flex items-center gap-2">
-                      {(currentStep.id === "files" || currentStep.id === "actors" || currentStep.id === "deployment") && (
+                      {(currentStep.id === "files" || currentStep.id === "actors") && (
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
