@@ -848,7 +848,7 @@ export default function AnalysisPage() {
                 <CardDescription>
                   {getStepStatus(currentStep.id) === "in_progress" ? "Analysis in progress..." : 
                    getStepStatus(currentStep.id) === "failed" ? "Analysis failed" : 
-                   getStepStatus(currentStep.id) === "completed" ? `Completed ${format(new Date(), 'MMM d, yyyy h:mm a')}` : 
+                   getStepStatus(currentStep.id) === "completed" ? `Completed ${format(new Date(analysis.steps[currentStep.id].createdAt), 'MMM d, yyyy h:mm a')}` : 
                    "Waiting to start..."}
                 </CardDescription>
               </CardHeader>
