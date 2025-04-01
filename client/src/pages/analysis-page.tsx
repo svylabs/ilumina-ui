@@ -692,15 +692,13 @@ export default function AnalysisPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Project Details */}
         <div className="bg-black/40 rounded-lg p-4 border border-primary/20">
-          <div className="flex flex-col md:flex-row justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-primary">Project Details</h2>
-              <div className="mt-2 space-y-1">
-                <p className="text-sm text-gray-300">Project: <span className="text-white font-medium">{analysis?.project?.name || "N/A"}</span></p>
-                <p className="text-sm text-gray-300">GitHub: <a href={analysis?.project?.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">{analysis?.project?.githubUrl || "N/A"}</a></p>
-                <p className="text-sm text-gray-300">Created: <span className="text-white">{analysis?.project?.createdAt ? format(new Date(analysis.project.createdAt), 'MMM d, yyyy h:mm a') : "N/A"}</span></p>
-              </div>
-            </div>
+          <div className="flex flex-col">
+            <h2 className="text-2xl font-bold text-white">{analysis?.project?.name || "Untitled Project"}</h2>
+            {analysis?.project?.githubUrl && (
+              <a href={analysis.project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mt-2">
+                {analysis.project.githubUrl}
+              </a>
+            )}
           </div>
         </div>
 
