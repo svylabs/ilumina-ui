@@ -1200,7 +1200,6 @@ export default function AnalysisPage() {
                                                   </div>
                                                 </CollapsibleContent>
                                               </Collapsible>
-                                            </div>
                                           </CollapsibleContent>
                                         </Collapsible>
                                       ))}
