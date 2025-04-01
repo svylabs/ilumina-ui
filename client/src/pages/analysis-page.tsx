@@ -1223,10 +1223,180 @@ export default function AnalysisPage() {
                         <div className="text-white font-mono">
                           <div className="space-y-6">
                             <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                            <div className="bg-gray-900 p-4 rounded-md">
-                              <pre className="text-sm text-green-400 whitespace-pre-wrap">
-                                {getStepDetails(currentStep.id) || currentStep.output || "No deployment instructions available"}
-                              </pre>
+                            
+                            <div className="space-y-4">
+                              <div className="bg-gray-900 p-4 rounded-md">
+                                <h4 className="text-lg font-medium text-yellow-300 mb-3">Transaction Sequence</h4>
+                                <div className="space-y-5">
+                                  
+                                  {/* Transaction 1: Deploy MockERC20 Token */}
+                                  <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
+                                    <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                      Transaction 1
+                                    </div>
+                                    <h5 className="text-blue-300 font-medium mb-2">Deploy MockERC20 Token</h5>
+                                    <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                                      <div className="col-span-3 text-gray-400">From:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Contract:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">MockERC20.sol</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Method:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">constructor</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Args:</div>
+                                      <div className="col-span-9 text-yellow-200 font-mono">
+                                        <div>- name: "Prediction Token"</div>
+                                        <div>- symbol: "PRED"</div>
+                                        <div>- initialSupply: 1000000</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-gray-400 text-xs mt-2">
+                                      <span className="text-yellow-400">Note:</span> This contract will be used for betting in prediction markets
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Transaction 2: Deploy ResolutionStrategy */}
+                                  <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
+                                    <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                      Transaction 2
+                                    </div>
+                                    <h5 className="text-blue-300 font-medium mb-2">Deploy ManualResolutionStrategy</h5>
+                                    <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                                      <div className="col-span-3 text-gray-400">From:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Contract:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">ManualResolutionStrategy.sol</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Method:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">constructor</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Args:</div>
+                                      <div className="col-span-9 text-yellow-200 font-mono">
+                                        <div>- admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-gray-400 text-xs mt-2">
+                                      <span className="text-yellow-400">Note:</span> The strategy will be used to manually resolve prediction markets
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Transaction 3: Deploy Predify */}
+                                  <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
+                                    <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                      Transaction 3
+                                    </div>
+                                    <h5 className="text-blue-300 font-medium mb-2">Deploy Predify Contract</h5>
+                                    <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                                      <div className="col-span-3 text-gray-400">From:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Contract:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">Predify.sol</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Method:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">constructor</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Args:</div>
+                                      <div className="col-span-9 text-yellow-200 font-mono">
+                                        <div>- admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</div>
+                                        <div>- defaultToken: [MOCK_ERC20_ADDRESS] (from tx 1)</div>
+                                        <div>- defaultResolutionStrategy: [RESOLUTION_STRATEGY_ADDRESS] (from tx 2)</div>
+                                        <div>- minMarketDuration: 3600 (1 hour)</div>
+                                        <div>- platformFee: 100 (1%)</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Transaction 4: Admin Setup */}
+                                  <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
+                                    <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                      Transaction 4
+                                    </div>
+                                    <h5 className="text-blue-300 font-medium mb-2">MockERC20 Setup: Approve Token Spending</h5>
+                                    <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                                      <div className="col-span-3 text-gray-400">From:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Contract:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">MockERC20 (from tx 1)</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Method:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">approve</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Args:</div>
+                                      <div className="col-span-9 text-yellow-200 font-mono">
+                                        <div>- spender: [PREDIFY_ADDRESS] (from tx 3)</div>
+                                        <div>- amount: 1000000000000000000000000 (unlimited)</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-gray-400 text-xs mt-2">
+                                      <span className="text-yellow-400">Note:</span> Setup to allow the Predify contract to transfer tokens on behalf of the admin
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Transaction 5: Resolution Strategy Setup */}
+                                  <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
+                                    <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                      Transaction 5
+                                    </div>
+                                    <h5 className="text-blue-300 font-medium mb-2">Resolution Strategy Setup</h5>
+                                    <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                                      <div className="col-span-3 text-gray-400">From:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Contract:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">ManualResolutionStrategy (from tx 2)</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Method:</div>
+                                      <div className="col-span-9 text-green-300 font-mono">setPredifyAddress</div>
+                                      
+                                      <div className="col-span-3 text-gray-400">Args:</div>
+                                      <div className="col-span-9 text-yellow-200 font-mono">
+                                        <div>- predifyAddress: [PREDIFY_ADDRESS] (from tx 3)</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-gray-400 text-xs mt-2">
+                                      <span className="text-yellow-400">Note:</span> Connect the resolution strategy to the Predify contract
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Local Network Setup Instructions */}
+                                  <div className="bg-black/20 border border-blue-900 p-3 rounded-md mt-5">
+                                    <h5 className="text-blue-300 font-medium mb-2">Local Network Setup</h5>
+                                    <div className="text-xs text-gray-300 space-y-2">
+                                      <p>Use Hardhat local network for testing:</p>
+                                      <div className="bg-gray-900 p-2 rounded font-mono text-green-300">
+                                        npx hardhat node
+                                      </div>
+                                      <p>Deploy contracts using the provided script:</p>
+                                      <div className="bg-gray-900 p-2 rounded font-mono text-green-300">
+                                        npx hardhat run scripts/deploy.js --network localhost
+                                      </div>
+                                      <p className="text-yellow-400 mt-2">Note: Make sure to save the addresses from the deployment console output for future reference.</p>
+                                    </div>
+                                  </div>
+                                  
+                                </div>
+                              </div>
+                              
+                              <div className="text-gray-400 text-sm mt-2">
+                                <p>After completing these deployment steps, the Prediction Market platform will be fully operational on your local network. Users will be able to create markets, place bets, and administrators will be able to resolve markets and distribute winnings.</p>
+                                <div className="text-xs mt-2">
+                                  <p>For detailed deployment instructions and contract verification steps, refer to the original step output:</p>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-black/50 p-4 rounded-md mt-4 text-xs">
+                                <details>
+                                  <summary className="cursor-pointer text-cyan-400 hover:text-cyan-300">View Original Deployment Instructions</summary>
+                                  <pre className="text-sm text-green-400 whitespace-pre-wrap mt-2">
+                                    {getStepDetails(currentStep.id) || currentStep.output || "No deployment instructions available"}
+                                  </pre>
+                                </details>
+                              </div>
                             </div>
                           </div>
                         </div>
