@@ -1219,7 +1219,7 @@ export default function AnalysisPage() {
                       ) : currentStep.id === "simulations" ? (
                         <SimulationsComponent />
                       
-                      ) : currentStep.id === "deployment" && getStepStatus(currentStep.id) === "completed" ? (
+                      ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
                           <div className="space-y-6">
                             <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
