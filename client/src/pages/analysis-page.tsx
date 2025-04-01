@@ -3,6 +3,7 @@ import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
 import {
   Dialog,
@@ -1050,41 +1051,90 @@ export default function AnalysisPage() {
                                                           <div className="space-y-3">
                                                             <div>
                                                               <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
-                                                              <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`async function ${action.function_name}(${actor.name.toLowerCase().replace(/\s+/g, '')}, params) {
-  // Implementation for ${action.name}
-  // Function documentation:
-  // - Contract: ${action.contract_name}
-  // - Function: ${action.function_name}
-  
-  // Parameter validation
-  if (!params || Object.keys(params).length === 0) {
-    throw new Error("Parameters required for this operation");
-  }
-  
-  // Main function execution
-  const tx = await ${action.contract_name.toLowerCase()}.connect(${actor.name.toLowerCase().replace(/\s+/g, '')}).${action.function_name}(
-    ...Object.values(params)
-  );
-  
-  // Wait for transaction confirmation
-  await tx.wait();
-  return tx;
-}`}
-                                                              </pre>
+                                                              <div className="bg-black/40 p-3 rounded text-xs">
+                                                                <p className="text-green-400 mb-2">
+                                                                  This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
+                                                                </p>
+                                                                
+                                                                <div className="text-white/80 space-y-2">
+                                                                  <p>Contract interaction: {action.contract_name}</p>
+                                                                  <p>Function: {action.function_name}</p>
+                                                                  <p>Actor: {actor.name}</p>
+                                                                  <p>Parameters will be passed according to the function specification</p>
+                                                                </div>
+                                                              </div>
+                                                              
+                                                              <Dialog>
+                                                                <DialogTrigger asChild>
+                                                                  <Button 
+                                                                    size="sm" 
+                                                                    variant="ghost" 
+                                                                    className="mt-2 text-xs text-blue-400 hover:text-blue-300"
+                                                                  >
+                                                                    Modify Implementation
+                                                                  </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="sm:max-w-[525px] bg-gray-900 text-white border-gray-700">
+                                                                  <DialogHeader>
+                                                                    <DialogTitle>Modify Implementation for {action.name}</DialogTitle>
+                                                                    <DialogDescription className="text-gray-400">
+                                                                      Provide instructions to modify how this action will be implemented.
+                                                                    </DialogDescription>
+                                                                  </DialogHeader>
+                                                                  <div className="grid gap-4 py-4">
+                                                                    <Textarea 
+                                                                      className="min-h-[200px] bg-gray-800 border-gray-700 text-white"
+                                                                      placeholder={`Describe how you want to modify the implementation of ${action.name}.\n\nExample: "Add a check for gas limit before executing the transaction" or "Include retry logic if the transaction fails."`}
+                                                                    />
+                                                                  </div>
+                                                                  <DialogFooter>
+                                                                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Apply Changes</Button>
+                                                                  </DialogFooter>
+                                                                </DialogContent>
+                                                              </Dialog>
                                                             </div>
                                                             
                                                             <div>
                                                               <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
-                                                              <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`// Validation rules for ${action.name}
-1. All required parameters must be provided and valid
-2. Actor must have appropriate permissions/role
-3. Actor must have sufficient balance if operations involve transfers
-4. Contract state must allow this operation
-5. Gas estimation must be within reasonable limits
-6. Operation must not violate any business logic constraints`}
-                                                              </pre>
+                                                              <div className="bg-black/40 p-3 rounded text-xs">
+                                                                <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+                                                                  <li>All required parameters must be provided and valid</li>
+                                                                  <li>Actor must have appropriate permissions/role</li>
+                                                                  <li>Actor must have sufficient balance if operations involve transfers</li>
+                                                                  <li>Contract state must allow this operation</li>
+                                                                  <li>Gas estimation must be within reasonable limits</li>
+                                                                  <li>Operation must not violate any business logic constraints</li>
+                                                                </ul>
+                                                              </div>
+                                                              
+                                                              <Dialog>
+                                                                <DialogTrigger asChild>
+                                                                  <Button 
+                                                                    size="sm" 
+                                                                    variant="ghost" 
+                                                                    className="mt-2 text-xs text-yellow-400 hover:text-yellow-300"
+                                                                  >
+                                                                    Modify Validation Rules
+                                                                  </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="sm:max-w-[525px] bg-gray-900 text-white border-gray-700">
+                                                                  <DialogHeader>
+                                                                    <DialogTitle>Modify Validation Rules for {action.name}</DialogTitle>
+                                                                    <DialogDescription className="text-gray-400">
+                                                                      Provide instructions to modify the validation rules for this action.
+                                                                    </DialogDescription>
+                                                                  </DialogHeader>
+                                                                  <div className="grid gap-4 py-4">
+                                                                    <Textarea 
+                                                                      className="min-h-[200px] bg-gray-800 border-gray-700 text-white"
+                                                                      placeholder={`Describe how you want to modify the validation rules for ${action.name}.\n\nExample: "Add a rule to check for maximum gas price" or "Remove the balance check for this particular action."`}
+                                                                    />
+                                                                  </div>
+                                                                  <DialogFooter>
+                                                                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Apply Changes</Button>
+                                                                  </DialogFooter>
+                                                                </DialogContent>
+                                                              </Dialog>
                                                             </div>
                                                           </div>
                                                         </CollapsibleContent>
@@ -1183,22 +1233,47 @@ export default function AnalysisPage() {
                                                             </div>
                                                           </CollapsibleTrigger>
                                                           <CollapsibleContent className="mt-2 p-2 bg-gray-800/50 rounded text-xs">
-                                                            <pre className="text-green-400 whitespace-pre-wrap">
-                                                              {`async function ${action.function_name}() {
-  // Implementation details would go here
-  // This would show the actual code implementation of how this action is executed
-  await ${action.contract_name}.connect(actor).${action.function_name}(params);
-  
-  // Additional logic, error handling, etc.
-}`}
-                                                            </pre>
-                                                            <Button 
-                                                              size="sm" 
-                                                              variant="ghost" 
-                                                              className="mt-2 text-xs text-blue-400 hover:text-blue-300"
-                                                            >
-                                                              Modify Implementation
-                                                            </Button>
+                                                            <div className="bg-black/40 p-3 rounded text-xs">
+                                                              <p className="text-green-400 mb-2">
+                                                                This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
+                                                              </p>
+                                                              
+                                                              <div className="text-white/80 space-y-2">
+                                                                <p>Contract interaction: {action.contract_name}</p>
+                                                                <p>Function: {action.function_name}</p>
+                                                                <p>Actor: {actor.name}</p>
+                                                                <p>Parameters will be passed according to the function specification</p>
+                                                              </div>
+                                                            </div>
+                                                            
+                                                            <Dialog>
+                                                              <DialogTrigger asChild>
+                                                                <Button 
+                                                                  size="sm" 
+                                                                  variant="ghost" 
+                                                                  className="mt-2 text-xs text-blue-400 hover:text-blue-300"
+                                                                >
+                                                                  Modify Implementation
+                                                                </Button>
+                                                              </DialogTrigger>
+                                                              <DialogContent className="sm:max-w-[525px] bg-gray-900 text-white border-gray-700">
+                                                                <DialogHeader>
+                                                                  <DialogTitle>Modify Implementation for {action.name}</DialogTitle>
+                                                                  <DialogDescription className="text-gray-400">
+                                                                    Provide instructions to modify how this action will be implemented.
+                                                                  </DialogDescription>
+                                                                </DialogHeader>
+                                                                <div className="grid gap-4 py-4">
+                                                                  <Textarea 
+                                                                    className="min-h-[200px] bg-gray-800 border-gray-700 text-white"
+                                                                    placeholder={`Describe how you want to modify the implementation of ${action.name}.\n\nExample: "Add a check for gas limit before executing the transaction" or "Include retry logic if the transaction fails."`}
+                                                                  />
+                                                                </div>
+                                                                <DialogFooter>
+                                                                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Apply Changes</Button>
+                                                                </DialogFooter>
+                                                              </DialogContent>
+                                                            </Dialog>
                                                           </CollapsibleContent>
                                                         </Collapsible>
                                                         
@@ -1210,20 +1285,43 @@ export default function AnalysisPage() {
                                                             </div>
                                                           </CollapsibleTrigger>
                                                           <CollapsibleContent className="mt-2 p-2 bg-gray-800/50 rounded text-xs">
-                                                            <pre className="text-yellow-400 whitespace-pre-wrap">
-                                                              {`// Validation rules for ${action.name}
-1. Check if actor has sufficient balance
-2. Verify contract state allows this action
-3. Ensure gas limits are appropriate
-4. Validate transaction parameters`}
-                                                            </pre>
-                                                            <Button 
-                                                              size="sm" 
-                                                              variant="ghost" 
-                                                              className="mt-2 text-xs text-yellow-400 hover:text-yellow-300"
-                                                            >
-                                                              Modify Validation Rules
-                                                            </Button>
+                                                            <div className="bg-black/40 p-3 rounded text-xs">
+                                                              <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+                                                                <li>Check if actor has sufficient balance</li>
+                                                                <li>Verify contract state allows this action</li>
+                                                                <li>Ensure gas limits are appropriate</li>
+                                                                <li>Validate transaction parameters</li>
+                                                              </ul>
+                                                            </div>
+                                                            
+                                                            <Dialog>
+                                                              <DialogTrigger asChild>
+                                                                <Button 
+                                                                  size="sm" 
+                                                                  variant="ghost" 
+                                                                  className="mt-2 text-xs text-yellow-400 hover:text-yellow-300"
+                                                                >
+                                                                  Modify Validation Rules
+                                                                </Button>
+                                                              </DialogTrigger>
+                                                              <DialogContent className="sm:max-w-[525px] bg-gray-900 text-white border-gray-700">
+                                                                <DialogHeader>
+                                                                  <DialogTitle>Modify Validation Rules for {action.name}</DialogTitle>
+                                                                  <DialogDescription className="text-gray-400">
+                                                                    Provide instructions to modify the validation rules for this action.
+                                                                  </DialogDescription>
+                                                                </DialogHeader>
+                                                                <div className="grid gap-4 py-4">
+                                                                  <Textarea 
+                                                                    className="min-h-[200px] bg-gray-800 border-gray-700 text-white"
+                                                                    placeholder={`Describe how you want to modify the validation rules for ${action.name}.\n\nExample: "Add a rule to check for maximum gas price" or "Remove the balance check for this particular action."`}
+                                                                  />
+                                                                </div>
+                                                                <DialogFooter>
+                                                                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Apply Changes</Button>
+                                                                </DialogFooter>
+                                                              </DialogContent>
+                                                            </Dialog>
                                                           </CollapsibleContent>
                                                         </Collapsible>
                                                       </div>
