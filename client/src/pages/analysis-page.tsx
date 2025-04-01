@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -694,12 +694,35 @@ export default function AnalysisPage() {
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>
-                    {currentStep.id === "files" ? "Project Summary" : 
-                     currentStep.id === "actors" ? "Actor Summary" :
-                     currentStep.id === "test_setup" ? "Simulation Setup" :
-                     "Simulation Results"}
-                  </span>
+                  <div className="flex items-center justify-between w-full">
+                    <span>
+                      {currentStep.id === "files" ? "Project Summary" : 
+                       currentStep.id === "actors" ? "Actor Summary" :
+                       currentStep.id === "test_setup" ? "Simulation Setup" :
+                       "Simulation Results"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {(currentStep.id === "files" || currentStep.id === "actors") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await fetch(`/api/reanalyze/${id}/${currentStep.id}`, {
+                                method: 'POST'
+                              });
+                            } catch (error) {
+                              console.error('Error triggering reanalysis:', error);
+                            }
+                          }}
+                          disabled={getStepStatus(currentStep.id) === "in_progress"}
+                        >
+                          <RefreshCcw className="h-4 w-4 mr-1" />
+                          Refresh
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                   {currentStep.link && getStepStatus(currentStep.id) === "completed" && (
                     <Button
                       variant="outline"
