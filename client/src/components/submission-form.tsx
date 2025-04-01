@@ -131,7 +131,7 @@ export default function SubmissionForm() {
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {user ? 'Create Project' : 'Continue to Login'}
+          Begin Analysis
         </Button>
       </form>
     </Form>
