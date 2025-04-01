@@ -64,7 +64,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6 pt-28">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">

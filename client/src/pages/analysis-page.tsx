@@ -688,7 +688,7 @@ export default function AnalysisPage() {
   const currentStep = analysisSteps.find(step => step.id === selectedStep) || analysisSteps[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6 pt-28">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
