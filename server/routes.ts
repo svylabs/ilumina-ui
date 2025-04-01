@@ -706,8 +706,15 @@ export function registerRoutes(app: Express): Server {
 
       // Return steps data
       res.json({ steps });
-        // New step IDs
-        files: { 
+    } catch (error) {
+      console.error("Error fetching analysis:", error);
+      res.status(500).json({ message: "Failed to fetch analysis data" });
+    }
+  });
+
+  // New step IDs route
+  app.get("/api/files", (req, res) => {
+    const files = { 
           status: "completed", 
           details: null, 
           startTime: null,
