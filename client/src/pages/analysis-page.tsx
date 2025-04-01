@@ -14,6 +14,11 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useEffect, useState, useCallback, useRef } from "react";
 import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
@@ -1129,33 +1134,42 @@ export default function AnalysisPage() {
                                     <h3 className="text-xl font-semibold text-green-400">Market Participants</h3>
                                     <div className="space-y-4">
                                       {actorsData.actors.map((actor: any, index: number) => (
-                                        <div key={index} className="bg-gray-900 p-4 rounded-md">
-                                          <div className="flex items-center justify-between">
-                                            <h4 className="text-lg font-medium text-blue-400">{actor.name}</h4>
-                                          </div>
-                                          <p className="mt-1 text-white">{actor.summary}</p>
-                                          
-                                          <div className="mt-3">
-                                            <p className="text-gray-400 mb-2">Possible Actions:</p>
-                                            <div className="space-y-2">
-                                              {actor.actions.map((action: any, i: number) => (
-                                                <div key={i} className="bg-gray-800 p-3 rounded">
-                                                  <div className="flex justify-between">
-                                                    <span className="text-yellow-300 font-medium">{action.name}</span>
-                                                    <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
-                                                      {action.contract_name}
-                                                    </span>
-                                                  </div>
-                                                  <p className="text-sm text-gray-300 mt-1">{action.summary}</p>
-                                                  <div className="mt-2 flex text-xs text-gray-400 space-x-4">
-                                                    <span>Function: <code className="text-cyan-300">{action.function_name}</code></span>
-                                                    <span>Probability: <span className="text-green-300">{action.probability * 100}%</span></span>
-                                                  </div>
-                                                </div>
-                                              ))}
+                                        <Collapsible key={index} className="bg-gray-900 rounded-md">
+                                          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                                            <div>
+                                              <h4 className="text-lg font-medium text-blue-400 text-left">{actor.name}</h4>
+                                              <p className="mt-1 text-white/70 text-sm text-left">{actor.summary}</p>
                                             </div>
-                                          </div>
-                                        </div>
+                                            <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
+                                          </CollapsibleTrigger>
+                                          <CollapsibleContent className="px-4 pb-4">
+                                            <div className="mt-3">
+                                              <Collapsible>
+                                                <CollapsibleTrigger className="flex items-center gap-2 text-gray-400 mb-2">
+                                                  <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                  <span>Possible Actions</span>
+                                                </CollapsibleTrigger>
+                                                <CollapsibleContent className="space-y-2">
+                                                  {actor.actions.map((action: any, i: number) => (
+                                                    <div key={i} className="bg-gray-800 p-3 rounded">
+                                                      <div className="flex justify-between">
+                                                        <span className="text-yellow-300 font-medium">{action.name}</span>
+                                                        <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
+                                                          {action.contract_name}
+                                                        </span>
+                                                      </div>
+                                                      <p className="text-sm text-gray-300 mt-1">{action.summary}</p>
+                                                      <div className="mt-2 flex text-xs text-gray-400 space-x-4">
+                                                        <span>Function: <code className="text-cyan-300">{action.function_name}</code></span>
+                                                        <span>Probability: <span className="text-green-300">{action.probability * 100}%</span></span>
+                                                      </div>
+                                                    </div>
+                                                  ))}
+                                                </CollapsibleContent>
+                                              </Collapsible>
+                                            </div>
+                                          </CollapsibleContent>
+                                        </Collapsible>
                                       ))}
                                     </div>
                                   </div>
