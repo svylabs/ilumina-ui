@@ -43,7 +43,7 @@ type SimulationRun = {
 // Component for Simulations tab
 function SimulationsComponent() {
   const { id: submissionId } = useParams();
-  
+
   // State for simulation runs
   const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
@@ -56,14 +56,14 @@ function SimulationsComponent() {
     runsLimit?: number | string;
   } | null>(null);
   const [showUpgradeMessage, setShowUpgradeMessage] = useState(false);
-  
+
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   // Fetch simulation runs and status on component mount
   useEffect(() => {
     if (!user || !submissionId) return;
-    
+
     const fetchData = async () => {
       try {
         // Fetch simulation status
@@ -78,7 +78,7 @@ function SimulationsComponent() {
             message: "Please login to run simulations"
           });
         }
-        
+
         // Fetch existing simulation runs
         const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
         if (runsResponse.ok) {
@@ -106,24 +106,24 @@ function SimulationsComponent() {
         });
       }
     };
-    
+
     fetchData();
   }, [user, submissionId, toast]);
-  
+
   // Generate a new simulation ID
   const generateSimId = () => {
     return `sim-${String(Math.floor(Math.random() * 900) + 100)}`;
   };
-  
+
   // Start a new simulation
   const startSimulation = async () => {
     if (isRunningSimulation || !simStatus?.canRun || !submissionId) return;
-    
+
     try {
       setIsRunningSimulation(true);
       setProgress(0);
       const simId = generateSimId();
-      
+
       // Mock progress updates
       const interval = setInterval(() => {
         setProgress(prev => {
@@ -134,7 +134,7 @@ function SimulationsComponent() {
           return prev + 5;
         });
       }, 300);
-      
+
       // Simulate a running time
       setTimeout(async () => {
         try {
@@ -144,7 +144,7 @@ function SimulationsComponent() {
           const passedTests = isSuccess 
             ? totalTests 
             : Math.floor(totalTests * (Math.random() * 0.4 + 0.5)); // 50-90% pass rate for failures
-          
+
           // Log the simulation run
           const logResponse = await fetch('/api/log-simulation', {
             method: 'POST',
@@ -163,7 +163,7 @@ function SimulationsComponent() {
               }
             })
           });
-          
+
           if (!logResponse.ok) {
             if (logResponse.status === 401) {
               toast({
@@ -177,9 +177,9 @@ function SimulationsComponent() {
             }
             throw new Error('Failed to log simulation');
           }
-          
+
           const logData = await logResponse.json();
-          
+
           // Update simulation runs with the new one from the server
           if (logData.success && logData.simulationRun) {
             // Fetch all runs to ensure consistency
@@ -215,7 +215,7 @@ function SimulationsComponent() {
               setSimulationRuns(prev => [newRun, ...prev]);
             }
           }
-          
+
           // Update simulation status with new counts
           const statusResponse = await fetch('/api/can-run-simulation');
           if (statusResponse.ok) {
@@ -223,7 +223,7 @@ function SimulationsComponent() {
             setSimStatus(newStatus);
             setShowUpgradeMessage(!newStatus.canRun);
           }
-          
+
           setIsRunningSimulation(false);
         } catch (error) {
           console.error('Error completing simulation:', error);
@@ -245,7 +245,7 @@ function SimulationsComponent() {
       setIsRunningSimulation(false);
     }
   };
-  
+
   return (
     <div className="text-white">
       <div className="space-y-6">
@@ -280,7 +280,7 @@ function SimulationsComponent() {
             </button>
           </div>
         </div>
-        
+
         {isRunningSimulation && (
           <div className="bg-gray-900 p-4 rounded-md">
             <div className="flex items-center mb-2">
@@ -303,7 +303,7 @@ function SimulationsComponent() {
             </div>
           </div>
         )}
-        
+
         {simulationRuns.length > 0 ? (
           <div className="bg-gray-900 rounded-md">
             <div className="border-b border-gray-800 p-4">
@@ -314,7 +314,7 @@ function SimulationsComponent() {
                 <div className="col-span-3">Actions</div>
               </div>
             </div>
-            
+
             <div className="divide-y divide-gray-800">
               {simulationRuns.map((run) => (
                 <div key={run.id} className="p-4 hover:bg-gray-800/50 transition-colors">
@@ -580,7 +580,7 @@ export default function AnalysisPage() {
   const { id } = useParams();
   const [selectedStep, setSelectedStep] = useState<string>("files");
   const [activeSubstep, setActiveSubstep] = useState<string>("");
-  
+
   // No content ref needed
 
   const { data: project } = useQuery({
@@ -592,16 +592,16 @@ export default function AnalysisPage() {
     queryKey: [`/api/analysis/${id}`],
     refetchInterval: (data: unknown) => {
       if (!data || typeof data !== 'object' || !('steps' in data)) return 2000;
-      
+
       // Type assertion
       const analysisData = data as AnalysisResponse;
       const steps = analysisData.steps;
-      
+
       // Check if any step is in progress
       const hasInProgressStep = Object.values(steps).some(
         (step: AnalysisStepStatus) => step.status === "in_progress"
       );
-      
+
       return hasInProgressStep ? 2000 : false;
     },
   });
@@ -620,19 +620,19 @@ export default function AnalysisPage() {
   // This effect only runs once on initial load and whenever analysis changes,
   // and only sets the selected step if not manually selected by the user
   const userSelectedRef = useRef(false);
-  
+
   useEffect(() => {
     if (analysis && analysis.steps) {
       // Only auto-select a step if the user hasn't manually selected one yet
       if (!userSelectedRef.current) {
         // Type safety: Explicitly cast entries to the right type
         const entries = Object.entries(analysis.steps) as [string, AnalysisStepStatus][];
-        
+
         // Find any in-progress step
         const inProgressStep = entries.find(
           ([_, step]) => step.status === "in_progress"
         );
-        
+
         if (inProgressStep) {
           setSelectedStep(inProgressStep[0]);
         } else {
@@ -640,9 +640,9 @@ export default function AnalysisPage() {
           const completedSteps = entries.filter(
             ([_, step]) => step.status === "completed"
           );
-          
+
           const lastCompletedStep = completedSteps.length > 0 ? completedSteps[completedSteps.length - 1] : null;
-            
+
           if (lastCompletedStep) {
             setSelectedStep(lastCompletedStep[0]);
           }
@@ -781,7 +781,7 @@ export default function AnalysisPage() {
                               disabled={getStepStatus(currentStep.id) === "in_progress"}
                             >
                               <RefreshCcw className="h-4 w-4 mr-1" />
-                              Re-evaluate
+                              Re-analyze
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="bg-black/95 border-primary/20">
@@ -838,7 +838,7 @@ export default function AnalysisPage() {
                       size="sm"
                       asChild
                     >
-                      <Link href={currentStep.id === "simulations" ? `/results/${id}` : currentStep.link}>
+                      <Link href={currentStep.id === "simulations" ? `/results/${id}` :currentStep.link}>
                         {currentStep.linkText}
                       </Link>
                     </Button>
@@ -867,7 +867,7 @@ export default function AnalysisPage() {
                             try {
                               // First try to use the jsonData field directly from the API
                               const stepData = analysis?.steps[currentStep.id];
-                              
+
                               // Fall back to parsing the details field if jsonData is not available
                               let projectData;
                               if (stepData?.jsonData) {
@@ -897,7 +897,7 @@ export default function AnalysisPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   <div className="space-y-4">
                                     <h3 className="text-lg font-semibold text-green-400">Smart Contracts</h3>
                                     <div className="space-y-3">
@@ -933,7 +933,7 @@ export default function AnalysisPage() {
                                       ))}
                                     </div>
                                   </div>
-                                  
+
                                   <div>
                                     <h3 className="text-lg font-semibold text-green-400 mb-3">Dependencies</h3>
                                     <div className="bg-gray-900 p-3 rounded-md">
@@ -964,7 +964,7 @@ export default function AnalysisPage() {
                             try {
                               // First try to use the jsonData field directly from the API
                               const stepData = analysis?.steps[currentStep.id];
-                              
+
                               // Fall back to parsing the details field if jsonData is not available
                               let testSetupData;
                               if (stepData?.jsonData) {
@@ -974,7 +974,7 @@ export default function AnalysisPage() {
                                 if (!details) return <p>No details available</p>;
                                 testSetupData = JSON.parse(details);
                               }
-                              
+
                               // Get actors data from API
                               let actorsData = { actors: [] };
                               try {
@@ -985,7 +985,7 @@ export default function AnalysisPage() {
                               } catch (e) {
                                 console.error("Failed to parse actors data:", e);
                               }
-                              
+
                               // Ensure testSetupData has all required properties
                               const enhancedTestSetupData = {
                                 ...testSetupData,
@@ -1016,20 +1016,20 @@ export default function AnalysisPage() {
                                   }
                                 ]
                               };
-                              
+
                               // Since we already have activeSubstep at the component level, 
                               // we just need to ensure it has a valid value
                               if (activeSubstep === "" && enhancedTestSetupData.substeps.length > 0) {
                                 // This is safe because we're just updating state without a hook
                                 setActiveSubstep(enhancedTestSetupData.substeps[0].id);
                               }
-                              
+
                               return (
                                 <div className="space-y-6">
                                   {/* Test Environment with file viewer */}
                                   <div className="mb-8">
                                     <h3 className="text-xl font-semibold text-blue-400 mb-4">Test Environment</h3>
-                                    
+
                                     {/* Network info panel */}
                                     <div className="bg-gray-900 p-4 rounded-md mb-4">
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1047,7 +1047,7 @@ export default function AnalysisPage() {
                                         </div>
                                       </div>
                                     </div>
-                                    
+
                                     {/* Code Viewer */}
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
                                       <h4 className="text-lg font-medium text-blue-400 mb-3">Simulation Code</h4>
@@ -1067,13 +1067,13 @@ export default function AnalysisPage() {
                                   {/* Implementation Steps Section */}
                                   <div className="space-y-4" id="implementation-steps">
                                     <h3 className="text-xl font-semibold text-blue-400">Actor Implementations</h3>
-                                    
+
                                     {/* Actors and their actions with validation details */}
                                     <div className="space-y-4">
                                       {/* Actor Implementations Section */}
                                       <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
                                         <p className="text-gray-300 mb-4">Create actor implementations based on the identified roles</p>
-                                        
+
                                         {/* Dynamic Actor List */}
                                         <div className="space-y-4">
                                           {enhancedTestSetupData.actors.length > 0 ? (
@@ -1112,7 +1112,7 @@ export default function AnalysisPage() {
                                                                 <p className="text-green-400 mb-2">
                                                                   This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
                                                                 </p>
-                                                                
+
                                                                 <div className="text-white/80 space-y-2">
                                                                   <p>Contract interaction: {action.contract_name}</p>
                                                                   <p>Function: {action.function_name}</p>
@@ -1120,7 +1120,7 @@ export default function AnalysisPage() {
                                                                   <p>Parameters will be passed according to the function specification</p>
                                                                 </div>
                                                               </div>
-                                                              
+
                                                               <Dialog>
                                                                 <DialogTrigger asChild>
                                                                   <Button 
@@ -1150,7 +1150,7 @@ export default function AnalysisPage() {
                                                                 </DialogContent>
                                                               </Dialog>
                                                             </div>
-                                                            
+
                                                             <div>
                                                               <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
                                                               <div className="bg-black/40 p-3 rounded text-xs">
@@ -1163,7 +1163,7 @@ export default function AnalysisPage() {
                                                                   <li>Operation must not violate any business logic constraints</li>
                                                                 </ul>
                                                               </div>
-                                                              
+
                                                               <Dialog>
                                                                 <DialogTrigger asChild>
                                                                   <Button 
@@ -1200,14 +1200,10 @@ export default function AnalysisPage() {
                                                   </div>
                                                 </CollapsibleContent>
                                               </Collapsible>
-                                            ))
-                                          ) : (
-                                            <div className="text-center p-6 bg-gray-800/50 rounded-lg">
-                                              <p className="text-gray-400">No actors available. Please ensure the analysis has completed successfully.</p>
                                             </div>
-                                          )}
-                                        </div>
-                                      </div>
+                                          </CollapsibleContent>
+                                        </Collapsible>
+                                      ))}
                                     </div>
                                   </div>
                                 </div>
@@ -1223,17 +1219,17 @@ export default function AnalysisPage() {
                         </div>
                       ) : currentStep.id === "simulations" ? (
                         <SimulationsComponent />
-                      
+
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
                           <div className="space-y-6">
                             <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                            
+
                             <div className="space-y-4">
                               <div className="bg-gray-900 p-4 rounded-md">
                                 <h4 className="text-lg font-medium text-yellow-300 mb-3">Transaction Sequence</h4>
                                 <div className="space-y-5">
-                                  
+
                                   {/* Transaction 1: Deploy MockERC20 Token */}
                                   <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
                                     <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -1243,13 +1239,13 @@ export default function AnalysisPage() {
                                     <div className="grid grid-cols-12 gap-2 text-xs mb-2">
                                       <div className="col-span-3 text-gray-400">From:</div>
                                       <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Contract:</div>
                                       <div className="col-span-9 text-green-300 font-mono">MockERC20.sol</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Method:</div>
                                       <div className="col-span-9 text-green-300 font-mono">constructor</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Args:</div>
                                       <div className="col-span-9 text-yellow-200 font-mono">
                                         <div>- name: "Prediction Token"</div>
@@ -1261,7 +1257,7 @@ export default function AnalysisPage() {
                                       <span className="text-yellow-400">Note:</span> This contract will be used for betting in prediction markets
                                     </div>
                                   </div>
-                                  
+
                                   {/* Transaction 2: Deploy ResolutionStrategy */}
                                   <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
                                     <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -1271,13 +1267,13 @@ export default function AnalysisPage() {
                                     <div className="grid grid-cols-12 gap-2 text-xs mb-2">
                                       <div className="col-span-3 text-gray-400">From:</div>
                                       <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Contract:</div>
                                       <div className="col-span-9 text-green-300 font-mono">ManualResolutionStrategy.sol</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Method:</div>
                                       <div className="col-span-9 text-green-300 font-mono">constructor</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Args:</div>
                                       <div className="col-span-9 text-yellow-200 font-mono">
                                         <div>- admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</div>
@@ -1287,7 +1283,7 @@ export default function AnalysisPage() {
                                       <span className="text-yellow-400">Note:</span> The strategy will be used to manually resolve prediction markets
                                     </div>
                                   </div>
-                                  
+
                                   {/* Transaction 3: Deploy Predify */}
                                   <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
                                     <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -1297,13 +1293,13 @@ export default function AnalysisPage() {
                                     <div className="grid grid-cols-12 gap-2 text-xs mb-2">
                                       <div className="col-span-3 text-gray-400">From:</div>
                                       <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Contract:</div>
                                       <div className="col-span-9 text-green-300 font-mono">Predify.sol</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Method:</div>
                                       <div className="col-span-9 text-green-300 font-mono">constructor</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Args:</div>
                                       <div className="col-span-9 text-yellow-200 font-mono">
                                         <div>- admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</div>
@@ -1314,7 +1310,7 @@ export default function AnalysisPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   {/* Transaction 4: Admin Setup */}
                                   <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
                                     <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -1324,13 +1320,13 @@ export default function AnalysisPage() {
                                     <div className="grid grid-cols-12 gap-2 text-xs mb-2">
                                       <div className="col-span-3 text-gray-400">From:</div>
                                       <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Contract:</div>
                                       <div className="col-span-9 text-green-300 font-mono">MockERC20 (from tx 1)</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Method:</div>
                                       <div className="col-span-9 text-green-300 font-mono">approve</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Args:</div>
                                       <div className="col-span-9 text-yellow-200 font-mono">
                                         <div>- spender: [PREDIFY_ADDRESS] (from tx 3)</div>
@@ -1341,7 +1337,7 @@ export default function AnalysisPage() {
                                       <span className="text-yellow-400">Note:</span> Setup to allow the Predify contract to transfer tokens on behalf of the admin
                                     </div>
                                   </div>
-                                  
+
                                   {/* Transaction 5: Resolution Strategy Setup */}
                                   <div className="border border-gray-700 p-3 rounded-md bg-black/30 relative">
                                     <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -1351,13 +1347,13 @@ export default function AnalysisPage() {
                                     <div className="grid grid-cols-12 gap-2 text-xs mb-2">
                                       <div className="col-span-3 text-gray-400">From:</div>
                                       <div className="col-span-9 text-green-300 font-mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Admin)</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Contract:</div>
                                       <div className="col-span-9 text-green-300 font-mono">ManualResolutionStrategy (from tx 2)</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Method:</div>
                                       <div className="col-span-9 text-green-300 font-mono">setPredifyAddress</div>
-                                      
+
                                       <div className="col-span-3 text-gray-400">Args:</div>
                                       <div className="col-span-9 text-yellow-200 font-mono">
                                         <div>- predifyAddress: [PREDIFY_ADDRESS] (from tx 3)</div>
@@ -1367,7 +1363,7 @@ export default function AnalysisPage() {
                                       <span className="text-yellow-400">Note:</span> Connect the resolution strategy to the Predify contract
                                     </div>
                                   </div>
-                                  
+
                                   {/* Local Network Setup Instructions */}
                                   <div className="bg-black/20 border border-blue-900 p-3 rounded-md mt-5">
                                     <h5 className="text-blue-300 font-medium mb-2">Local Network Setup</h5>
@@ -1383,10 +1379,10 @@ export default function AnalysisPage() {
                                       {/* Remove reference to addresses */}
                                     </div>
                                   </div>
-                                  
+
                                 </div>
                               </div>
-                              
+
                               <div className="text-gray-400 text-sm mt-2">
                                 <p>After completing these deployment steps, the Prediction Market platform will be fully operational on your local network. Users will be able to create markets, place bets, and administrators will be able to resolve markets and distribute winnings.</p>
                               </div>
@@ -1399,7 +1395,7 @@ export default function AnalysisPage() {
                             try {
                               // First try to use the jsonData field directly from the API
                               const stepData = analysis?.steps[currentStep.id];
-                              
+
                               // Fall back to parsing the details field if jsonData is not available
                               let deploymentData;
                               if (stepData?.jsonData) {
@@ -1409,7 +1405,7 @@ export default function AnalysisPage() {
                                 if (!details) return <p>No details available</p>;
                                 deploymentData = JSON.parse(details);
                               }
-                              
+
                               return (
                                 <div className="space-y-6">
                                   <div className="bg-gray-900 p-4 rounded-md">
@@ -1417,7 +1413,7 @@ export default function AnalysisPage() {
                                     <p className="text-gray-300 mt-1">{deploymentData.title || "Smart Contract Deployment Process"}</p>
                                     <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
                                   </div>
-                                  
+
 
 
                                   <div className="space-y-4">
@@ -1474,10 +1470,10 @@ export default function AnalysisPage() {
                             try {
                               // First try to use the jsonData field directly from the API
                               const stepData = analysis?.steps[currentStep.id];
-                              
+
                               // Use the jsonData field directly from the API
                               let actorsData;
-                              
+
                               if (stepData?.jsonData) {
                                 actorsData = stepData.jsonData;
                               } else {
@@ -1583,7 +1579,7 @@ export default function AnalysisPage() {
                                   console.error("Error parsing actors data:", parseError);
                                 }
                               }
-                              
+
                               return (
                                 <div className="space-y-6">
                                   <div className="space-y-2">
