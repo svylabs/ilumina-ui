@@ -695,6 +695,17 @@ export default function AnalysisPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6 pt-28">
       <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Smart Contract Analysis</h1>
+          </div>
+        </div>
+
         {/* Project Details */}
         <div className="bg-black/40 rounded-lg p-4 border border-primary/20">
           <div className="flex flex-col">
@@ -704,17 +715,6 @@ export default function AnalysisPage() {
                 {project.githubUrl}
               </a>
             )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-            <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white">Smart Contract Analysis</h1>
           </div>
         </div>
 
