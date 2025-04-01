@@ -956,145 +956,239 @@ export default function AnalysisPage() {
                               
                               return (
                                 <div className="space-y-6">
-
-                                  {/* Implementation Steps Section */}
-                                  <div className="space-y-4" id="implementation-steps">
-                                    <h3 className="text-xl font-semibold text-blue-400">Implementation Steps</h3>
+                                  {/* Test Environment with file viewer */}
+                                  <div className="mb-8">
+                                    <h3 className="text-xl font-semibold text-blue-400 mb-4">Test Environment</h3>
                                     
-                                    {/* Substep Navigation Tabs */}
-                                    <div className="flex space-x-2 border-b border-gray-800">
-                                      {enhancedTestSetupData.substeps.map((substep: any) => (
-                                        <button
-                                          key={substep.id}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            setActiveSubstep(substep.id);
-                                          }}
-                                          className={`px-3 py-2 text-sm font-medium border-b-2 ${
-                                            activeSubstep === substep.id 
-                                              ? 'border-blue-400 text-blue-400' 
-                                              : 'border-transparent text-gray-400 hover:text-gray-300'
-                                          }`}
-                                        >
-                                          {substep.name}
-                                        </button>
-                                      ))}
+                                    {/* Network info panel */}
+                                    <div className="bg-gray-900 p-4 rounded-md mb-4">
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                          <span className="text-gray-400">Runtime:</span>
+                                          <p className="text-white">{enhancedTestSetupData.testEnvironment}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-400">Network:</span>
+                                          <p className="text-cyan-300">{enhancedTestSetupData.networkSettings.name}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-400">Chain ID:</span>
+                                          <p className="text-white">{enhancedTestSetupData.networkSettings.chainId}</p>
+                                        </div>
+                                      </div>
                                     </div>
                                     
-                                    {/* Substep Content */}
-                                    <div className="space-y-6">
-                                      {enhancedTestSetupData.substeps.map((substep: any) => (
-                                        <div 
-                                          key={substep.id} 
-                                          className={activeSubstep === substep.id ? 'block' : 'hidden'}
-                                        >
-                                          <div className="mb-4">
-                                            <p className="text-gray-300">{substep.description}</p>
-                                          </div>
-                                          
-                                          {substep.output && (
-                                            <div className="mt-2 bg-black/60 p-3 rounded-md">
-                                              <pre className="text-sm text-green-400 whitespace-pre-wrap">{substep.output}</pre>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
+                                    {/* Code Viewer */}
+                                    <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                                      <h4 className="text-lg font-medium text-blue-400 mb-3">Contract Code</h4>
+                                      <div className="w-full overflow-hidden">
+                                        {/* Dynamically get repository from submission */}
+                                        <GitHubCodeViewer 
+                                          owner="ethereum"
+                                          repo="solidity"
+                                          branch="develop"
+                                          path="docs/examples"
+                                          showBreadcrumb={true}
+                                        />
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Test Environment with file viewer and AI assistant */}
-                                  <div className="mt-8 mb-8">
-                                    <h3 className="text-xl font-semibold text-blue-400 mb-2">Test Environment</h3>
+                                  {/* Implementation Steps Section */}
+                                  <div className="space-y-4" id="implementation-steps">
+                                    <h3 className="text-xl font-semibold text-blue-400">Actor Implementations</h3>
                                     
-                                    {/* Main container with code files and AI assistant */}
-                                    <div className="bg-gray-900 rounded-lg border border-gray-800 p-2">
-                                      {/* Network info panel */}
-                                      <div className="bg-gray-900 p-3 rounded-md mb-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                          <div>
-                                            <span className="text-gray-400">Runtime:</span>
-                                            <p className="text-white">{enhancedTestSetupData.testEnvironment}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-gray-400">Network:</span>
-                                            <p className="text-cyan-300">{enhancedTestSetupData.networkSettings.name}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-gray-400">Chain ID:</span>
-                                            <p className="text-white">{enhancedTestSetupData.networkSettings.chainId}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Code Viewer and AI Assistant */}
-                                      <div id="code-content">
-                                        <div className="flex flex-col gap-4">
-                                          {/* Main code viewer */}
-                                          <div className="w-full overflow-hidden">
-                                            {/* Dynamically get repository from submission */}
-                                            <GitHubCodeViewer 
-                                              owner="ethereum"
-                                              repo="solidity"
-                                              branch="develop"
-                                              path="docs/examples"
-                                              showBreadcrumb={true}
-                                            />
-                                          </div>
-                                          
-                                          {/* AI Assistant for Pro and Teams plans only */}
-                                          {(() => {
-                                            // Get the current user from auth context
-                                            const { user } = useAuth();
+                                    {/* Actors and their actions with validation details */}
+                                    <div className="space-y-4">
+                                      {enhancedTestSetupData.substeps.map((substep: any) => (
+                                        substep.id === "actors" && (
+                                          <div key={substep.id} className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                                            <p className="text-gray-300 mb-4">{substep.description}</p>
                                             
-                                            // Only render the assistant for pro and teams plans
-                                            if (user && (user.plan === "pro" || user.plan === "teams")) {
-                                              return (
-                                                <div className="w-full bg-gray-800 rounded-lg p-3">
-                                                  <div className="mb-2 p-2 bg-blue-500/10 rounded flex items-center">
-                                                    <span className="text-blue-400 font-semibold">AI Assistant</span>
-                                                    <Badge className="ml-2 bg-blue-500 text-xs" variant="default">
-                                                      {user.plan === "pro" ? "Pro" : "Teams"}
-                                                    </Badge>
+                                            {/* Actor List */}
+                                            <div className="space-y-4">
+                                              {/* Example actor - hardcoded for now but would come from API */}
+                                              <Collapsible className="bg-gray-800 rounded-md">
+                                                <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                                                  <div>
+                                                    <h4 className="text-lg font-medium text-blue-400 text-left">Market Creator</h4>
+                                                    <p className="mt-1 text-white/70 text-sm text-left">Creates prediction markets with specific parameters</p>
                                                   </div>
-                                                  <div className="h-[300px]">
-                                                    <TestEnvironmentChat 
-                                                      submissionId={id || ""}
-                                                      projectName={enhancedTestSetupData.projectName || "Smart Contract Project"}
-                                                      onCodeUpdate={(code: string, path?: string) => {
-                                                        console.log("Code update requested:", { code, path });
-                                                        // Here you would implement the code update logic
-                                                      }}
-                                                      initialMessages={[
-                                                        {
-                                                          id: "welcome",
-                                                          role: "assistant",
-                                                          content: "Welcome to the AI Code Assistant. I can help you understand and modify the code. What questions do you have?",
-                                                          timestamp: new Date()
-                                                        }
-                                                      ]}
-                                                    />
+                                                  <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                </CollapsibleTrigger>
+                                                <CollapsibleContent className="px-4 pb-4">
+                                                  <div className="space-y-4">
+                                                    <Collapsible>
+                                                      <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                          <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                          <span>Create Market</span>
+                                                        </div>
+                                                        <Button size="sm" variant="outline" className="h-7 text-xs">
+                                                          Modify
+                                                        </Button>
+                                                      </CollapsibleTrigger>
+                                                      <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
+                                                        <div className="space-y-3">
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
+                                                            <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`async function createMarket(creator, params) {
+  // Validate market parameters
+  if (!params.question || !params.endTime || !params.options || params.options.length < 2) {
+    throw new Error("Invalid market parameters");
+  }
+  
+  // Create the market
+  const tx = await predictionMarket.connect(creator).createMarket(
+    params.question,
+    params.options,
+    Math.floor(new Date(params.endTime).getTime() / 1000)
+  );
+  
+  // Wait for confirmation
+  await tx.wait();
+  return tx;
+}`}
+                                                            </pre>
+                                                          </div>
+                                                          
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
+                                                            <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`// Validation for Market Creation
+1. Question must be non-empty string
+2. At least 2 options must be provided 
+3. End time must be in the future (> now + 1 hour)
+4. Creator must have sufficient balance for market creation fee
+5. Creator must not have too many active markets (limit: 10)
+6. Market with identical question should not exist`}
+                                                            </pre>
+                                                          </div>
+                                                        </div>
+                                                      </CollapsibleContent>
+                                                    </Collapsible>
+                                                    
+                                                    <Collapsible>
+                                                      <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                          <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                          <span>Add Market Liquidity</span>
+                                                        </div>
+                                                        <Button size="sm" variant="outline" className="h-7 text-xs">
+                                                          Modify
+                                                        </Button>
+                                                      </CollapsibleTrigger>
+                                                      <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
+                                                        <div className="space-y-3">
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
+                                                            <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`async function addLiquidity(creator, marketId, amount) {
+  // Check if market exists
+  const marketExists = await predictionMarket.marketExists(marketId);
+  if (!marketExists) {
+    throw new Error(\`Market \${marketId} does not exist\`);
+  }
+  
+  // Approve token transfer first
+  await token.connect(creator).approve(predictionMarket.address, amount);
+  
+  // Add liquidity
+  const tx = await predictionMarket.connect(creator).addLiquidity(marketId, amount);
+  
+  // Wait for confirmation
+  await tx.wait();
+  return tx;
+}`}
+                                                            </pre>
+                                                          </div>
+                                                          
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
+                                                            <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`// Validation for Adding Liquidity
+1. Market must exist and be active (not resolved)
+2. Amount must be > 0
+3. Creator must have sufficient token balance
+4. Creator must approve token transfer to market contract
+5. Market must not be in resolution period
+6. Liquidity amount must not exceed maximum limit`}
+                                                            </pre>
+                                                          </div>
+                                                        </div>
+                                                      </CollapsibleContent>
+                                                    </Collapsible>
                                                   </div>
-                                                </div>
-                                              );
-                                            }
-                                            
-                                            // For free plan users, show upgrade prompt
-                                            return (
-                                              <div className="w-full bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center h-[150px]">
-                                                <h3 className="text-white font-semibold mb-2">AI Assistant</h3>
-                                                <p className="text-gray-400 text-sm text-center mb-4">
-                                                  Upgrade to Pro or Teams plan to access the AI Assistant and get help with your smart contracts.
-                                                </p>
-                                                <Link href="/pricing">
-                                                  <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
-                                                    Upgrade Plan
-                                                  </Button>
-                                                </Link>
-                                              </div>
-                                            );
-                                          })()}
-                                        </div>
-                                      </div>
+                                                </CollapsibleContent>
+                                              </Collapsible>
+                                              
+                                              {/* Another example actor */}
+                                              <Collapsible className="bg-gray-800 rounded-md">
+                                                <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                                                  <div>
+                                                    <h4 className="text-lg font-medium text-blue-400 text-left">Market Participant</h4>
+                                                    <p className="mt-1 text-white/70 text-sm text-left">Participates in markets by placing bets on outcomes</p>
+                                                  </div>
+                                                  <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                </CollapsibleTrigger>
+                                                <CollapsibleContent className="px-4 pb-4">
+                                                  <div className="space-y-4">
+                                                    <Collapsible>
+                                                      <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                          <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                          <span>Place Bet</span>
+                                                        </div>
+                                                        <Button size="sm" variant="outline" className="h-7 text-xs">
+                                                          Modify
+                                                        </Button>
+                                                      </CollapsibleTrigger>
+                                                      <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
+                                                        <div className="space-y-3">
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
+                                                            <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`async function placeBet(participant, marketId, outcomeIndex, amount) {
+  // Approve token transfer
+  await token.connect(participant).approve(predictionMarket.address, amount);
+  
+  // Place bet
+  const tx = await predictionMarket.connect(participant).placeBet(
+    marketId,
+    outcomeIndex,
+    amount
+  );
+  
+  // Wait for confirmation
+  await tx.wait();
+  return tx;
+}`}
+                                                            </pre>
+                                                          </div>
+                                                          
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
+                                                            <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`// Validation for Placing Bets
+1. Market must exist and be active
+2. Outcome index must be valid for the market
+3. Bet amount must be greater than minimum (> 0.01 tokens)
+4. Participant must have sufficient token balance
+5. Market must not be in pending resolution state
+6. Betting period must not have ended`}
+                                                            </pre>
+                                                          </div>
+                                                        </div>
+                                                      </CollapsibleContent>
+                                                    </Collapsible>
+                                                  </div>
+                                                </CollapsibleContent>
+                                              </Collapsible>
+                                            </div>
+                                          </div>
+                                        )
+                                      ))}
                                     </div>
                                   </div>
                                 </div>
@@ -1143,16 +1237,19 @@ export default function AnalysisPage() {
                                             <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
                                           </CollapsibleTrigger>
                                           <CollapsibleContent className="px-4 pb-4">
-                                            <div className="mt-3">
+                                            <div className="mt-3 space-y-4">
+                                              {/* Actions Section */}
                                               <Collapsible defaultOpen>
-                                                <CollapsibleTrigger className="flex items-center gap-2 text-gray-400 mb-2">
-                                                  <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
-                                                  <span>Possible Actions</span>
+                                                <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 mb-2 w-full justify-between bg-gray-800/50 p-2 rounded">
+                                                  <div className="flex items-center gap-2">
+                                                    <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                    <span className="font-medium">Actions</span>
+                                                  </div>
                                                 </CollapsibleTrigger>
-                                                <CollapsibleContent className="space-y-2">
+                                                <CollapsibleContent className="space-y-2 mt-2">
                                                   {actor.actions.map((action: any, i: number) => (
-                                                    <div key={i} className="bg-gray-800 p-3 rounded">
-                                                      <div className="flex justify-between">
+                                                    <div key={i} className="bg-gray-800 p-3 rounded border border-gray-700">
+                                                      <div className="flex justify-between items-center">
                                                         <span className="text-yellow-300 font-medium">{action.name}</span>
                                                         <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
                                                           {action.contract_name}
@@ -1162,6 +1259,61 @@ export default function AnalysisPage() {
                                                       <div className="mt-2 flex text-xs text-gray-400 space-x-4">
                                                         <span>Function: <code className="text-cyan-300">{action.function_name}</code></span>
                                                         <span>Probability: <span className="text-green-300">{action.probability * 100}%</span></span>
+                                                      </div>
+                                                      
+                                                      {/* Code Implementation and Validation Collapsible Sections */}
+                                                      <div className="mt-3 grid grid-cols-1 gap-2">
+                                                        <Collapsible className="w-full">
+                                                          <CollapsibleTrigger className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 w-full justify-between bg-gray-700/30 p-1.5 rounded">
+                                                            <div className="flex items-center">
+                                                              <ChevronRight className="h-3 w-3 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                              <span>Implementation Details</span>
+                                                            </div>
+                                                          </CollapsibleTrigger>
+                                                          <CollapsibleContent className="mt-2 p-2 bg-gray-800/50 rounded text-xs">
+                                                            <pre className="text-green-400 whitespace-pre-wrap">
+                                                              {`async function ${action.function_name}() {
+  // Implementation details would go here
+  // This would show the actual code implementation of how this action is executed
+  await ${action.contract_name}.connect(actor).${action.function_name}(params);
+  
+  // Additional logic, error handling, etc.
+}`}
+                                                            </pre>
+                                                            <Button 
+                                                              size="sm" 
+                                                              variant="ghost" 
+                                                              className="mt-2 text-xs text-blue-400 hover:text-blue-300"
+                                                            >
+                                                              Modify Implementation
+                                                            </Button>
+                                                          </CollapsibleContent>
+                                                        </Collapsible>
+                                                        
+                                                        <Collapsible className="w-full">
+                                                          <CollapsibleTrigger className="text-xs flex items-center gap-1 text-yellow-400 hover:text-yellow-300 w-full justify-between bg-gray-700/30 p-1.5 rounded">
+                                                            <div className="flex items-center">
+                                                              <ChevronRight className="h-3 w-3 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                              <span>Validation Rules</span>
+                                                            </div>
+                                                          </CollapsibleTrigger>
+                                                          <CollapsibleContent className="mt-2 p-2 bg-gray-800/50 rounded text-xs">
+                                                            <pre className="text-yellow-400 whitespace-pre-wrap">
+                                                              {`// Validation rules for ${action.name}
+1. Check if actor has sufficient balance
+2. Verify contract state allows this action
+3. Ensure gas limits are appropriate
+4. Validate transaction parameters`}
+                                                            </pre>
+                                                            <Button 
+                                                              size="sm" 
+                                                              variant="ghost" 
+                                                              className="mt-2 text-xs text-yellow-400 hover:text-yellow-300"
+                                                            >
+                                                              Modify Validation Rules
+                                                            </Button>
+                                                          </CollapsibleContent>
+                                                        </Collapsible>
                                                       </div>
                                                     </div>
                                                   ))}
