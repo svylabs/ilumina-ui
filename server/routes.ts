@@ -573,6 +573,84 @@ export function registerRoutes(app: Express): Server {
         .orderBy(submissions.createdAt, "desc")
         .limit(1);
 
+
+  // Reanalyze project files or actors
+  app.post("/api/reanalyze/:id/:section", async (req, res) => {
+    try {
+      const { id, section } = req.params;
+      
+      // Get the analysis step
+      const [step] = await db
+        .select()
+        .from(analysisSteps)
+        .where(eq(analysisSteps.submissionId, id))
+        .where(eq(analysisSteps.stepId, section))
+        .limit(1);
+
+      if (!step) {
+        return res.status(404).json({ message: "Analysis step not found" });
+      }
+
+      // Update step status to trigger reanalysis
+      await db
+        .update(analysisSteps)
+        .set({ 
+          status: "in_progress",
+          details: "Reanalyzing...",
+          createdAt: new Date()
+        })
+        .where(eq(analysisSteps.submissionId, id))
+        .where(eq(analysisSteps.stepId, section));
+
+      res.json({ message: "Reanalysis started" });
+    } catch (error) {
+      console.error("Error triggering reanalysis:", error);
+      res.status(500).json({ message: "Failed to trigger reanalysis" });
+    }
+  });
+
+  // Refine analysis with AI prompt
+  app.post("/api/refine-analysis/:id/:section", async (req, res) => {
+    try {
+      const { id, section } = req.params;
+      const { prompt } = req.body;
+
+      if (!prompt) {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+
+      // Get the analysis step
+      const [step] = await db
+        .select()
+        .from(analysisSteps)
+        .where(eq(analysisSteps.submissionId, id))
+        .where(eq(analysisSteps.stepId, section))
+        .limit(1);
+
+      if (!step) {
+        return res.status(404).json({ message: "Analysis step not found" });
+      }
+
+      // Update step status to refine with AI
+      await db
+        .update(analysisSteps)
+        .set({ 
+          status: "in_progress",
+          details: `Refining analysis with prompt: ${prompt}`,
+          createdAt: new Date()
+        })
+        .where(eq(analysisSteps.submissionId, id))
+        .where(eq(analysisSteps.stepId, section));
+
+      res.json({ message: "Analysis refinement started" });
+    } catch (error) {
+      console.error("Error refining analysis:", error);
+      res.status(500).json({ message: "Failed to refine analysis" });
+    }
+  });
+
+
+
       // If not found, try UUID format
       if (!submission.length && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) {
         submission = await db
