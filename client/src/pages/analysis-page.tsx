@@ -917,6 +917,17 @@ export default function AnalysisPage() {
                                 testSetupData = JSON.parse(details);
                               }
                               
+                              // Get actors data from API
+                              let actorsData = { actors: [] };
+                              try {
+                                const actorsStep = analysis?.steps?.actors;
+                                if (actorsStep?.jsonData) {
+                                  actorsData = actorsStep.jsonData;
+                                }
+                              } catch (e) {
+                                console.error("Failed to parse actors data:", e);
+                              }
+                              
                               // Ensure testSetupData has all required properties
                               const enhancedTestSetupData = {
                                 ...testSetupData,
@@ -925,6 +936,7 @@ export default function AnalysisPage() {
                                   name: "Local Hardhat",
                                   chainId: "31337"
                                 },
+                                actors: actorsData.actors || [],
                                 substeps: testSetupData.substeps || [
                                   {
                                     id: "setup",
@@ -1000,195 +1012,95 @@ export default function AnalysisPage() {
                                     
                                     {/* Actors and their actions with validation details */}
                                     <div className="space-y-4">
-                                      {enhancedTestSetupData.substeps.map((substep: any) => (
-                                        substep.id === "actors" && (
-                                          <div key={substep.id} className="bg-gray-900 rounded-lg border border-gray-800 p-4">
-                                            <p className="text-gray-300 mb-4">{substep.description}</p>
-                                            
-                                            {/* Actor List */}
-                                            <div className="space-y-4">
-                                              {/* Example actor - hardcoded for now but would come from API */}
-                                              <Collapsible className="bg-gray-800 rounded-md">
+                                      {/* Actor Implementations Section */}
+                                      <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                                        <p className="text-gray-300 mb-4">Create actor implementations based on the identified roles</p>
+                                        
+                                        {/* Dynamic Actor List */}
+                                        <div className="space-y-4">
+                                          {enhancedTestSetupData.actors.length > 0 ? (
+                                            enhancedTestSetupData.actors.map((actor: any, index: number) => (
+                                              <Collapsible key={index} className="bg-gray-800 rounded-md">
                                                 <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
                                                   <div>
-                                                    <h4 className="text-lg font-medium text-blue-400 text-left">Market Creator</h4>
-                                                    <p className="mt-1 text-white/70 text-sm text-left">Creates prediction markets with specific parameters</p>
+                                                    <h4 className="text-lg font-medium text-blue-400 text-left">{actor.name}</h4>
+                                                    <p className="mt-1 text-white/70 text-sm text-left">{actor.summary}</p>
                                                   </div>
                                                   <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
                                                 </CollapsibleTrigger>
                                                 <CollapsibleContent className="px-4 pb-4">
                                                   <div className="space-y-4">
-                                                    <Collapsible>
-                                                      <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                          <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
-                                                          <span>Create Market</span>
-                                                        </div>
-                                                        <Button size="sm" variant="outline" className="h-7 text-xs">
-                                                          Modify
-                                                        </Button>
-                                                      </CollapsibleTrigger>
-                                                      <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
-                                                        <div className="space-y-3">
-                                                          <div>
-                                                            <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
-                                                            <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`async function createMarket(creator, params) {
-  // Validate market parameters
-  if (!params.question || !params.endTime || !params.options || params.options.length < 2) {
-    throw new Error("Invalid market parameters");
+                                                    {actor.actions.map((action: any, i: number) => (
+                                                      <Collapsible key={i}>
+                                                        <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
+                                                          <div className="flex items-center gap-2">
+                                                            <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                                            <span>{action.name}</span>
+                                                          </div>
+                                                          <div className="flex items-center gap-2">
+                                                            <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
+                                                              {action.contract_name}
+                                                            </span>
+                                                            <Button size="sm" variant="outline" className="h-7 text-xs">
+                                                              Modify
+                                                            </Button>
+                                                          </div>
+                                                        </CollapsibleTrigger>
+                                                        <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
+                                                          <div className="space-y-3">
+                                                            <div>
+                                                              <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
+                                                              <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`async function ${action.function_name}(${actor.name.toLowerCase().replace(/\s+/g, '')}, params) {
+  // Implementation for ${action.name}
+  // Function documentation:
+  // - Contract: ${action.contract_name}
+  // - Function: ${action.function_name}
+  
+  // Parameter validation
+  if (!params || Object.keys(params).length === 0) {
+    throw new Error("Parameters required for this operation");
   }
   
-  // Create the market
-  const tx = await predictionMarket.connect(creator).createMarket(
-    params.question,
-    params.options,
-    Math.floor(new Date(params.endTime).getTime() / 1000)
+  // Main function execution
+  const tx = await ${action.contract_name.toLowerCase()}.connect(${actor.name.toLowerCase().replace(/\s+/g, '')}).${action.function_name}(
+    ...Object.values(params)
   );
   
-  // Wait for confirmation
+  // Wait for transaction confirmation
   await tx.wait();
   return tx;
 }`}
-                                                            </pre>
+                                                              </pre>
+                                                            </div>
+                                                            
+                                                            <div>
+                                                              <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
+                                                              <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
+{`// Validation rules for ${action.name}
+1. All required parameters must be provided and valid
+2. Actor must have appropriate permissions/role
+3. Actor must have sufficient balance if operations involve transfers
+4. Contract state must allow this operation
+5. Gas estimation must be within reasonable limits
+6. Operation must not violate any business logic constraints`}
+                                                              </pre>
+                                                            </div>
                                                           </div>
-                                                          
-                                                          <div>
-                                                            <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
-                                                            <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`// Validation for Market Creation
-1. Question must be non-empty string
-2. At least 2 options must be provided 
-3. End time must be in the future (> now + 1 hour)
-4. Creator must have sufficient balance for market creation fee
-5. Creator must not have too many active markets (limit: 10)
-6. Market with identical question should not exist`}
-                                                            </pre>
-                                                          </div>
-                                                        </div>
-                                                      </CollapsibleContent>
-                                                    </Collapsible>
-                                                    
-                                                    <Collapsible>
-                                                      <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                          <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
-                                                          <span>Add Market Liquidity</span>
-                                                        </div>
-                                                        <Button size="sm" variant="outline" className="h-7 text-xs">
-                                                          Modify
-                                                        </Button>
-                                                      </CollapsibleTrigger>
-                                                      <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
-                                                        <div className="space-y-3">
-                                                          <div>
-                                                            <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
-                                                            <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`async function addLiquidity(creator, marketId, amount) {
-  // Check if market exists
-  const marketExists = await predictionMarket.marketExists(marketId);
-  if (!marketExists) {
-    throw new Error(\`Market \${marketId} does not exist\`);
-  }
-  
-  // Approve token transfer first
-  await token.connect(creator).approve(predictionMarket.address, amount);
-  
-  // Add liquidity
-  const tx = await predictionMarket.connect(creator).addLiquidity(marketId, amount);
-  
-  // Wait for confirmation
-  await tx.wait();
-  return tx;
-}`}
-                                                            </pre>
-                                                          </div>
-                                                          
-                                                          <div>
-                                                            <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
-                                                            <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`// Validation for Adding Liquidity
-1. Market must exist and be active (not resolved)
-2. Amount must be > 0
-3. Creator must have sufficient token balance
-4. Creator must approve token transfer to market contract
-5. Market must not be in resolution period
-6. Liquidity amount must not exceed maximum limit`}
-                                                            </pre>
-                                                          </div>
-                                                        </div>
-                                                      </CollapsibleContent>
-                                                    </Collapsible>
+                                                        </CollapsibleContent>
+                                                      </Collapsible>
+                                                    ))}
                                                   </div>
                                                 </CollapsibleContent>
                                               </Collapsible>
-                                              
-                                              {/* Another example actor */}
-                                              <Collapsible className="bg-gray-800 rounded-md">
-                                                <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
-                                                  <div>
-                                                    <h4 className="text-lg font-medium text-blue-400 text-left">Market Participant</h4>
-                                                    <p className="mt-1 text-white/70 text-sm text-left">Participates in markets by placing bets on outcomes</p>
-                                                  </div>
-                                                  <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
-                                                </CollapsibleTrigger>
-                                                <CollapsibleContent className="px-4 pb-4">
-                                                  <div className="space-y-4">
-                                                    <Collapsible>
-                                                      <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                          <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
-                                                          <span>Place Bet</span>
-                                                        </div>
-                                                        <Button size="sm" variant="outline" className="h-7 text-xs">
-                                                          Modify
-                                                        </Button>
-                                                      </CollapsibleTrigger>
-                                                      <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
-                                                        <div className="space-y-3">
-                                                          <div>
-                                                            <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
-                                                            <pre className="text-xs text-green-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`async function placeBet(participant, marketId, outcomeIndex, amount) {
-  // Approve token transfer
-  await token.connect(participant).approve(predictionMarket.address, amount);
-  
-  // Place bet
-  const tx = await predictionMarket.connect(participant).placeBet(
-    marketId,
-    outcomeIndex,
-    amount
-  );
-  
-  // Wait for confirmation
-  await tx.wait();
-  return tx;
-}`}
-                                                            </pre>
-                                                          </div>
-                                                          
-                                                          <div>
-                                                            <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
-                                                            <pre className="text-xs text-yellow-400 bg-black/40 p-2 rounded whitespace-pre-wrap">
-{`// Validation for Placing Bets
-1. Market must exist and be active
-2. Outcome index must be valid for the market
-3. Bet amount must be greater than minimum (> 0.01 tokens)
-4. Participant must have sufficient token balance
-5. Market must not be in pending resolution state
-6. Betting period must not have ended`}
-                                                            </pre>
-                                                          </div>
-                                                        </div>
-                                                      </CollapsibleContent>
-                                                    </Collapsible>
-                                                  </div>
-                                                </CollapsibleContent>
-                                              </Collapsible>
+                                            ))
+                                          ) : (
+                                            <div className="text-center p-6 bg-gray-800/50 rounded-lg">
+                                              <p className="text-gray-400">No actors available. Please ensure the analysis has completed successfully.</p>
                                             </div>
-                                          </div>
-                                        )
-                                      ))}
+                                          )}
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
