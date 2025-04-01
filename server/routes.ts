@@ -714,6 +714,9 @@ export function registerRoutes(app: Express): Server {
 
   // New step IDs route
   app.get("/api/files", (req, res) => {
+    // Determine project type - defaulting to false (Predify project)
+    const isStableBaseProject = false;
+    
     const files = { 
           status: "completed", 
           details: null, 
