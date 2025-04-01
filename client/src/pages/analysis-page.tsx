@@ -445,7 +445,48 @@ Security Analysis:
 - Time lock functionality present in staking contract
 `
   },
+  {
+    id: "deployment",
+    title: "Deployment Instructions",
+    description: "Transaction sequence for local network setup",
+    status: "pending",
+    output: `// Deployment Instructions
+Transaction sequence for local network setup:
 
+1. Deploy Token Contract
+   - Constructor params: "Token Name", "SYM", 18 (decimals)
+   - Gas: ~2,500,000
+   - Transaction: TokenOwner deploys Token.sol
+   - Result: Token contract deployed at 0xToken
+
+2. Deploy Staking Contract
+   - Constructor params: Token address (0xToken)
+   - Gas: ~3,200,000
+   - Transaction: TokenOwner deploys Staking.sol with Token address
+   - Result: Staking contract deployed at 0xStaking
+
+3. Deploy DEX Contract
+   - Constructor params: Token address (0xToken), Fee rate (0.3%)
+   - Gas: ~4,100,000
+   - Transaction: TokenOwner deploys DEX.sol with Token address
+   - Result: DEX contract deployed at 0xDEX
+
+4. Configure Token Permissions
+   - Gas: ~50,000
+   - Transaction: TokenOwner calls token.setMinter(0xDEX, true)
+   - Result: DEX can now mint reward tokens
+
+5. Initialize Trading Parameters
+   - Gas: ~150,000
+   - Transaction: TokenOwner calls dex.setFeeRate(300) // 0.3%
+   - Result: DEX fee rate configured
+
+Network Options:
+- Ethereum Mainnet
+- Polygon PoS Chain (recommended for lower fees)
+- Local Hardhat Network (for testing)
+`
+  },
   {
     id: "test_setup",
     title: "Setup Simulation",
@@ -715,6 +756,7 @@ export default function AnalysisPage() {
                     <span>
                       {currentStep.id === "files" ? "Project Summary" : 
                        currentStep.id === "actors" ? "Actor Summary" :
+                       currentStep.id === "deployment" ? "Deployment Instructions" :
                        currentStep.id === "test_setup" ? "Simulation Setup" :
                        currentStep.id === "simulations" ? "Simulation Results" :
                        currentStep.id}
@@ -1349,6 +1391,86 @@ export default function AnalysisPage() {
                               </div>
                             </div>
                           </div>
+                        </div>
+                      ) : currentStep.id === "deployment" && getStepStatus(currentStep.id) === "completed" ? (
+                        <div className="text-white font-mono">
+                          {(() => {
+                            try {
+                              // First try to use the jsonData field directly from the API
+                              const stepData = analysis?.steps[currentStep.id];
+                              
+                              // Fall back to parsing the details field if jsonData is not available
+                              let deploymentData;
+                              if (stepData?.jsonData) {
+                                deploymentData = stepData.jsonData;
+                              } else {
+                                const details = getStepDetails(currentStep.id);
+                                if (!details) return <p>No details available</p>;
+                                deploymentData = JSON.parse(details);
+                              }
+                              
+                              return (
+                                <div className="space-y-6">
+                                  <div className="bg-gray-900 p-4 rounded-md">
+                                    <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
+                                    <p className="text-gray-300 mt-1">{deploymentData.title || "Smart Contract Deployment Process"}</p>
+                                    <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
+                                  </div>
+                                  
+                                  <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
+                                    <div className="space-y-3">
+                                      {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
+                                        <div key={index} className="bg-gray-900 p-3 rounded-md">
+                                          <div className="flex justify-between items-start">
+                                            <h4 className="font-medium text-yellow-300">{step.name}</h4>
+                                            <div className="bg-gray-800 px-2 py-1 rounded text-xs text-gray-400">Gas: {step.gas}</div>
+                                          </div>
+                                          <div className="mt-2">
+                                            <div className="text-xs text-gray-400">Transaction:</div>
+                                            <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
+                                              {step.tx}
+                                            </div>
+                                          </div>
+                                          {Object.keys(step.params || {}).length > 0 && (
+                                            <div className="mt-2">
+                                              <div className="text-xs text-gray-400">Parameters:</div>
+                                              <div className="grid grid-cols-1 gap-1 mt-1">
+                                                {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
+                                                  <div key={i} className="text-sm">
+                                                    <span className="text-gray-500">{key}: </span>
+                                                    <span className="text-green-300">{String(value)}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          <div className="mt-2">
+                                            <div className="text-xs text-gray-400">Result:</div>
+                                            <div className="text-sm text-blue-300 mt-1">{step.result}</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <details>
+                                    <summary className="cursor-pointer text-cyan-400 hover:text-cyan-300">View Raw Deployment Data</summary>
+                                    <pre className="text-sm text-green-400 whitespace-pre-wrap mt-2">
+                                      {getStepDetails(currentStep.id) || currentStep.output || "No raw deployment data available"}
+                                    </pre>
+                                  </details>
+                                </div>
+                              );
+                            } catch (e) {
+                              console.error("Error rendering deployment data:", e);
+                              return (
+                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
+                                  {getStepDetails(currentStep.id) || currentStep.output || "No deployment data available"}
+                                </pre>
+                              );
+                            }
+                          })()}
                         </div>
                       ) : currentStep.id === "actors" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
