@@ -2,9 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { 
-  submissions, runs, projects, simulationRuns, users,
+  submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
-  pricingPlans, planFeatures 
+  pricingPlans, planFeatures
 } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
@@ -226,6 +226,146 @@ export function registerRoutes(app: Express): Server {
       return res.status(500).json({ 
         success: false, 
         message: "Failed to fetch simulation runs" 
+      });
+    }
+  });
+
+  // Get project files endpoint
+  app.get("/api/files/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      let submissionId: string | null = null;
+      
+      // First, check if this is a project ID
+      if (/^\d+$/.test(id)) {
+        // It's a number, probably a project ID
+        const projectSubmission = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.projectId, parseInt(id)))
+          .orderBy(submissions.createdAt, "desc")
+          .limit(1);
+        
+        if (projectSubmission.length > 0) {
+          submissionId = projectSubmission[0].id;
+        }
+      } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        // It's a UUID format, probably a submission ID
+        submissionId = id;
+      }
+      
+      if (!submissionId) {
+        return res.status(404).json({
+          success: false,
+          message: "No submission found for the given ID"
+        });
+      }
+      
+      // Check if we have project files data in our database
+      const projectFilesData = await db
+        .select()
+        .from(projectFiles)
+        .where(eq(projectFiles.submissionId, submissionId))
+        .limit(1);
+      
+      if (projectFilesData.length > 0) {
+        // Return the project files from database
+        return res.json(projectFilesData[0]);
+      }
+      
+      // If no database record found, derive project type and create default data
+      const project = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.githubUrl, submissionId))
+        .limit(1);
+      
+      // Determine if this is a StableBase or Predify project (default to Predify)
+      const isStableBaseProject = project.length > 0 && project[0].id === 24;
+      const projectType = isStableBaseProject ? "StableBase" : "Predify";
+      
+      // Create default data for this project type
+      const defaultData = {
+        submissionId,
+        projectName: isStableBaseProject ? "StableBase" : "Predify",
+        projectSummary: isStableBaseProject 
+          ? "A stablecoin protocol that maintains price stability through algorithmic mechanisms and collateral management."
+          : "A decentralized prediction market platform that allows users to create markets, place bets, and earn rewards based on the outcome of various events.",
+        devEnvironment: "Hardhat + Solidity",
+        compiler: "0.8.17",
+        contracts: [
+          {
+            name: isStableBaseProject ? "StableBase.sol" : "Predify.sol",
+            summary: isStableBaseProject 
+              ? "Main contract for the stablecoin protocol. Manages minting, redeeming, and stability mechanisms." 
+              : "Main contract for the prediction market platform. Handles creating markets, placing bets, and resolving outcomes.",
+            interfaces: isStableBaseProject 
+              ? ["IStablecoin", "IERC20"] 
+              : ["IPredictionMarket", "IERC20Receiver"],
+            libraries: isStableBaseProject 
+              ? ["SafeERC20", "SafeMath", "Ownable"] 
+              : ["SafeERC20", "AccessControl"]
+          },
+          {
+            name: isStableBaseProject ? "StabilityPool.sol" : "ManualResolutionStrategy.sol",
+            summary: isStableBaseProject 
+              ? "Manages a pool of funds for stability operations and liquidation protection." 
+              : "Implements a resolution strategy where authorized resolvers manually determine the outcome of markets.",
+            interfaces: isStableBaseProject 
+              ? ["IPool", "IRewardDistributor"] 
+              : ["IResolutionStrategy"],
+            libraries: isStableBaseProject 
+              ? ["SafeERC20", "ReentrancyGuard"] 
+              : ["AccessControl"]
+          },
+          {
+            name: isStableBaseProject ? "Oracle.sol" : "MockERC20.sol",
+            summary: isStableBaseProject 
+              ? "Price feed for collateral assets used by the protocol." 
+              : "A mock ERC20 token used for testing the prediction market.",
+            interfaces: isStableBaseProject 
+              ? ["AggregatorV3Interface"] 
+              : ["IERC20", "IERC20Metadata"],
+            libraries: isStableBaseProject 
+              ? ["Ownable"] 
+              : ["Context"]
+          }
+        ],
+        dependencies: isStableBaseProject 
+          ? {
+              "@openzeppelin/contracts": "4.8.2",
+              "hardhat": "2.14.0",
+              "ethers": "5.7.2",
+              "chai": "4.3.7",
+              "@chainlink/contracts": "0.6.1"
+            }
+          : {
+              "@openzeppelin/contracts": "4.8.2",
+              "hardhat": "2.14.0",
+              "ethers": "5.7.2",
+              "chai": "4.3.7"
+            },
+        projectType
+      };
+      
+      // Save default data to database for future use
+      try {
+        const [insertedData] = await db
+          .insert(projectFiles)
+          .values(defaultData)
+          .returning();
+        
+        return res.json(insertedData);
+      } catch (dbError) {
+        console.error("Error saving project files data:", dbError);
+        // Even if saving to DB failed, return the default data
+        return res.json(defaultData);
+      }
+    } catch (error) {
+      console.error("Error fetching project files:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch project files data" 
       });
     }
   });
@@ -1712,9 +1852,51 @@ export function registerRoutes(app: Express): Server {
         });
 
         // Special handling for files step
-        // If files step is "in_progress", we still want to show sample data
+        // If files step is "in_progress", fetch from the projectFiles table
         if (stepsStatus.files.status === "in_progress") {
-          stepsStatus.files.jsonData = sampleData.files.jsonData;
+          try {
+            // Try to fetch from projectFiles table
+            // Ensure submissionId is a valid UUID string
+            const validSubmissionId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId) 
+              ? submissionId 
+              : null;
+
+            if (!validSubmissionId) {
+              console.warn(`Invalid UUID format for submission ID: ${submissionId}`);
+              // If there is sample data, use it
+              if (sampleData?.files?.jsonData) {
+                stepsStatus.files.jsonData = sampleData.files.jsonData;
+                return;
+              }
+            }
+
+            const projectFilesData = await db
+              .select()
+              .from(projectFiles)
+              .where(eq(projectFiles.submissionId, validSubmissionId))
+              .limit(1);
+            
+            if (projectFilesData.length > 0) {
+              // Use data from projectFiles table
+              stepsStatus.files.jsonData = {
+                projectName: projectFilesData[0].projectName,
+                projectSummary: projectFilesData[0].projectSummary,
+                devEnvironment: projectFilesData[0].devEnvironment,
+                compiler: projectFilesData[0].compiler,
+                contracts: projectFilesData[0].contracts,
+                dependencies: projectFilesData[0].dependencies
+              };
+            } else if (sampleData.files.jsonData) {
+              // Fallback to sample data if needed
+              stepsStatus.files.jsonData = sampleData.files.jsonData;
+            }
+          } catch (error) {
+            console.error("Error fetching project files data:", error);
+            // Use sample data as fallback
+            if (sampleData.files.jsonData) {
+              stepsStatus.files.jsonData = sampleData.files.jsonData;
+            }
+          }
         }
 
         const hasInProgressStep = steps.some(step => step.status === "in_progress");

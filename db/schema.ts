@@ -98,6 +98,21 @@ export const simulationRuns = pgTable("simulation_runs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// New table to store project files data
+export const projectFiles = pgTable("project_files", {
+  id: serial("id").primaryKey(),
+  submissionId: uuid("submission_id").notNull(),
+  projectName: text("project_name").notNull(),
+  projectSummary: text("project_summary").notNull(),
+  devEnvironment: text("dev_environment").notNull(),
+  compiler: text("compiler").notNull(),
+  contracts: jsonb("contracts").notNull(), // Will store array of contract objects
+  dependencies: jsonb("dependencies").notNull(), // Will store dependencies object
+  projectType: text("project_type", { enum: ["StableBase", "Predify"] }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
   name: z.string().min(1),
@@ -138,6 +153,9 @@ export const selectPlanFeatureSchema = createSelectSchema(planFeatures);
 export const insertSimulationRunSchema = createInsertSchema(simulationRuns);
 export const selectSimulationRunSchema = createSelectSchema(simulationRuns);
 
+export const insertProjectFilesSchema = createInsertSchema(projectFiles);
+export const selectProjectFilesSchema = createSelectSchema(projectFiles);
+
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;
 export type InsertRun = typeof runs.$inferInsert;
@@ -150,6 +168,8 @@ export type InsertContact = typeof contacts.$inferInsert;
 export type SelectContact = typeof contacts.$inferSelect;
 export type InsertSimulationRun = typeof simulationRuns.$inferInsert;
 export type SelectSimulationRun = typeof simulationRuns.$inferSelect;
+export type InsertProjectFiles = typeof projectFiles.$inferInsert;
+export type SelectProjectFiles = typeof projectFiles.$inferSelect;
 
 export const insertAnalysisStepSchema = createInsertSchema(analysisSteps);
 export const selectAnalysisStepSchema = createSelectSchema(analysisSteps);
