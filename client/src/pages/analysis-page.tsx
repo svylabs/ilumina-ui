@@ -457,23 +457,23 @@ Transaction sequence for local network setup:
    - Constructor params: "Token Name", "SYM", 18 (decimals)
    - Gas: ~2,500,000
    - Transaction: TokenOwner deploys Token.sol
-   - Result: Token contract deployed at 0xToken
+   - Result: Token contract deployed successfully
 
 2. Deploy Staking Contract
-   - Constructor params: Token address (0xToken)
+   - Constructor params: Token address (from step 1)
    - Gas: ~3,200,000
    - Transaction: TokenOwner deploys Staking.sol with Token address
-   - Result: Staking contract deployed at 0xStaking
+   - Result: Staking contract deployed successfully
 
 3. Deploy DEX Contract
-   - Constructor params: Token address (0xToken), Fee rate (0.3%)
+   - Constructor params: Token address (from step 1), Fee rate (0.3%)
    - Gas: ~4,100,000
    - Transaction: TokenOwner deploys DEX.sol with Token address
-   - Result: DEX contract deployed at 0xDEX
+   - Result: DEX contract deployed successfully
 
 4. Configure Token Permissions
    - Gas: ~50,000
-   - Transaction: TokenOwner calls token.setMinter(0xDEX, true)
+   - Transaction: TokenOwner calls token.setMinter(DEX contract from step 3, true)
    - Result: DEX can now mint reward tokens
 
 5. Initialize Trading Parameters
@@ -1002,7 +1002,7 @@ export default function AnalysisPage() {
                                     id: "contract_deployment",
                                     name: "Contract Deployment",
                                     description: "Implement contract deployment and initialization",
-                                    output: "Predify.sol deployed to 0x1234...\nManualResolutionStrategy.sol deployed to 0x5678...\nMockERC20.sol deployed to 0x9abc..."
+                                    output: "Predify.sol deployed successfully\nManualResolutionStrategy.sol deployed successfully\nMockERC20.sol deployed successfully"
                                   },
                                   {
                                     id: "actors",
@@ -1376,7 +1376,7 @@ export default function AnalysisPage() {
                                       <div className="bg-gray-900 p-2 rounded font-mono text-green-300">
                                         npx hardhat run scripts/deploy.js --network localhost
                                       </div>
-                                      <p className="text-yellow-400 mt-2">Note: Make sure to save the addresses from the deployment console output for future reference.</p>
+                                      {/* Remove reference to addresses */}
                                     </div>
                                   </div>
                                   
@@ -1385,18 +1385,6 @@ export default function AnalysisPage() {
                               
                               <div className="text-gray-400 text-sm mt-2">
                                 <p>After completing these deployment steps, the Prediction Market platform will be fully operational on your local network. Users will be able to create markets, place bets, and administrators will be able to resolve markets and distribute winnings.</p>
-                                <div className="text-xs mt-2">
-                                  <p>For detailed deployment instructions and contract verification steps, refer to the original step output:</p>
-                                </div>
-                              </div>
-                              
-                              <div className="bg-black/50 p-4 rounded-md mt-4 text-xs">
-                                <details>
-                                  <summary className="cursor-pointer text-cyan-400 hover:text-cyan-300">View Original Deployment Instructions</summary>
-                                  <pre className="text-sm text-green-400 whitespace-pre-wrap mt-2">
-                                    {getStepDetails(currentStep.id) || currentStep.output || "No deployment instructions available"}
-                                  </pre>
-                                </details>
                               </div>
                             </div>
                           </div>
@@ -1426,17 +1414,7 @@ export default function AnalysisPage() {
                                     <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
                                   </div>
                                   
-                                  <div className="p-3 rounded-md bg-gray-800/60 mb-4">
-                                    <div className="flex items-center mb-2">
-                                      <AlertTriangle className="h-5 w-5 text-amber-400 mr-2" />
-                                      <span className="text-amber-400 font-medium">Verification Only</span>
-                                    </div>
-                                    <p className="text-gray-300 text-sm">
-                                      These deployment instructions are for verification purposes only. 
-                                      Please review them to ensure they accurately describe how the contracts should be deployed
-                                      before executing any deployment actions.
-                                    </p>
-                                  </div>
+
 
                                   <div className="space-y-4">
                                     <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
