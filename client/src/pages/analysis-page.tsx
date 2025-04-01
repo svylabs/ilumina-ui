@@ -1585,7 +1585,7 @@ export default function AnalysisPage() {
                               return (
                                 <div className="space-y-6">
                                   <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Prediction Market Participants</h3>
+                                    <h3 className="text-xl font-semibold text-green-400">Market Participants</h3>
                                     <div className="space-y-4">
                                       {actorsData.actors.map((actor: any, index: number) => (
                                         <Collapsible key={index} className="bg-gray-900 rounded-md">
