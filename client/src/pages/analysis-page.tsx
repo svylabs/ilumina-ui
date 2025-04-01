@@ -703,23 +703,62 @@ export default function AnalysisPage() {
                     </span>
                     <div className="flex items-center gap-2">
                       {(currentStep.id === "files" || currentStep.id === "actors") && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              await fetch(`/api/reanalyze/${id}/${currentStep.id}`, {
-                                method: 'POST'
-                              });
-                            } catch (error) {
-                              console.error('Error triggering reanalysis:', error);
-                            }
-                          }}
-                          disabled={getStepStatus(currentStep.id) === "in_progress"}
-                        >
-                          <RefreshCcw className="h-4 w-4 mr-1" />
-                          Refresh
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={getStepStatus(currentStep.id) === "in_progress"}
+                            >
+                              <RefreshCcw className="h-4 w-4 mr-1" />
+                              Refresh
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-black/95 border-primary/20">
+                            <DialogHeader>
+                              <DialogTitle className="text-white">Refine Analysis</DialogTitle>
+                              <DialogDescription className="text-white/70">
+                                Optionally provide instructions to refine the analysis.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex flex-col gap-4 py-4">
+                              <textarea
+                                className="w-full h-24 rounded-md bg-black/50 border-gray-700 text-white p-2"
+                                placeholder="Enter prompt (optional)"
+                                id="prompt"
+                              />
+                            </div>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button
+                                  variant="default"
+                                  onClick={async () => {
+                                    const prompt = (document.getElementById('prompt') as HTMLTextAreaElement).value;
+                                    try {
+                                      if (prompt) {
+                                        await fetch(`/api/refine-analysis/${id}/${currentStep.id}`, {
+                                          method: 'POST',
+                                          headers: {
+                                            'Content-Type': 'application/json'
+                                          },
+                                          body: JSON.stringify({ prompt })
+                                        });
+                                      } else {
+                                        await fetch(`/api/reanalyze/${id}/${currentStep.id}`, {
+                                          method: 'POST'
+                                        });
+                                      }
+                                    } catch (error) {
+                                      console.error('Error triggering reanalysis:', error);
+                                    }
+                                  }}
+                                >
+                                  Start Analysis
+                                </Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       )}
                     </div>
                   </div>
