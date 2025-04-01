@@ -67,7 +67,17 @@ export default function ProjectsPage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-white">My Projects</h1>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+              <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">My Projects</h1>
+              <p className="text-sm text-white/70 mt-1">Manage and analyze your smart contract projects</p>
+            </div>
+          </div>
           <Button asChild>
             <Link href="/new-project" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
