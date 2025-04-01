@@ -690,42 +690,16 @@ export default function AnalysisPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6 pt-28">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-              <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Smart Contract Analysis</h1>
-              <p className="text-sm text-white/70 mt-1">Analyzing repository structure and test environment</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => window.location.href = `/api/download/${id}`}
-            className="gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Download Project
-          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Smart Contract Analysis</h1>
+          </div>
         </div>
-        
-        <p className="text-muted-foreground text-lg">
-          Analyzing repository structure and preparing test environment
-        </p>
-        
-        <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-          <div 
-            className="bg-primary h-full transition-all duration-500 ease-in-out"
-            style={{ width: `${calculateProgress()}%` }}
-          />
-        </div>
-        
-        <p className="text-sm text-muted-foreground">
-          Overall Progress: {calculateProgress()}%
-        </p>
 
         {/* Compact Steps Bar */}
         <div className="flex flex-wrap justify-center mb-6">
