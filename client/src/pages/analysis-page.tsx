@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCcw } from "lucide-react";
+import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
@@ -771,7 +771,7 @@ export default function AnalysisPage() {
                        currentStep.id}
                     </span>
                     <div className="flex items-center gap-2">
-                      {(currentStep.id === "files" || currentStep.id === "actors") && (
+                      {(currentStep.id === "files" || currentStep.id === "actors" || currentStep.id === "deployment") && (
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
@@ -1426,6 +1426,18 @@ export default function AnalysisPage() {
                                     <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
                                   </div>
                                   
+                                  <div className="p-3 rounded-md bg-gray-800/60 mb-4">
+                                    <div className="flex items-center mb-2">
+                                      <AlertTriangle className="h-5 w-5 text-amber-400 mr-2" />
+                                      <span className="text-amber-400 font-medium">Verification Only</span>
+                                    </div>
+                                    <p className="text-gray-300 text-sm">
+                                      These deployment instructions are for verification purposes only. 
+                                      Please review them to ensure they accurately describe how the contracts should be deployed
+                                      before executing any deployment actions.
+                                    </p>
+                                  </div>
+
                                   <div className="space-y-4">
                                     <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
                                     <div className="space-y-3">
@@ -1462,13 +1474,6 @@ export default function AnalysisPage() {
                                       ))}
                                     </div>
                                   </div>
-
-                                  <details>
-                                    <summary className="cursor-pointer text-cyan-400 hover:text-cyan-300">View Raw Deployment Data</summary>
-                                    <pre className="text-sm text-green-400 whitespace-pre-wrap mt-2">
-                                      {getStepDetails(currentStep.id) || currentStep.output || "No raw deployment data available"}
-                                    </pre>
-                                  </details>
                                 </div>
                               );
                             } catch (e) {
