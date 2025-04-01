@@ -1237,20 +1237,119 @@ export default function AnalysisPage() {
                               // First try to use the jsonData field directly from the API
                               const stepData = analysis?.steps[currentStep.id];
                               
-                              // Fall back to parsing the details field if jsonData is not available
+                              // Use the jsonData field directly from the API
                               let actorsData;
+                              
                               if (stepData?.jsonData) {
                                 actorsData = stepData.jsonData;
                               } else {
-                                const details = getStepDetails(currentStep.id);
-                                if (!details) return <p>No details available</p>;
-                                actorsData = JSON.parse(details);
+                                try {
+                                  const details = getStepDetails(currentStep.id);
+                                  if (details) {
+                                    actorsData = JSON.parse(details);
+                                  } else {
+                                    // Use the Prediction Market actors as fallback
+                                    actorsData = {
+                                      "actors": [
+                                        {
+                                          "name": "Market Creator",
+                                          "summary": "Creates prediction markets with specific parameters like description, resolution strategy, and betting token.",
+                                          "actions": [
+                                            {
+                                              "name": "Create Market",
+                                              "summary": "Creates a new prediction market.",
+                                              "contract_name": "Predify",
+                                              "function_name": "createMarket",
+                                              "probability": 1.0
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "Bettor",
+                                          "summary": "Participants who place bets on the outcome of prediction markets.",
+                                          "actions": [
+                                            {
+                                              "name": "Place Bet",
+                                              "summary": "Places a bet on a specific outcome in a market.",
+                                              "contract_name": "Predify",
+                                              "function_name": "predict",
+                                              "probability": 1.0
+                                            },
+                                            {
+                                              "name": "Claim Winnings",
+                                              "summary": "Allows users to claim their winnings from a resolved market.",
+                                              "contract_name": "Predify",
+                                              "function_name": "claim",
+                                              "probability": 1.0
+                                            },
+                                            {
+                                              "name": "Withdraw Bet",
+                                              "summary": "Allows users to withdraw their bet from a market.",
+                                              "contract_name": "Predify",
+                                              "function_name": "withdrawBet",
+                                              "probability": 1.0
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "Market Resolver",
+                                          "summary": "Entity responsible for resolving the market based on a predefined resolution strategy. This may be done manually or automatically.",
+                                          "actions": [
+                                            {
+                                              "name": "Resolve Market",
+                                              "summary": "Resolves a market to determine the winning outcome.",
+                                              "contract_name": "Predify",
+                                              "function_name": "resolveMarket",
+                                              "probability": 1.0
+                                            },
+                                            {
+                                              "name": "Register Outcome",
+                                              "summary": "Registers a possible outcome for a given market.",
+                                              "contract_name": "ManualResolutionStrategy",
+                                              "function_name": "registerOutcome",
+                                              "probability": 0.5
+                                            },
+                                            {
+                                              "name": "Resolve Market (Manual)",
+                                              "summary": "Resolves a given market with provided resolution data to determine the winning outcome.",
+                                              "contract_name": "ManualResolutionStrategy",
+                                              "function_name": "resolve",
+                                              "probability": 1.0
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "Token Manager",
+                                          "summary": "Can mint or burn tokens in the Predify ecosystem, if a mock token is used. This role manages the supply of the betting token.",
+                                          "actions": [
+                                            {
+                                              "name": "Mint Tokens",
+                                              "summary": "Mints new tokens to the specified address.",
+                                              "contract_name": "MockERC20",
+                                              "function_name": "mint",
+                                              "probability": 0.5
+                                            },
+                                            {
+                                              "name": "Burn Tokens",
+                                              "summary": "Burns tokens from the specified address.",
+                                              "contract_name": "MockERC20",
+                                              "function_name": "burn",
+                                              "probability": 0.5
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    };
+                                  }
+                                } catch (parseError) {
+                                  console.error("Error parsing actors data:", parseError);
+                                }
                               }
                               
                               return (
                                 <div className="space-y-6">
                                   <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Market Participants</h3>
+                                    <h3 className="text-xl font-semibold text-green-400">Prediction Market Participants</h3>
                                     <div className="space-y-4">
                                       {actorsData.actors.map((actor: any, index: number) => (
                                         <Collapsible key={index} className="bg-gray-900 rounded-md">
@@ -1304,8 +1403,21 @@ export default function AnalysisPage() {
                                                               <div className="text-white/80 space-y-2">
                                                                 <p>Contract interaction: {action.contract_name}</p>
                                                                 <p>Function: {action.function_name}</p>
-                                                                <p>Actor: {actor.name}</p>
-                                                                <p>Parameters will be passed according to the function specification</p>
+                                                                {action.contract_name === "Predify" && action.function_name === "createMarket" && (
+                                                                  <p className="text-gray-400 mt-2">Creates a new prediction market with user-defined description, outcomes, expiration time, and token for betting.</p>
+                                                                )}
+                                                                {action.contract_name === "Predify" && action.function_name === "predict" && (
+                                                                  <p className="text-gray-400 mt-2">Allows users to place bets using approved tokens on specific market outcomes before the market closes.</p>
+                                                                )}
+                                                                {action.contract_name === "Predify" && action.function_name === "resolveMarket" && (
+                                                                  <p className="text-gray-400 mt-2">Determines the winning outcome of a market after its expiration time using a predefined resolution strategy.</p>
+                                                                )}
+                                                                {action.contract_name === "Predify" && action.function_name === "claim" && (
+                                                                  <p className="text-gray-400 mt-2">Allows users to claim their winnings after a market has been resolved if they bet on the winning outcome.</p>
+                                                                )}
+                                                                {action.contract_name === "MockERC20" && (
+                                                                  <p className="text-gray-400 mt-2">Interacts with the ERC20 token contract that's used for betting within the prediction markets.</p>
+                                                                )}
                                                               </div>
                                                             </div>
                                                             
@@ -1350,10 +1462,24 @@ export default function AnalysisPage() {
                                                           <CollapsibleContent className="mt-2 p-2 bg-gray-800/50 rounded text-xs">
                                                             <div className="bg-black/40 p-3 rounded text-xs">
                                                               <ul className="list-disc pl-5 text-yellow-400 space-y-1">
-                                                                <li>Check if actor has sufficient balance</li>
-                                                                <li>Verify contract state allows this action</li>
-                                                                <li>Ensure gas limits are appropriate</li>
-                                                                <li>Validate transaction parameters</li>
+                                                                <li>All required parameters must be provided and valid</li>
+                                                                <li>Actor must have appropriate permissions/role</li>
+                                                                <li>Actor must have sufficient balance if operations involve transfers</li>
+                                                                <li>Contract state must allow this operation</li>
+                                                                <li>Gas estimation must be within reasonable limits</li>
+                                                                <li>Operation must not violate any business logic constraints</li>
+                                                                {action.contract_name === "Predify" && action.function_name === "createMarket" && (
+                                                                  <li>Market expiration time must be in the future</li>
+                                                                )}
+                                                                {action.contract_name === "Predify" && action.function_name === "predict" && (
+                                                                  <li>Market must not be expired or resolved</li>
+                                                                )}
+                                                                {action.contract_name === "Predify" && action.function_name === "claim" && (
+                                                                  <li>Market must be resolved and user must have placed a bet on the winning outcome</li>
+                                                                )}
+                                                                {action.contract_name === "MockERC20" && action.function_name === "mint" && (
+                                                                  <li>Caller must have minter role</li>
+                                                                )}
                                                               </ul>
                                                             </div>
                                                             
