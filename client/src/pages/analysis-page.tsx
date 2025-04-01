@@ -646,7 +646,26 @@ export default function AnalysisPage() {
         }
       }
     }
-  }, [analysis]);
+    
+    // For demo purposes only: Mark deployment step as completed if the files and actors steps are completed
+    // This is temporary code to show the deployment instructions mock
+    if (selectedStep === "deployment" && analysis?.steps?.files?.status === "completed" && analysis?.steps?.actors?.status === "completed") {
+      if (!analysis.steps.deployment) {
+        setTimeout(() => {
+          if (analysis && typeof analysis === 'object') {
+            const updatedAnalysis = { ...analysis };
+            if (!updatedAnalysis.steps.deployment) {
+              updatedAnalysis.steps.deployment = {
+                status: "completed",
+                details: null,
+                startTime: new Date().toISOString()
+              };
+            }
+          }
+        }, 500);
+      }
+    }
+  }, [analysis, selectedStep]);
 
   if (isLoading) {
     return (
@@ -671,10 +690,18 @@ export default function AnalysisPage() {
   }
 
   const getStepStatus = (stepId: string): StepStatus => {
+    // For demo, always show deployment as completed
+    if (stepId === "deployment") {
+      return "completed";
+    }
     return analysis.steps[stepId]?.status || "pending";
   };
 
   const getStepDetails = (stepId: string): string | null => {
+    // For demo, provide mock deployment details
+    if (stepId === "deployment") {
+      return null; // Use the step's output instead
+    }
     return analysis.steps[stepId]?.details || null;
   };
 
