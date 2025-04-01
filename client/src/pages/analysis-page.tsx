@@ -489,7 +489,7 @@ Network Options:
   },
   {
     id: "test_setup",
-    title: "Setup Simulation",
+    title: "Simulation Setup",
     description: "Configuring and implementing the simulation environment",
     status: "pending",
     output: `// Test Environment Setup
