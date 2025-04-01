@@ -508,7 +508,7 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
           <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
           {startTime && (
             <span className="text-sm text-muted-foreground">
-              ~{formatDistanceToNow(addMinutes(new Date(startTime), 1))} remaining
+              running for {formatDistanceToNow(new Date(startTime))}
             </span>
           )}
         </div>
