@@ -215,12 +215,12 @@ export default function HomePage() {
                       </div>
                       {plan.name === 'Pro' && (
                         <div className="mt-1 text-xs text-primary/80">
-                          Monthly subscription available at $79/month
+                          Monthly subscription: $79/month
                         </div>
                       )}
                       {plan.name === 'Teams' && (
                         <div className="mt-1 text-xs text-primary/80">
-                          Monthly subscription available at $799/month
+                          Monthly subscription: $799/month
                         </div>
                       )}
                       <p className="mt-2 text-white/70">
