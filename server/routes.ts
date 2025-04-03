@@ -478,8 +478,8 @@ export function registerRoutes(app: Express): Server {
       });
     }
 
-    // Check team access if teamId is provided
-    if (req.body.teamId) {
+    // Check team access if teamId is provided and it's not "personal"
+    if (req.body.teamId && req.body.teamId !== "personal") {
       // Verify the user is on the Teams plan
       if (req.user.plan !== 'teams') {
         return res.status(403).json({
@@ -487,11 +487,13 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
+      const teamId = parseInt(req.body.teamId);
+
       // Verify the user is a member of this team
       const teamMembership = await db
         .select()
         .from(teamMembers)
-        .where(eq(teamMembers.teamId, req.body.teamId))
+        .where(eq(teamMembers.teamId, teamId))
         .where(eq(teamMembers.userId, req.user.id))
         .where(eq(teamMembers.status, 'active'));
 
@@ -499,7 +501,7 @@ export function registerRoutes(app: Express): Server {
       const isTeamCreator = await db
         .select()
         .from(teams)
-        .where(eq(teams.id, req.body.teamId))
+        .where(eq(teams.id, teamId))
         .where(eq(teams.createdBy, req.user.id));
 
       if (teamMembership.length === 0 && isTeamCreator.length === 0) {
@@ -511,13 +513,19 @@ export function registerRoutes(app: Express): Server {
 
     // Start a transaction to create both project and submission
     const [project, submission] = await db.transaction(async (tx) => {
+      // Handle team ID logic - if "personal" or not specified, set to null
+      let finalTeamId = null;
+      if (req.body.teamId && req.body.teamId !== "personal") {
+        finalTeamId = parseInt(req.body.teamId);
+      }
+      
       const [project] = await tx
         .insert(projects)
         .values({
           name: req.body.name,
           githubUrl: req.body.githubUrl,
           userId: req.user.id,
-          teamId: req.body.teamId || null, // Add teamId if present
+          teamId: finalTeamId, // Use the calculated team ID
         })
         .returning();
 

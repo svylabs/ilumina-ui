@@ -183,8 +183,13 @@ export default function NewProjectPage() {
                         <FormLabel className="text-white">Team (Optional)</FormLabel>
                         <Select
                           onValueChange={(value) => {
-                            setSelectedTeamId(value ? parseInt(value) : null);
-                            field.onChange(value ? parseInt(value) : undefined);
+                            if (value === "personal") {
+                              setSelectedTeamId(null);
+                              field.onChange(undefined);
+                            } else {
+                              setSelectedTeamId(parseInt(value));
+                              field.onChange(parseInt(value));
+                            }
                           }}
                           defaultValue={field.value?.toString()}
                         >
@@ -194,7 +199,7 @@ export default function NewProjectPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-black/90 border-primary/40 text-white">
-                            <SelectItem value="">Personal Project</SelectItem>
+                            <SelectItem value="personal">Personal Project</SelectItem>
                             {teams?.map((team: any) => (
                               <SelectItem key={team.id} value={team.id.toString()}>
                                 {team.name}
