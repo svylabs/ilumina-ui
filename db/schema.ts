@@ -1,8 +1,9 @@
-import { pgTable, text, serial, timestamp, integer, boolean, uuid, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, uuid, jsonb, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
-// Existing tables remain unchanged
+// Define the relations for models
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -13,6 +14,41 @@ export const users = pgTable("users", {
   simulationsUsed: integer("simulations_used").default(0).notNull(),
   // Field to track the last date simulations were used for daily limit reset
   lastSimulationDate: timestamp("last_simulation_date"),
+});
+
+// Define teams table for team management
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: integer("created_by").notNull(), // User who created the team
+});
+
+// Define team members table to track team membership
+export const teamMembers = pgTable("team_members", {
+  teamId: integer("team_id").notNull(),
+  userId: integer("user_id").notNull(),
+  role: text("role", { enum: ["admin", "member"] }).default("member").notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  invitedBy: integer("invited_by").notNull(),
+  status: text("status", { enum: ["invited", "active"] }).default("invited").notNull(),
+  // Composite primary key to ensure each user is only once in each team
+  }, (t) => ({
+    pk: primaryKey({ columns: [t.teamId, t.userId] }),
+}));
+
+// Define team invitations table for pending invites
+export const teamInvitations = pgTable("team_invitations", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull(),
+  email: text("email").notNull(),
+  invitedBy: integer("invited_by").notNull(),
+  invitedAt: timestamp("invited_at").defaultNow().notNull(),
+  status: text("status", { enum: ["pending", "accepted", "declined"] }).default("pending").notNull(),
+  expiresAt: timestamp("expires_at"),
+  token: text("token").notNull(), // Unique token for invitation
 });
 
 // New pricing tables
@@ -38,6 +74,7 @@ export const projects = pgTable("projects", {
   name: text("name").notNull(),
   githubUrl: text("github_url"),
   userId: integer("user_id").notNull(),
+  teamId: integer("team_id"), // Optional, null for personal projects
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -176,7 +213,70 @@ export const selectAnalysisStepSchema = createSelectSchema(analysisSteps);
 export type InsertAnalysisStep = typeof analysisSteps.$inferInsert;
 export type SelectAnalysisStep = typeof analysisSteps.$inferSelect;
 
+// Team type definitions
+export const insertTeamSchema = createInsertSchema(teams, {
+  name: z.string().min(1, "Team name is required"),
+  description: z.string().optional(),
+});
+export const selectTeamSchema = createSelectSchema(teams);
+export type InsertTeam = typeof teams.$inferInsert;
+export type SelectTeam = typeof teams.$inferSelect;
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers);
+export const selectTeamMemberSchema = createSelectSchema(teamMembers);
+export type InsertTeamMember = typeof teamMembers.$inferInsert;
+export type SelectTeamMember = typeof teamMembers.$inferSelect;
+
+export const insertTeamInvitationSchema = createInsertSchema(teamInvitations, {
+  email: z.string().email("Invalid email address"),
+});
+export const selectTeamInvitationSchema = createSelectSchema(teamInvitations);
+export type InsertTeamInvitation = typeof teamInvitations.$inferInsert;
+export type SelectTeamInvitation = typeof teamInvitations.$inferSelect;
+
 export type InsertPricingPlan = typeof pricingPlans.$inferInsert;
 export type SelectPricingPlan = typeof pricingPlans.$inferSelect;
 export type InsertPlanFeature = typeof planFeatures.$inferInsert;
 export type SelectPlanFeature = typeof planFeatures.$inferSelect;
+
+// Define relations between tables
+export const usersRelations = relations(users, ({ many }) => ({
+  projects: many(projects),
+  teamMemberships: many(teamMembers),
+}));
+
+export const teamsRelations = relations(teams, ({ many, one }) => ({
+  members: many(teamMembers),
+  projects: many(projects),
+  creator: one(users, {
+    fields: [teams.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamMembers.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+  inviter: one(users, {
+    fields: [teamMembers.invitedBy],
+    references: [users.id],
+  }),
+}));
+
+export const projectsRelations = relations(projects, ({ one }) => ({
+  owner: one(users, {
+    fields: [projects.userId],
+    references: [users.id],
+  }),
+  team: one(teams, {
+    fields: [projects.teamId],
+    references: [teams.id],
+    relationName: "team_projects",
+  }),
+}));
