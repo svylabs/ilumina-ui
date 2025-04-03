@@ -3152,6 +3152,7 @@ export function registerRoutes(app: Express): Server {
           .from(projects)
           .innerJoin(teams, eq(projects.teamId, teams.id))
           .where(sql`${projects.teamId} IN (${teamIds.join(',')})`)
+          .where(eq(projects.isDeleted, false)) // Only non-deleted team projects
           .orderBy(teams.name, projects.createdAt);
       }
       
