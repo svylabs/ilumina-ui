@@ -2421,6 +2421,7 @@ export function registerRoutes(app: Express): Server {
         .select()
         .from(teams)
         .where(eq(teams.id, teamId))
+        .where(eq(teams.isDeleted, false))
         .limit(1);
       
       if (!team) {
@@ -2485,6 +2486,7 @@ export function registerRoutes(app: Express): Server {
         .select()
         .from(teams)
         .where(eq(teams.id, teamId))
+        .where(eq(teams.isDeleted, false))
         .limit(1);
       
       if (!team) {
@@ -2738,6 +2740,7 @@ export function registerRoutes(app: Express): Server {
         .select()
         .from(teams)
         .where(eq(teams.id, invitation.teamId))
+        .where(eq(teams.isDeleted, false))
         .limit(1);
       
       return res.json({
@@ -3036,6 +3039,7 @@ export function registerRoutes(app: Express): Server {
         })
         .from(teams)
         .where(eq(teams.createdBy, req.user.id))
+        .where(eq(teams.isDeleted, false))
         .where(sql`${teams.id} NOT IN (
           SELECT team_id FROM team_members 
           WHERE user_id = ${req.user.id} AND status = 'active'
@@ -3121,3 +3125,4 @@ async function updateRunStatus(runId: number) {
 
   console.log(`Updated run ${runId} to status: ${status}`);
   return updatedRun;
+}
