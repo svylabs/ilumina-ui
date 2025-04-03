@@ -588,7 +588,7 @@ export default function AnalysisPage() {
   
   // No content ref needed
 
-  const { data: project } = useQuery({
+  const { data: project } = useQuery<SelectProject>({
     queryKey: [`/api/project/${id}`],
     enabled: !!id
   });

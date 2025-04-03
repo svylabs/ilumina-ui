@@ -6,7 +6,7 @@ import {
   insertSubmissionSchema, insertContactSchema, 
   pricingPlans, planFeatures, teams, teamMembers, teamInvitations
 } from "@db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { analysisSteps } from "@db/schema";
@@ -3017,7 +3017,7 @@ export function registerRoutes(app: Express): Server {
         .where(eq(projects.userId, req.user.id))
         .where(sql`${projects.teamId} IS NULL`) // Only projects without teamId
         .where(eq(projects.isDeleted, false))
-        .orderBy(desc(projects.createdAt));
+        .orderBy(projects.createdAt);
       
       // Get teams the user belongs to
       const userTeams = await db
