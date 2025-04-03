@@ -1,6 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import SubmissionForm from "@/components/submission-form";
-import { SunDim, Check, Loader2 } from "lucide-react";
+import { 
+  SunDim, 
+  Check, 
+  Loader2, 
+  ChevronDown, 
+  ChevronUp,
+  Github,
+  Twitter,
+  Linkedin,
+  Mail
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -9,6 +19,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertContactSchema, type InsertContact } from "@db/schema";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -166,7 +182,13 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {pricingData?.map((plan) => (
+              {pricingData?.map((plan: {
+                name: string;
+                price: number;
+                period: string;
+                description: string;
+                features: string[];
+              }) => (
                 <Card
                   key={plan.name}
                   className={`border-2 ${
@@ -196,7 +218,7 @@ export default function HomePage() {
                       </p>
                     </div>
                     <ul className="space-y-3 mb-6">
-                      {plan.features.map((feature) => (
+                      {plan.features.map((feature: string) => (
                         <li key={feature} className="flex items-center text-white/90">
                           <Check className="h-4 w-4 text-primary mr-2" />
                           {feature}
@@ -294,6 +316,218 @@ export default function HomePage() {
           </Card>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="scroll-mt-20 py-24 px-6 bg-gradient-to-b from-black to-black/95">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-lg text-white/70">
+              Find answers to common questions about our platform
+            </p>
+          </div>
+
+          <Card className="border-2 border-primary/20 bg-black/50">
+            <CardContent className="p-8">
+              <Accordion type="single" collapsible className="space-y-4">
+                <AccordionItem value="item-1" className="border-primary/20">
+                  <AccordionTrigger className="text-white font-medium py-4 hover:text-primary">
+                    What types of smart contracts can I test?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/70 pb-4">
+                    Ilumina supports testing for Ethereum-based smart contracts written in Solidity. Our platform is designed to work with a variety of contract types, including DeFi protocols, NFTs, marketplaces, and more.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2" className="border-primary/20">
+                  <AccordionTrigger className="text-white font-medium py-4 hover:text-primary">
+                    How does the AI-generated testing work?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/70 pb-4">
+                    Our AI system analyzes your smart contract code to identify potential vulnerabilities, edge cases, and complex interactions. It then generates comprehensive test scenarios that simulate real-world conditions, including various actor behaviors and transaction sequences.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-3" className="border-primary/20">
+                  <AccordionTrigger className="text-white font-medium py-4 hover:text-primary">
+                    Can I collaborate with my team on projects?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/70 pb-4">
+                    Yes! Our Teams plan allows you to create teams, invite members, and collaborate on multiple projects. Team members can access shared projects, run simulations, and view results based on their assigned permissions.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-4" className="border-primary/20">
+                  <AccordionTrigger className="text-white font-medium py-4 hover:text-primary">
+                    How secure is my contract code on your platform?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/70 pb-4">
+                    We take security seriously. Your code is transmitted and stored using industry-standard encryption practices. We don't share your code with third parties, and you maintain complete ownership of your intellectual property.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-5" className="border-primary/20">
+                  <AccordionTrigger className="text-white font-medium py-4 hover:text-primary">
+                    Can I export test results and simulation environments?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/70 pb-4">
+                    Yes, all plans include the ability to export simulation environments to GitHub repositories. This allows you to integrate our tests with your development workflow and CI/CD pipelines.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* About Us Section */}
+      <section id="about" className="scroll-mt-20 py-24 px-6 bg-black">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              About Ilumina
+            </h2>
+            <p className="text-lg text-white/70">
+              Building the future of smart contract testing
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div>
+              <h3 className="text-2xl font-semibold text-white mb-4">Our Mission</h3>
+              <p className="text-white/70 mb-6">
+                At Ilumina, we're on a mission to make blockchain development safer and more reliable through advanced smart contract testing. We believe that robust testing is essential for the growth and adoption of decentralized technologies.
+              </p>
+              <p className="text-white/70">
+                Our platform combines cutting-edge AI with deep blockchain expertise to deliver comprehensive testing solutions that help developers identify and fix vulnerabilities before deployment.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold text-white mb-4">Our Story</h3>
+              <p className="text-white/70 mb-6">
+                Founded by a team of blockchain developers and security experts, Ilumina was born out of frustration with existing testing tools that failed to capture the complexity of real-world scenarios.
+              </p>
+              <p className="text-white/70">
+                We built Ilumina to simulate how actual users would interact with smart contracts, accounting for the diverse behaviors, intentions, and capabilities of different actors in the ecosystem.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Terms of Service Section */}
+      <section id="terms" className="scroll-mt-20 py-24 px-6 bg-gradient-to-b from-black/95 to-black">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Terms of Service
+            </h2>
+            <p className="text-lg text-white/70">
+              Please review our terms and conditions
+            </p>
+          </div>
+
+          <Card className="border-2 border-primary/20 bg-black/50">
+            <CardContent className="p-8">
+              <div className="space-y-6 text-white/70">
+                <h3 className="text-xl font-semibold text-white">1. Service Usage</h3>
+                <p>
+                  By accessing and using Ilumina, you agree to comply with these Terms of Service and all applicable laws and regulations. You are responsible for maintaining the confidentiality of your account credentials.
+                </p>
+
+                <h3 className="text-xl font-semibold text-white mt-6">2. Intellectual Property</h3>
+                <p>
+                  You retain all rights to your smart contract code and related materials uploaded to our platform. We do not claim ownership of your content. However, you grant us a license to use your content solely for the purpose of providing our services.
+                </p>
+
+                <h3 className="text-xl font-semibold text-white mt-6">3. Limitations of Liability</h3>
+                <p>
+                  While we strive to provide accurate and comprehensive testing, Ilumina is provided "as is" without warranties of any kind. Our tests are designed to help identify issues but cannot guarantee the absence of vulnerabilities or bugs.
+                </p>
+
+                <h3 className="text-xl font-semibold text-white mt-6">4. Subscription and Billing</h3>
+                <p>
+                  Paid plans are billed according to the pricing terms in effect at the time of purchase. You may cancel your subscription at any time, but refunds are provided only in accordance with our refund policy.
+                </p>
+
+                <h3 className="text-xl font-semibold text-white mt-6">5. Privacy</h3>
+                <p>
+                  We collect and process personal information in accordance with our Privacy Policy. By using our services, you consent to such processing and you warrant that all data provided by you is accurate.
+                </p>
+
+                <div className="mt-6">
+                  <p className="italic">
+                    Last updated: April 1, 2025
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-black py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-4">Ilumina</h3>
+              <p className="text-white/70 text-sm">
+                Smart testing for your smart contracts
+              </p>
+              <div className="flex space-x-4 mt-4">
+                <a href="#" className="text-white/70 hover:text-primary transition-colors">
+                  <Github className="h-5 w-5" />
+                </a>
+                <a href="#" className="text-white/70 hover:text-primary transition-colors">
+                  <Twitter className="h-5 w-5" />
+                </a>
+                <a href="#" className="text-white/70 hover:text-primary transition-colors">
+                  <Linkedin className="h-5 w-5" />
+                </a>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-4">Company</h3>
+              <ul className="space-y-2">
+                <li><a href="#about" className="text-white/70 hover:text-primary transition-colors">About Us</a></li>
+                <li><a href="#contact" className="text-white/70 hover:text-primary transition-colors">Contact</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Careers</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Blog</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-4">Resources</h3>
+              <ul className="space-y-2">
+                <li><a href="#faq" className="text-white/70 hover:text-primary transition-colors">FAQ</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Documentation</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">API</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Support</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li><a href="#terms" className="text-white/70 hover:text-primary transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Security</a></li>
+                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Compliance</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-white/10 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p className="text-white/50 text-sm mb-4 md:mb-0">
+                &copy; 2025 Ilumina. All rights reserved.
+              </p>
+              <div className="flex items-center space-x-2">
+                <a href="mailto:contact@ilumina.io" className="flex items-center text-white/50 hover:text-primary transition-colors text-sm">
+                  <Mail className="h-4 w-4 mr-1" />
+                  contact@ilumina.io
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
