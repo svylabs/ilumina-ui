@@ -490,17 +490,13 @@ export default function HomePage() {
               <ul className="space-y-2">
                 <li><a href="#about" className="text-white/70 hover:text-primary transition-colors">About Us</a></li>
                 <li><a href="#contact" className="text-white/70 hover:text-primary transition-colors">Contact</a></li>
-                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Careers</a></li>
-                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Blog</a></li>
               </ul>
             </div>
             <div>
               <h3 className="text-white font-semibold text-lg mb-4">Resources</h3>
               <ul className="space-y-2">
                 <li><a href="#faq" className="text-white/70 hover:text-primary transition-colors">FAQ</a></li>
-                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Documentation</a></li>
-                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">API</a></li>
-                <li><a href="#" className="text-white/70 hover:text-primary transition-colors">Support</a></li>
+                <li><a href="#contact" className="text-white/70 hover:text-primary transition-colors">Support</a></li>
               </ul>
             </div>
             <div>
