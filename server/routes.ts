@@ -3100,7 +3100,6 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
-      // Get user's personal projects (non-deleted only)
       // Get user's personal projects (non-team projects, non-deleted only)
       const personalProjects = await db
         .select()
@@ -3109,6 +3108,8 @@ export function registerRoutes(app: Express): Server {
         .where(sql`${projects.teamId} IS NULL`) // Only projects without teamId
         .where(eq(projects.isDeleted, false))
         .orderBy(projects.createdAt);
+      
+      console.log("Personal projects:", personalProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
       
       // Get teams the user belongs to
       const userTeams = await db
@@ -3157,10 +3158,17 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Format the response
-      const formattedTeamProjects = teamProjects.map(tp => ({
-        ...tp.project,
-        teamName: tp.teamName
-      }));
+      const formattedTeamProjects = teamProjects.map(tp => {
+        const project = {
+          ...tp.project,
+          teamName: tp.teamName
+        };
+        // Make sure teamId is properly set
+        console.log("Original project teamId:", tp.project.teamId, "Type:", typeof tp.project.teamId);
+        return project;
+      });
+      
+      console.log("Team projects:", formattedTeamProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
       
       // Group projects by team
       const projectsByTeam = {};

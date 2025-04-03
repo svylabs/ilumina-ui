@@ -85,9 +85,19 @@ export default function ProjectsPage() {
   
   // Determine which projects to display
   // Make sure personal projects only includes projects with no teamId
-  const personalProjects = (allProjectsData?.personalProjects || projects || []).filter(p => p.teamId === null);
+  const rawPersonalProjects = allProjectsData?.personalProjects || projects || [];
+  console.log("Raw personal projects:", rawPersonalProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId, teamIdType: typeof p.teamId })));
+  
+  const personalProjects = rawPersonalProjects.filter(p => p.teamId === null);
+  console.log("Filtered personal projects:", personalProjects.map(p => ({ id: p.id, name: p.name })));
+  
   // Filter team projects to only include actual team projects (those with teamId)
-  const teamProjects = (allProjectsData?.teamProjects || []).filter(p => p.teamId !== null);
+  const rawTeamProjects = allProjectsData?.teamProjects || [];
+  console.log("Raw team projects:", rawTeamProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId, teamIdType: typeof p.teamId })));
+  
+  const teamProjects = rawTeamProjects.filter(p => p.teamId !== null);
+  console.log("Filtered team projects:", teamProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
+  
   const projectsByTeam = allProjectsData?.projectsByTeam || [];
   const hasTeamProjects = isTeamsUser && teamProjects.length > 0;
 
