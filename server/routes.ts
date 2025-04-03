@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { db } from "@db";
+import { db, pool } from "@db";
 import { 
   submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
@@ -281,7 +281,9 @@ export function registerRoutes(app: Express): Server {
         .limit(1);
       
       // Determine if this is a StableBase or Predify project (default to Predify)
-      const isStableBaseProject = project.length > 0 && project[0].id === 24;
+      // Use dynamic project name check instead of hard-coded ID
+      const isStableBaseProject = project.length > 0 && 
+        project[0].name?.toLowerCase().includes('stablebase');
       const projectType = isStableBaseProject ? "StableBase" : "Predify";
       
       // Create default data for this project type
@@ -808,23 +810,102 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json(submission);
   });
 
-  // Update the analysis endpoint
+  // Fetch project details by ID or via submission ID
   app.get("/api/project/:id", async (req, res) => {
     try {
-      const projectId = parseInt(req.params.id);
+      // Get the project ID from the URL parameter
+      const requestedId = req.params.id;
+      console.log(`Project API request for ID: ${requestedId}`);
       
-      const [project] = await db
-        .select()
-        .from(projects)
-        .where(eq(projects.id, projectId))
-        .where(eq(projects.isDeleted, false)) // Filter out deleted projects
-        .limit(1);
-
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+      // Only process numeric IDs
+      const projectId = parseInt(requestedId);
+      
+      // DEBUG: Print out what we're getting from the database
+      console.log(`Running SELECT * FROM projects WHERE id = ${projectId} AND is_deleted = false`);
+      
+      if (!isNaN(projectId)) {
+        // Try to find the project with requested ID and is not deleted
+        const dbResult = await pool.query(
+          `SELECT * FROM projects WHERE id = $1 AND is_deleted = false LIMIT 1`, 
+          [projectId]
+        );
+        
+        // Debug output to see what's being returned from the database
+        const rows = dbResult.rows || [];
+        console.log(`Found ${rows.length} projects with ID ${projectId}`);
+        if (rows.length > 0) {
+          console.log(`Project details:`, rows[0]);
+        }
+        
+        // If we found a project, return it
+        if (rows.length > 0) {
+          // Convert snake_case to camelCase for frontend consistency
+          const project = {
+            id: rows[0].id,
+            name: rows[0].name,
+            githubUrl: rows[0].github_url,
+            userId: rows[0].user_id,
+            teamId: rows[0].team_id,
+            createdAt: rows[0].created_at,
+            isDeleted: rows[0].is_deleted
+          };
+          
+          console.log(`Returning project:`, project);
+          return res.json(project);
+        } else {
+          console.log(`No project found with ID ${projectId}`);
+        }
+      } else {
+        console.log(`ID ${requestedId} is not a valid numeric ID`);
       }
-
-      res.json(project);
+      
+      // If we get here, check if this is a submission ID
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestedId)) {
+        console.log(`ID ${requestedId} is a UUID, checking for submission`);
+        
+        // Find the submission
+        const submissionDbResult = await pool.query(
+          `SELECT * FROM submissions WHERE id = $1 LIMIT 1`, 
+          [requestedId]
+        );
+        
+        const submissionRows = submissionDbResult.rows || [];
+        console.log(`Found ${submissionRows.length} submissions with ID ${requestedId}`);
+        
+        // If we found a submission with a project ID, get that project
+        if (submissionRows.length > 0 && submissionRows[0].project_id) {
+          const projectId = submissionRows[0].project_id;
+          console.log(`Submission has project ID: ${projectId}`);
+          
+          const projectDbResult = await pool.query(
+            `SELECT * FROM projects WHERE id = $1 AND is_deleted = false LIMIT 1`, 
+            [projectId]
+          );
+          
+          const projectRows = projectDbResult.rows || [];
+          console.log(`Found ${projectRows.length} projects with ID ${projectId} from submission`);
+          
+          if (projectRows.length > 0) {
+            // Convert snake_case to camelCase for frontend consistency
+            const project = {
+              id: projectRows[0].id,
+              name: projectRows[0].name,
+              githubUrl: projectRows[0].github_url,
+              userId: projectRows[0].user_id,
+              teamId: projectRows[0].team_id,
+              createdAt: projectRows[0].created_at,
+              isDeleted: projectRows[0].is_deleted
+            };
+            
+            console.log(`Returning project from submission:`, project);
+            return res.json(project);
+          }
+        }
+      }
+      
+      // If we reach here, no project was found
+      console.log(`No project found for ID ${requestedId}`);
+      return res.status(404).json({ message: "Project not found" });
     } catch (error) {
       console.error('Error fetching project:', error);
       res.status(500).json({ message: "Failed to fetch project details" });
@@ -941,8 +1022,17 @@ export function registerRoutes(app: Express): Server {
         .where(eq(analysisSteps.submissionId, submission[0].id))
         .orderBy(analysisSteps.createdAt);
 
-      // Check which project we're looking at based on the projectId (or other identifier)
-      const isStableBaseProject = submission[0].projectId === 24;
+      // Dynamically determine project type based on the actual project ID
+      // Get the real project information
+      const [actualProject] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, submission[0].projectId))
+        .limit(1);
+
+      // Use the project name to determine the project type
+      const projectName = actualProject?.name || '';
+      const isStableBaseProject = projectName.toLowerCase().includes('stablebase');
 
       // Create sample data for each project type
       const sampleData = {

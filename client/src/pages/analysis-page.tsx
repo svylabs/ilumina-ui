@@ -588,7 +588,15 @@ export default function AnalysisPage() {
   
   // No content ref needed
 
-  const { data: project } = useQuery<SelectProject>({
+  const { data: project } = useQuery<{
+    id: number;
+    name: string;
+    githubUrl: string;
+    userId: number;
+    teamId: number | null;
+    createdAt: string;
+    isDeleted: boolean;
+  }>({
     queryKey: [`/api/project/${id}`],
     enabled: !!id
   });
@@ -860,8 +868,8 @@ export default function AnalysisPage() {
                 <CardDescription>
                   {getStepStatus(currentStep.id) === "in_progress" ? "Analysis in progress..." : 
                    getStepStatus(currentStep.id) === "failed" ? "Analysis failed" : 
-                   getStepStatus(currentStep.id) === "completed" && analysis.steps[currentStep.id]?.createdAt ? 
-                   `Completed ${format(new Date(analysis.steps[currentStep.id].createdAt), 'MMM d, yyyy h:mm a')}` : 
+                   getStepStatus(currentStep.id) === "completed" && analysis.steps[currentStep.id]?.startTime ? 
+                   `Completed ${format(new Date(analysis.steps[currentStep.id].startTime || new Date()), 'MMM d, yyyy h:mm a')}` : 
                    "Waiting to start..."}
                 </CardDescription>
               </CardHeader>
