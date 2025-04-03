@@ -2461,7 +2461,7 @@ export function registerRoutes(app: Express): Server {
       const teamProjects = await db
         .select()
         .from(projects)
-        .where(eq(projects.teamId, teamId))
+        .where(eq(projects.teamId, teamId)) // Only get projects for this team
         .where(eq(projects.isDeleted, false))
         .orderBy(projects.createdAt);
       

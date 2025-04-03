@@ -85,7 +85,8 @@ export default function ProjectsPage() {
   
   // Determine which projects to display
   const personalProjects = allProjectsData?.personalProjects || projects || [];
-  const teamProjects = allProjectsData?.teamProjects || [];
+  // Filter team projects to only include actual team projects (those with teamId)
+  const teamProjects = (allProjectsData?.teamProjects || []).filter(p => p.teamId !== null);
   const projectsByTeam = allProjectsData?.projectsByTeam || [];
   const hasTeamProjects = isTeamsUser && teamProjects.length > 0;
 
