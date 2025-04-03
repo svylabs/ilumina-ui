@@ -496,9 +496,12 @@ export function TeamDetailPage() {
               </p>
             </CardContent>
             <CardFooter>
-              <Button asChild variant="outline">
-                <Link href="/teams">Back to Teams</Link>
-              </Button>
+              <Link href="/teams">
+                <Button variant="outline" className="gap-2">
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                  Back to Teams
+                </Button>
+              </Link>
             </CardFooter>
           </Card>
         </div>
@@ -512,22 +515,11 @@ export function TeamDetailPage() {
         {/* Team Header */}
         <div className="flex justify-between items-start">
           <div>
-            <Link href="/teams" className="text-primary hover:underline flex items-center gap-1 mb-2">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                ></path>
-              </svg>
-              Back to Teams
+            <Link href="/teams">
+              <Button variant="outline" className="gap-2 mb-2">
+                <ChevronRight className="h-4 w-4 rotate-180" />
+                Back to Teams
+              </Button>
             </Link>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
