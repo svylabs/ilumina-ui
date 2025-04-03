@@ -442,6 +442,7 @@ export function registerRoutes(app: Express): Server {
       .from(projects)
       .where(eq(projects.userId, req.user.id))
       .where(eq(projects.isDeleted, false)) // Filter out soft-deleted projects
+      .where(sql`${projects.teamId} IS NULL`) // Only include personal projects (not team projects)
       .orderBy(projects.createdAt);
 
     res.json(userProjects);
