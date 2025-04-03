@@ -181,7 +181,7 @@ export default function HomePage() {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {pricingData?.map((plan: {
                 name: string;
                 price: number;
@@ -249,6 +249,55 @@ export default function HomePage() {
                   </CardContent>
                 </Card>
               ))}
+              
+              {/* Custom Plan Card */}
+              <Card className="border-2 border-primary/20 bg-black/50 backdrop-blur relative">
+                <CardContent className="p-6">
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl font-semibold mb-2 text-white">
+                      Custom
+                    </h3>
+                    <div className="text-3xl font-bold text-white mb-1">
+                      Contact Us
+                    </div>
+                    <div className="text-sm text-white/70">
+                      For special requirements
+                    </div>
+                    <p className="mt-2 text-white/70">
+                      For organizations with specialized needs and enterprise-level requirements
+                    </p>
+                  </div>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-center text-white/90">
+                      <Check className="h-4 w-4 text-primary mr-2" />
+                      Customized integration support
+                    </li>
+                    <li className="flex items-center text-white/90">
+                      <Check className="h-4 w-4 text-primary mr-2" />
+                      Dedicated account management
+                    </li>
+                    <li className="flex items-center text-white/90">
+                      <Check className="h-4 w-4 text-primary mr-2" />
+                      On-demand scalability
+                    </li>
+                    <li className="flex items-center text-white/90">
+                      <Check className="h-4 w-4 text-primary mr-2" />
+                      SLA guarantees
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full bg-primary/20 hover:bg-primary/30 text-white"
+                    onClick={() => {
+                      const contactSection = document.getElementById('contact');
+                      if (contactSection) {
+                        contactSection.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    Contact Us
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
