@@ -270,19 +270,7 @@ export default function HomePage() {
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-center text-white/90">
                       <Check className="h-4 w-4 text-primary mr-2" />
-                      Customized integration support
-                    </li>
-                    <li className="flex items-center text-white/90">
-                      <Check className="h-4 w-4 text-primary mr-2" />
-                      Dedicated account management
-                    </li>
-                    <li className="flex items-center text-white/90">
-                      <Check className="h-4 w-4 text-primary mr-2" />
-                      On-demand scalability
-                    </li>
-                    <li className="flex items-center text-white/90">
-                      <Check className="h-4 w-4 text-primary mr-2" />
-                      SLA guarantees
+                      Customized to fit your needs
                     </li>
                   </ul>
                   <Button
