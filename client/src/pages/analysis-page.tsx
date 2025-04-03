@@ -702,21 +702,16 @@ export default function AnalysisPage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Smart Contract Analysis</h1>
-          </div>
-        </div>
-
-        {/* Project Details */}
-        <div className="bg-black/40 rounded-lg p-4 border border-primary/20">
-          <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-white">{project?.name || "Untitled Project"}</h2>
+            <h1 className="text-3xl font-bold text-white">{project?.name || "Project"} Simulation</h1>
             {project?.githubUrl && (
-              <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mt-2">
+              <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mt-1 text-sm">
                 {project.githubUrl}
               </a>
             )}
           </div>
         </div>
+
+        {/* Project Details section removed - info moved to page title */}
 
         {/* Compact Steps Bar */}
         <div className="flex flex-wrap justify-center mb-6">
