@@ -3010,13 +3010,14 @@ export function registerRoutes(app: Express): Server {
     
     try {
       // Get user's personal projects (non-deleted only)
+      // Get user's personal projects (non-team projects, non-deleted only)
       const personalProjects = await db
         .select()
         .from(projects)
         .where(eq(projects.userId, req.user.id))
-        .where(sql`${projects.teamId} IS NULL`)
+        .where(sql`${projects.teamId} IS NULL`) // Only projects without teamId
         .where(eq(projects.isDeleted, false))
-        .orderBy(projects.createdAt);
+        .orderBy(desc(projects.createdAt));
       
       // Get teams the user belongs to
       const userTeams = await db

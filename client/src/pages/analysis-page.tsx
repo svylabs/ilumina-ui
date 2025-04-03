@@ -446,6 +446,40 @@ Security Analysis:
 `
   },
   {
+    id: "test_setup",
+    title: "Simulation Setup",
+    description: "Configuring and implementing the simulation environment",
+    status: "pending",
+    output: `// Test Environment Setup
+Setting up Hardhat environment...
+Compiling contracts with solc 0.8.17...
+Compilation successful
+
+Configuring simulation environment:
+- Virtual network with 10 accounts
+- Each account funded with 1000 ETH
+- Gas price set to 1 gwei
+- Block time: 12 seconds
+- Actor wallets configured with test funds
+- Test trading pairs initialized
+- Automated test scenarios prepared
+
+Dependency versions:
+- ethers.js: 5.7.2
+- hardhat: 2.12.3
+- @nomiclabs/hardhat-ethers: 2.2.1
+
+Agent Configuration:
+- TokenOwner: Account 0
+- LiquidityProvider: Accounts 1-3
+- Traders: Accounts 4-7
+- Stakers: Accounts 8-9
+- Attackers: Accounts 3,7 (dual role)
+
+All test accounts configured with appropriate initial balances
+`
+  },
+  {
     id: "deployment",
     title: "Deployment Instructions",
     description: "Transaction sequence for local network setup",
@@ -487,36 +521,7 @@ Network Options:
 - Local Hardhat Network (for testing)
 `
   },
-  {
-    id: "test_setup",
-    title: "Simulation Setup",
-    description: "Configuring and implementing the simulation environment",
-    status: "pending",
-    output: `// Test Environment Setup
-Setting up Hardhat environment...
-Compiling contracts with solc 0.8.17...
-Compilation successful
-
-Configuring simulation environment:
-- Network: Hardhat local
-- Chain ID: 31337
-- Block Gas Limit: 30000000
-- Initial ETH Balance: 10000 ETH per account
-
-Generating test accounts:
-- Owner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-- LP Provider: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-- Trader 1: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-- Trader 2: 0x90F79bf6EB2c4f870365E785982E1f101E93b906
-- Staker: 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
-
-Test scenario scripts generated:
-- scenario1_basic_trading.js
-- scenario2_liquidity_provision.js
-- scenario3_staking_rewards.js
-- scenario4_attack_simulation.js
-`
-  },
+  // Second test_setup entry removed to prevent duplication
   {
     id: "simulations",
     title: "Run Simulation",
