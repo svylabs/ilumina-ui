@@ -81,6 +81,16 @@ export default function Header() {
               >
                 <Link href="/projects">My Projects</Link>
               </Button>
+              
+              {user.plan === 'teams' && (
+                <Button 
+                  variant="ghost" 
+                  className="text-white/90 hover:text-white hidden sm:flex"
+                  asChild
+                >
+                  <Link href="/teams">Teams</Link>
+                </Button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -103,6 +113,15 @@ export default function Header() {
                   >
                     My Projects
                   </DropdownMenuItem>
+                  
+                  {user.plan === 'teams' && (
+                    <DropdownMenuItem 
+                      className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer sm:hidden"
+                      onClick={() => setLocation('/teams')}
+                    >
+                      Teams
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem 
                     className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer"
                     onClick={() => scrollToSection("pricing")}

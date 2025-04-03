@@ -5,8 +5,15 @@ import { apiRequest, queryClient } from "./queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
+// Enhanced user type with plan field
+export interface AuthUser extends SelectUser {
+  plan: 'free' | 'pro' | 'teams';
+  name: string;
+  email: string;
+}
+
 type AuthContextType = {
-  user: SelectUser | null;
+  user: AuthUser | null;
   isLoading: boolean;
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;

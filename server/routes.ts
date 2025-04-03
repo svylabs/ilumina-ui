@@ -4,7 +4,7 @@ import { db } from "@db";
 import { 
   submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
-  pricingPlans, planFeatures
+  pricingPlans, planFeatures, teams, teamMembers, teamInvitations
 } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
@@ -478,6 +478,37 @@ export function registerRoutes(app: Express): Server {
       });
     }
 
+    // Check team access if teamId is provided
+    if (req.body.teamId) {
+      // Verify the user is on the Teams plan
+      if (req.user.plan !== 'teams') {
+        return res.status(403).json({
+          message: "Only users with a Teams plan can create team projects"
+        });
+      }
+
+      // Verify the user is a member of this team
+      const teamMembership = await db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.teamId, req.body.teamId))
+        .where(eq(teamMembers.userId, req.user.id))
+        .where(eq(teamMembers.status, 'active'));
+
+      // Also check if user is the team creator
+      const isTeamCreator = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, req.body.teamId))
+        .where(eq(teams.createdBy, req.user.id));
+
+      if (teamMembership.length === 0 && isTeamCreator.length === 0) {
+        return res.status(403).json({
+          message: "You are not a member of this team"
+        });
+      }
+    }
+
     // Start a transaction to create both project and submission
     const [project, submission] = await db.transaction(async (tx) => {
       const [project] = await tx
@@ -486,6 +517,7 @@ export function registerRoutes(app: Express): Server {
           name: req.body.name,
           githubUrl: req.body.githubUrl,
           userId: req.user.id,
+          teamId: req.body.teamId || null, // Add teamId if present
         })
         .returning();
 
@@ -581,18 +613,51 @@ export function registerRoutes(app: Express): Server {
 
     const projectId = parseInt(req.params.id);
 
-    // Verify project belongs to user
+    // Get the project
     const [project] = await db
       .select()
       .from(projects)
       .where(eq(projects.id, projectId))
-      .where(eq(projects.userId, req.user.id))
       .limit(1);
 
     if (!project) {
       return res.status(404).json({
-        message: "Project not found or you don't have permission to delete it"
+        message: "Project not found"
       });
+    }
+    
+    // Check permission based on whether it's a personal or team project
+    if (project.teamId) {
+      // It's a team project - check if user is team admin or creator
+      
+      // Check if user is the team creator
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, project.teamId))
+        .where(eq(teams.createdBy, req.user.id));
+      
+      // Check if user is a team admin
+      const [teamMember] = await db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.teamId, project.teamId))
+        .where(eq(teamMembers.userId, req.user.id))
+        .where(eq(teamMembers.role, 'admin'))
+        .where(eq(teamMembers.status, 'active'));
+      
+      if (!team && !teamMember) {
+        return res.status(403).json({
+          message: "You don't have permission to delete this team project"
+        });
+      }
+    } else {
+      // It's a personal project - check if user is the owner
+      if (project.userId !== req.user.id) {
+        return res.status(403).json({
+          message: "You don't have permission to delete this project"
+        });
+      }
     }
 
     await db.delete(projects).where(eq(projects.id, projectId));
@@ -2093,6 +2158,918 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Team Management Endpoints
+  
+  // Check if user can create a team (Teams plan only)
+  app.get("/api/can-create-team", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ 
+      canCreate: false,
+      message: "You must be logged in"
+    });
+    
+    if (req.user.plan !== 'teams') {
+      return res.json({
+        canCreate: false,
+        message: "Team creation is only available for Teams plan subscribers"
+      });
+    }
+    
+    return res.json({
+      canCreate: true,
+      message: "You can create and manage teams"
+    });
+  });
+  
+  // Get all teams for the current user
+  app.get("/api/teams", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Get teams created by the user
+      const createdTeams = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.createdBy, req.user.id));
+      
+      // Get teams the user is a member of
+      const memberTeams = await db
+        .select({
+          team: teams,
+          role: teamMembers.role,
+          status: teamMembers.status
+        })
+        .from(teamMembers)
+        .innerJoin(teams, eq(teamMembers.teamId, teams.id))
+        .where(eq(teamMembers.userId, req.user.id));
+      
+      // Combine and format the results
+      const allTeams = [
+        ...createdTeams.map(team => ({
+          ...team,
+          role: 'admin',
+          status: 'active',
+          isCreator: true
+        })),
+        ...memberTeams
+          .filter(mt => !createdTeams.find(ct => ct.id === mt.team.id))
+          .map(mt => ({
+            ...mt.team,
+            role: mt.role,
+            status: mt.status,
+            isCreator: false
+          }))
+      ];
+      
+      return res.json(allTeams);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch teams" 
+      });
+    }
+  });
+  
+  // Create a new team
+  app.post("/api/teams", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    if (req.user.plan !== 'teams') {
+      return res.status(403).json({
+        success: false,
+        message: "Team creation is only available for Teams plan subscribers"
+      });
+    }
+    
+    try {
+      const { name, description } = req.body;
+      
+      if (!name || name.trim() === '') {
+        return res.status(400).json({
+          success: false,
+          message: "Team name is required"
+        });
+      }
+      
+      // Create the team
+      const [newTeam] = await db.insert(teams)
+        .values({
+          name,
+          description: description || null,
+          createdBy: req.user.id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return res.status(201).json({
+        success: true,
+        team: newTeam
+      });
+    } catch (error) {
+      console.error("Error creating team:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to create team" 
+      });
+    }
+  });
+  
+  // Get team details including members
+  app.get("/api/teams/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const teamId = parseInt(req.params.id);
+      
+      // Get team details
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
+      
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      
+      // Check if user is a member or creator of the team
+      const isCreator = team.createdBy === req.user.id;
+      
+      if (!isCreator) {
+        const [membership] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, req.user.id))
+          .limit(1);
+          
+        if (!membership || membership.status !== 'active') {
+          return res.status(403).json({
+            success: false,
+            message: "You don't have access to this team"
+          });
+        }
+      }
+      
+      // Get team members
+      const members = await db
+        .select({
+          id: teamMembers.userId,
+          role: teamMembers.role,
+          status: teamMembers.status,
+          joinedAt: teamMembers.joinedAt,
+          invitedBy: teamMembers.invitedBy,
+          // Join user data
+          name: users.name,
+          email: users.email
+        })
+        .from(teamMembers)
+        .innerJoin(users, eq(teamMembers.userId, users.id))
+        .where(eq(teamMembers.teamId, teamId));
+      
+      // Get team projects
+      const teamProjects = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.teamId, teamId))
+        .orderBy(projects.createdAt);
+      
+      // Get pending invitations
+      const pendingInvitations = await db
+        .select({
+          id: teamInvitations.id,
+          email: teamInvitations.email,
+          invitedAt: teamInvitations.invitedAt,
+          status: teamInvitations.status,
+          expiresAt: teamInvitations.expiresAt,
+          // Include inviter name
+          inviterName: users.name,
+          inviterEmail: users.email
+        })
+        .from(teamInvitations)
+        .innerJoin(users, eq(teamInvitations.invitedBy, users.id))
+        .where(eq(teamInvitations.teamId, teamId))
+        .where(eq(teamInvitations.status, 'pending'));
+      
+      return res.json({
+        ...team,
+        isCreator,
+        userRole: isCreator ? 'admin' : members.find(m => m.id === req.user.id)?.role || 'member',
+        members,
+        projects: teamProjects,
+        pendingInvitations
+      });
+    } catch (error) {
+      console.error("Error fetching team details:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch team details" 
+      });
+    }
+  });
+  
+  // Update team details
+  app.patch("/api/teams/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const teamId = parseInt(req.params.id);
+      const { name, description } = req.body;
+      
+      // Get team to check permissions
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
+      
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      
+      // Check if user is the team creator or an admin
+      const isCreator = team.createdBy === req.user.id;
+      
+      if (!isCreator) {
+        const [membership] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, req.user.id))
+          .limit(1);
+          
+        if (!membership || membership.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            message: "Only team admins can update team details"
+          });
+        }
+      }
+      
+      // Update team
+      const [updatedTeam] = await db
+        .update(teams)
+        .set({
+          name: name || team.name,
+          description: description !== undefined ? description : team.description,
+          updatedAt: new Date()
+        })
+        .where(eq(teams.id, teamId))
+        .returning();
+      
+      return res.json({
+        success: true,
+        team: updatedTeam
+      });
+    } catch (error) {
+      console.error("Error updating team:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to update team" 
+      });
+    }
+  });
+  
+  // Delete a team
+  app.delete("/api/teams/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const teamId = parseInt(req.params.id);
+      
+      // Get team to check permissions
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
+      
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      
+      // Only team creator can delete a team
+      if (team.createdBy !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Only the team creator can delete the team"
+        });
+      }
+      
+      // Delete team and related records in a transaction
+      await db.transaction(async (tx) => {
+        // Delete team invitations
+        await tx
+          .delete(teamInvitations)
+          .where(eq(teamInvitations.teamId, teamId));
+        
+        // Delete team members
+        await tx
+          .delete(teamMembers)
+          .where(eq(teamMembers.teamId, teamId));
+        
+        // Remove team association from projects
+        await tx
+          .update(projects)
+          .set({ teamId: null })
+          .where(eq(projects.teamId, teamId));
+        
+        // Delete the team
+        await tx
+          .delete(teams)
+          .where(eq(teams.id, teamId));
+      });
+      
+      return res.json({
+        success: true,
+        message: "Team deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting team:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to delete team" 
+      });
+    }
+  });
+  
+  // Invite a user to a team
+  app.post("/api/teams/:id/invite", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const teamId = parseInt(req.params.id);
+      const { email, role = 'member' } = req.body;
+      
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Valid email address is required"
+        });
+      }
+      
+      // Get team to check permissions
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
+      
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      
+      // Check if user is the team creator or an admin
+      const isCreator = team.createdBy === req.user.id;
+      
+      if (!isCreator) {
+        const [membership] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, req.user.id))
+          .limit(1);
+          
+        if (!membership || membership.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            message: "Only team admins can send invitations"
+          });
+        }
+      }
+      
+      // Check if the email is already a team member
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+      
+      if (existingUser) {
+        const [existingMember] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, existingUser.id))
+          .limit(1);
+        
+        if (existingMember) {
+          return res.status(400).json({
+            success: false,
+            message: "This user is already a member of the team"
+          });
+        }
+        
+        // User exists but is not a member, add them directly
+        const [newMember] = await db
+          .insert(teamMembers)
+          .values({
+            teamId,
+            userId: existingUser.id,
+            role,
+            status: 'invited',
+            joinedAt: new Date(),
+            invitedBy: req.user.id
+          })
+          .returning();
+        
+        // TODO: Send email notification to user
+        
+        return res.status(201).json({
+          success: true,
+          message: "User invited to the team",
+          member: {
+            ...newMember,
+            name: existingUser.name,
+            email: existingUser.email
+          }
+        });
+      }
+      
+      // Email doesn't belong to an existing user, create invitation
+      // Generate a unique token for the invitation
+      const token = Buffer.from(Math.random().toString(36).substring(2) + Date.now().toString(36)).toString('base64');
+      
+      // Set expiration to 7 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      // Create the invitation
+      const [invitation] = await db
+        .insert(teamInvitations)
+        .values({
+          teamId,
+          email,
+          invitedBy: req.user.id,
+          invitedAt: new Date(),
+          status: 'pending',
+          expiresAt,
+          token
+        })
+        .returning();
+      
+      // TODO: Send invitation email
+      
+      return res.status(201).json({
+        success: true,
+        message: "Invitation sent",
+        invitation: {
+          ...invitation,
+          inviterName: req.user.name,
+          inviterEmail: req.user.email
+        }
+      });
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to send invitation" 
+      });
+    }
+  });
+  
+  // Accept an invitation to join a team
+  app.post("/api/teams/accept-invitation", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: "Invitation token is required"
+        });
+      }
+      
+      // Find the invitation
+      const [invitation] = await db
+        .select()
+        .from(teamInvitations)
+        .where(eq(teamInvitations.token, token))
+        .limit(1);
+      
+      if (!invitation) {
+        return res.status(404).json({
+          success: false,
+          message: "Invalid or expired invitation"
+        });
+      }
+      
+      // Check if invitation has expired
+      if (invitation.status !== 'pending' || (invitation.expiresAt && new Date(invitation.expiresAt) < new Date())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invitation has expired or already been used"
+        });
+      }
+      
+      // Check if the invitation email matches the current user
+      if (invitation.email.toLowerCase() !== req.user.email.toLowerCase()) {
+        return res.status(403).json({
+          success: false,
+          message: "This invitation was sent to a different email address"
+        });
+      }
+      
+      // Add user to the team
+      const [teamMembership] = await db
+        .insert(teamMembers)
+        .values({
+          teamId: invitation.teamId,
+          userId: req.user.id,
+          role: 'member', // Default role for invited members
+          status: 'active',
+          joinedAt: new Date(),
+          invitedBy: invitation.invitedBy
+        })
+        .returning();
+      
+      // Mark the invitation as accepted
+      await db
+        .update(teamInvitations)
+        .set({ status: 'accepted' })
+        .where(eq(teamInvitations.id, invitation.id));
+      
+      // Get team details
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, invitation.teamId))
+        .limit(1);
+      
+      return res.json({
+        success: true,
+        message: "You have joined the team",
+        team,
+        membership: teamMembership
+      });
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to accept invitation" 
+      });
+    }
+  });
+  
+  // Remove a member from a team
+  app.delete("/api/teams/:teamId/members/:userId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const userId = parseInt(req.params.userId);
+      
+      // Get team
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
+      
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      
+      // Check permissions - must be team creator, admin, or removing self
+      const isCreator = team.createdBy === req.user.id;
+      const isSelf = userId === req.user.id;
+      
+      if (!isCreator && !isSelf) {
+        const [membership] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, req.user.id))
+          .limit(1);
+          
+        if (!membership || membership.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            message: "You don't have permission to remove this member"
+          });
+        }
+      }
+      
+      // Check if trying to remove the team creator
+      if (userId === team.createdBy && !isSelf) {
+        return res.status(403).json({
+          success: false,
+          message: "The team creator cannot be removed from the team"
+        });
+      }
+      
+      // Remove the member
+      await db
+        .delete(teamMembers)
+        .where(eq(teamMembers.teamId, teamId))
+        .where(eq(teamMembers.userId, userId));
+      
+      return res.json({
+        success: true,
+        message: `${isSelf ? "You have" : "Member has"} been removed from the team`
+      });
+    } catch (error) {
+      console.error("Error removing team member:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to remove team member" 
+      });
+    }
+  });
+  
+  // Update team member role
+  app.patch("/api/teams/:teamId/members/:userId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const userId = parseInt(req.params.userId);
+      const { role } = req.body;
+      
+      if (!role || !['member', 'admin'].includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid role. Must be 'member' or 'admin'"
+        });
+      }
+      
+      // Get team
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
+      
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      
+      // Check permissions - only team creator or admins can update roles
+      const isCreator = team.createdBy === req.user.id;
+      
+      if (!isCreator) {
+        const [membership] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, req.user.id))
+          .limit(1);
+          
+        if (!membership || membership.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            message: "Only team admins can update member roles"
+          });
+        }
+      }
+      
+      // Update the member's role
+      const [updatedMember] = await db
+        .update(teamMembers)
+        .set({ role })
+        .where(eq(teamMembers.teamId, teamId))
+        .where(eq(teamMembers.userId, userId))
+        .returning();
+      
+      if (!updatedMember) {
+        return res.status(404).json({
+          success: false,
+          message: "Member not found in this team"
+        });
+      }
+      
+      return res.json({
+        success: true,
+        message: "Member role updated",
+        member: updatedMember
+      });
+    } catch (error) {
+      console.error("Error updating member role:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to update member role" 
+      });
+    }
+  });
+  
+  // Update project to assign it to a team
+  app.patch("/api/projects/:id/team", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const projectId = parseInt(req.params.id);
+      const { teamId } = req.body;
+      
+      // Get the project
+      const [project] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+      
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          message: "Project not found"
+        });
+      }
+      
+      // Check if user owns the project
+      if (project.userId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "You don't have permission to modify this project"
+        });
+      }
+      
+      // If removing from team (teamId = null)
+      if (teamId === null) {
+        const [updatedProject] = await db
+          .update(projects)
+          .set({ teamId: null })
+          .where(eq(projects.id, projectId))
+          .returning();
+        
+        return res.json({
+          success: true,
+          message: "Project removed from team",
+          project: updatedProject
+        });
+      }
+      
+      // Verify the team exists and user is a member
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
+      
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      
+      // Check if user is the team creator or a member
+      const isCreator = team.createdBy === req.user.id;
+      
+      if (!isCreator) {
+        const [membership] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, req.user.id))
+          .limit(1);
+          
+        if (!membership || membership.status !== 'active') {
+          return res.status(403).json({
+            success: false,
+            message: "You must be an active member of the team to add projects to it"
+          });
+        }
+      }
+      
+      // Update the project
+      const [updatedProject] = await db
+        .update(projects)
+        .set({ teamId })
+        .where(eq(projects.id, projectId))
+        .returning();
+      
+      return res.json({
+        success: true,
+        message: "Project added to team",
+        project: updatedProject
+      });
+    } catch (error) {
+      console.error("Error updating project team:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to update project team" 
+      });
+    }
+  });
+  
+  // Get all projects for the current user, including team projects
+  app.get("/api/all-projects", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Get user's personal projects
+      const personalProjects = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.userId, req.user.id))
+        .where(sql`${projects.teamId} IS NULL`)
+        .orderBy(projects.createdAt);
+      
+      // Get teams the user belongs to
+      const userTeams = await db
+        .select({
+          teamId: teams.id,
+          teamName: teams.name,
+          role: teamMembers.role
+        })
+        .from(teamMembers)
+        .innerJoin(teams, eq(teamMembers.teamId, teams.id))
+        .where(eq(teamMembers.userId, req.user.id))
+        .where(eq(teamMembers.status, 'active'));
+      
+      // Also include teams created by the user
+      const createdTeams = await db
+        .select({
+          teamId: teams.id,
+          teamName: teams.name,
+          role: sql<string>`'admin'` // Creator is always admin
+        })
+        .from(teams)
+        .where(eq(teams.createdBy, req.user.id))
+        .where(sql`${teams.id} NOT IN (
+          SELECT team_id FROM team_members 
+          WHERE user_id = ${req.user.id} AND status = 'active'
+        )`);
+      
+      // Combine all team IDs
+      const allTeams = [...userTeams, ...createdTeams];
+      const teamIds = allTeams.map(t => t.teamId);
+      
+      // Get projects for all these teams
+      let teamProjects = [];
+      if (teamIds.length > 0) {
+        teamProjects = await db
+          .select({
+            project: projects,
+            teamName: teams.name
+          })
+          .from(projects)
+          .innerJoin(teams, eq(projects.teamId, teams.id))
+          .where(sql`${projects.teamId} IN (${teamIds.join(',')})`)
+          .orderBy(teams.name, projects.createdAt);
+      }
+      
+      // Format the response
+      const formattedTeamProjects = teamProjects.map(tp => ({
+        ...tp.project,
+        teamName: tp.teamName
+      }));
+      
+      // Group projects by team
+      const projectsByTeam = {};
+      
+      // Add personal projects
+      projectsByTeam.personal = {
+        teamId: null,
+        teamName: "Personal Projects",
+        projects: personalProjects
+      };
+      
+      // Add team projects
+      for (const team of allTeams) {
+        const teamProjects = formattedTeamProjects.filter(p => p.teamId === team.teamId);
+        projectsByTeam[team.teamId] = {
+          teamId: team.teamId,
+          teamName: team.teamName,
+          role: team.role,
+          projects: teamProjects
+        };
+      }
+      
+      return res.json({
+        personalProjects,
+        teamProjects: formattedTeamProjects,
+        projectsByTeam: Object.values(projectsByTeam)
+      });
+    } catch (error) {
+      console.error("Error fetching all projects:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch projects" 
+      });
+    }
+  });
+  
   const httpServer = createServer(app);
   const PORT = process.env.PORT || 3000;
   app.set('port', PORT);

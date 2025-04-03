@@ -3,16 +3,23 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
+import { useAuth, AuthUser } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import type { InsertProject } from "@db/schema";
 import { insertProjectSchema } from "@db/schema";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function NewProjectPage() {
   const [, setLocation] = useLocation();
@@ -26,13 +33,23 @@ export default function NewProjectPage() {
     queryKey: ["/api/projects"],
     enabled: !!user,
   });
+  
+  // Get user's teams if on a teams plan
+  const { data: teams, isLoading: isLoadingTeams } = useQuery({
+    queryKey: ["/api/teams"],
+    enabled: !!user && user.plan === 'teams',
+  });
 
-  const form = useForm<InsertProject>({
+  // Initialize a teamId state for our form
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+
+  const form = useForm<InsertProject & { teamId?: number }>({
     resolver: zodResolver(insertProjectSchema),
     defaultValues: {
       name: "",
       githubUrl: "",
       userId: user?.id,
+      teamId: undefined, // Add teamId field to the form
     },
   });
 
@@ -106,7 +123,17 @@ export default function NewProjectPage() {
           <CardContent className="p-6">
             <h2 className="text-2xl font-bold text-white mb-6">Create New Project</h2>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => mutation.mutate({...data, userId: user.id}))} className="space-y-6">
+              <form 
+                onSubmit={form.handleSubmit((data) => {
+                  // Add team information if a team is selected
+                  if (selectedTeamId) {
+                    mutation.mutate({...data, userId: user.id, teamId: selectedTeamId});
+                  } else {
+                    mutation.mutate({...data, userId: user.id});
+                  }
+                })} 
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="githubUrl"
@@ -146,6 +173,43 @@ export default function NewProjectPage() {
                     </FormItem>
                   )}
                 />
+
+                {user.plan === 'teams' && (
+                  <FormField
+                    control={form.control}
+                    name="teamId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Team (Optional)</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            setSelectedTeamId(value ? parseInt(value) : null);
+                            field.onChange(value ? parseInt(value) : undefined);
+                          }}
+                          defaultValue={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="bg-black/50 border-primary/40 text-white">
+                              <SelectValue placeholder="Select a team" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-black/90 border-primary/40 text-white">
+                            <SelectItem value="">Personal Project</SelectItem>
+                            {teams?.map((team: any) => (
+                              <SelectItem key={team.id} value={team.id.toString()}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription className="text-primary/70">
+                          Projects can be personal or shared with a team
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <Button 
                   type="submit" 

@@ -10,6 +10,7 @@ import AnalysisPage from "@/pages/analysis-page";
 import ProjectsPage from "@/pages/projects-page";
 import NewProjectPage from "@/pages/new-project";
 import AuthPage from "@/pages/auth-page";
+import TeamsPage, { TeamDetailPage } from "@/pages/teams-page";
 import RootLayout from "@/components/layout/root-layout";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -23,6 +24,8 @@ function Router() {
         <ProtectedRoute path="/new-project" component={NewProjectPage} />
         <ProtectedRoute path="/results/:id" component={ResultsPage} />
         <ProtectedRoute path="/analysis/:id" component={AnalysisPage} />
+        <ProtectedRoute path="/teams" component={TeamsPage} />
+        <ProtectedRoute path="/teams/:id" component={TeamDetailPage} />
         <Route component={NotFound} />
       </Switch>
     </RootLayout>
