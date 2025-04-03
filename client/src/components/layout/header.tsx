@@ -142,16 +142,23 @@ export default function Header() {
               <Button 
                 variant="ghost" 
                 className="text-white/90 hover:text-white hidden sm:flex"
-                onClick={() => scrollToSection("features")}
+                asChild
               >
-                Features
+                <Link href="/#features">Features</Link>
               </Button>
               <Button 
                 variant="ghost" 
                 className="text-white/90 hover:text-white hidden sm:flex"
-                onClick={() => scrollToSection("pricing")}
+                asChild
               >
-                Pricing
+                <Link href="/#pricing">Pricing</Link>
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="text-white/90 hover:text-white hidden sm:flex"
+                asChild
+              >
+                <Link href="/#about">About</Link>
               </Button>
 
               <DropdownMenu>
@@ -161,17 +168,20 @@ export default function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-black/95 border-primary/20">
-                  <DropdownMenuItem 
-                    className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer"
-                    onClick={() => scrollToSection("features")}
-                  >
-                    Features
+                  <DropdownMenuItem asChild>
+                    <Link href="/#features" className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer w-full">
+                      Features
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer"
-                    onClick={() => scrollToSection("pricing")}
-                  >
-                    Pricing
+                  <DropdownMenuItem asChild>
+                    <Link href="/#pricing" className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer w-full">
+                      Pricing
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/#about" className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer w-full">
+                      About
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
