@@ -303,8 +303,9 @@ export default function TeamsPage() {
             {teams.map((team) => (
               <Card
                 key={team.id}
-                className="border-primary/20 bg-black/50 hover:border-primary/40 transition-colors"
+                className="border-primary/20 bg-black/50 hover:border-primary/40 transition-colors relative group"
               >
+                <Link href={`/teams/${team.id}`} className="absolute inset-0 z-10 cursor-pointer" />
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl font-semibold text-white">
@@ -329,15 +330,15 @@ export default function TeamsPage() {
                   </div>
                 </CardContent>
                 <Separator className="bg-primary/10" />
-                <CardFooter className="pt-4">
+                <CardFooter className="pt-4 relative z-20">
                   <div className="w-full flex justify-between items-center">
-                    <Button asChild variant="outline" size="sm">
+                    <Button asChild variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
                       <Link href={`/teams/${team.id}`} className="flex items-center gap-2">
                         <Settings className="h-4 w-4" />
                         Manage
                       </Link>
                     </Button>
-                    <Button asChild variant="outline" size="sm">
+                    <Button asChild variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
                       <Link href={`/projects?team=${team.id}`} className="flex items-center gap-2">
                         <ChevronRight className="h-4 w-4" />
                         View Projects

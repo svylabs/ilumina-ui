@@ -84,7 +84,8 @@ export default function ProjectsPage() {
   const isLoading = isLoadingProjects || isLoadingTeams || isLoadingOldProjects;
   
   // Determine which projects to display
-  const personalProjects = allProjectsData?.personalProjects || projects || [];
+  // Make sure personal projects only includes projects with no teamId
+  const personalProjects = (allProjectsData?.personalProjects || projects || []).filter(p => p.teamId === null);
   // Filter team projects to only include actual team projects (those with teamId)
   const teamProjects = (allProjectsData?.teamProjects || []).filter(p => p.teamId !== null);
   const projectsByTeam = allProjectsData?.projectsByTeam || [];
@@ -183,7 +184,13 @@ export default function ProjectsPage() {
                       ) : (
                         <Users className="h-5 w-5 text-primary" />
                       )}
-                      <h2 className="text-xl font-semibold text-white">{teamGroup.teamName}</h2>
+                      {teamGroup.teamId === null ? (
+                        <h2 className="text-xl font-semibold text-white">{teamGroup.teamName}</h2>
+                      ) : (
+                        <Link href={`/teams/${teamGroup.teamId}`} className="hover:text-primary transition-colors">
+                          <h2 className="text-xl font-semibold text-white">{teamGroup.teamName}</h2>
+                        </Link>
+                      )}
                       {teamGroup.teamId !== null && teamGroup.role === 'admin' && (
                         <Badge variant="outline" className="ml-2 bg-primary/10 text-primary">
                           Admin
