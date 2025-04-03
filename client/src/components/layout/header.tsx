@@ -17,12 +17,8 @@ export default function Header() {
   const [, setLocation] = useLocation();
 
   const scrollToSection = (id: string) => {
-    if (window.location.pathname !== '/') {
-      setLocation('/#' + id);
-      return;
-    }
-    // Don't auto-scroll to elements as this can interfere with user experience
-    // Removed: element.scrollIntoView({ behavior: 'smooth' });
+    const element = document.getElementById(id);
+    element?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleHomeClick = (e: React.MouseEvent) => {
@@ -81,7 +77,7 @@ export default function Header() {
               >
                 <Link href="/projects">My Projects</Link>
               </Button>
-              
+
               {user.plan === 'teams' && (
                 <Button 
                   variant="ghost" 
@@ -113,7 +109,7 @@ export default function Header() {
                   >
                     My Projects
                   </DropdownMenuItem>
-                  
+
                   {user.plan === 'teams' && (
                     <DropdownMenuItem 
                       className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer sm:hidden"
@@ -142,24 +138,24 @@ export default function Header() {
               <Button 
                 variant="ghost" 
                 className="text-white/90 hover:text-white hidden sm:flex"
-                asChild
-              >
-                <Link href="/#features">Features</Link>
-              </Button>
+                onClick={() => scrollToSection("features")}
+                >
+                  Features
+                </Button>
               <Button 
                 variant="ghost" 
                 className="text-white/90 hover:text-white hidden sm:flex"
-                asChild
-              >
-                <Link href="/#pricing">Pricing</Link>
-              </Button>
+                onClick={() => scrollToSection("pricing")}
+                >
+                  Pricing
+                </Button>
               <Button 
                 variant="ghost" 
                 className="text-white/90 hover:text-white hidden sm:flex"
-                asChild
-              >
-                <Link href="/#about">About</Link>
-              </Button>
+                onClick={() => scrollToSection("about")}
+                >
+                  About
+                </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild className="sm:hidden">
@@ -168,21 +164,9 @@ export default function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-black/95 border-primary/20">
-                  <DropdownMenuItem asChild>
-                    <Link href="/#features" className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer w-full">
-                      Features
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/#pricing" className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer w-full">
-                      Pricing
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/#about" className="text-white/90 focus:text-white focus:bg-primary/20 cursor-pointer w-full">
-                      About
-                    </Link>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => scrollToSection("features")}>Features</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => scrollToSection("pricing")}>Pricing</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => scrollToSection("about")}>About</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
