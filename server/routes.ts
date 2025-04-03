@@ -464,15 +464,28 @@ export function registerRoutes(app: Express): Server {
       });
     }
 
-    // Check for existing project with same GitHub URL
-    const existingProject = await db
+    // Helper function to normalize GitHub URLs
+    const normalizeGitHubUrl = (url: string): string => {
+      // Remove protocol, trailing slash, and .git extension
+      return url.toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/\.git$/, '')
+        .replace(/\/$/, '');
+    };
+
+    // Get all user's projects to compare normalized URLs
+    const userProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.githubUrl, req.body.githubUrl))
-      .where(eq(projects.userId, req.user.id))
-      .limit(1);
+      .where(eq(projects.userId, req.user.id));
+    
+    // Check for existing project with same GitHub URL by comparing normalized URLs
+    const normalizedNewUrl = normalizeGitHubUrl(req.body.githubUrl);
+    const existingProject = userProjects.find(project => 
+      normalizeGitHubUrl(project.githubUrl) === normalizedNewUrl
+    );
 
-    if (existingProject.length > 0) {
+    if (existingProject) {
       return res.status(400).json({
         message: "A project with this GitHub URL already exists in your account"
       });
