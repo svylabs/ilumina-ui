@@ -439,6 +439,7 @@ export function registerRoutes(app: Express): Server {
       .select()
       .from(projects)
       .where(eq(projects.userId, req.user.id))
+      .where(eq(projects.isDeleted, false)) // Filter out soft-deleted projects
       .orderBy(projects.createdAt);
 
     res.json(userProjects);
@@ -451,11 +452,12 @@ export function registerRoutes(app: Express): Server {
     const maxProjects = req.user.plan === 'teams' ? Infinity :
                        req.user.plan === 'pro' ? 3 : 1;
 
-    // Get current project count
+    // Get current project count (exclude deleted projects)
     const projectCount = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(projects)
       .where(eq(projects.userId, req.user.id))
+      .where(eq(projects.isDeleted, false))
       .then(result => result[0].count);
 
     if (projectCount >= maxProjects) {
@@ -473,11 +475,12 @@ export function registerRoutes(app: Express): Server {
         .replace(/\/$/, '');
     };
 
-    // Get all user's projects to compare normalized URLs
+    // Get all user's active projects to compare normalized URLs
     const userProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.userId, req.user.id));
+      .where(eq(projects.userId, req.user.id))
+      .where(eq(projects.isDeleted, false));
     
     // Check for existing project with same GitHub URL by comparing normalized URLs
     const normalizedNewUrl = normalizeGitHubUrl(req.body.githubUrl);
@@ -515,7 +518,8 @@ export function registerRoutes(app: Express): Server {
         .select()
         .from(teams)
         .where(eq(teams.id, teamId))
-        .where(eq(teams.createdBy, req.user.id));
+        .where(eq(teams.createdBy, req.user.id))
+        .where(eq(teams.isDeleted, false));
 
       if (teamMembership.length === 0 && isTeamCreator.length === 0) {
         return res.status(403).json({
@@ -656,7 +660,8 @@ export function registerRoutes(app: Express): Server {
         .select()
         .from(teams)
         .where(eq(teams.id, project.teamId))
-        .where(eq(teams.createdBy, req.user.id));
+        .where(eq(teams.createdBy, req.user.id))
+        .where(eq(teams.isDeleted, false));
       
       // Check if user is a team admin
       const [teamMember] = await db
@@ -681,7 +686,12 @@ export function registerRoutes(app: Express): Server {
       }
     }
 
-    await db.delete(projects).where(eq(projects.id, projectId));
+    // Soft delete the project instead of hard delete
+    await db
+      .update(projects)
+      .set({ isDeleted: true })
+      .where(eq(projects.id, projectId));
+    
     res.sendStatus(204);
   });
 
@@ -807,6 +817,7 @@ export function registerRoutes(app: Express): Server {
         .select()
         .from(projects)
         .where(eq(projects.id, projectId))
+        .where(eq(projects.isDeleted, false)) // Filter out deleted projects
         .limit(1);
 
       if (!project) {
@@ -2206,11 +2217,12 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
-      // Get teams created by the user
+      // Get teams created by the user (non-deleted only)
       const createdTeams = await db
         .select()
         .from(teams)
-        .where(eq(teams.createdBy, req.user.id));
+        .where(eq(teams.createdBy, req.user.id))
+        .where(eq(teams.isDeleted, false));
       
       // Get teams the user is a member of
       const memberTeams = await db
@@ -2221,7 +2233,8 @@ export function registerRoutes(app: Express): Server {
         })
         .from(teamMembers)
         .innerJoin(teams, eq(teamMembers.teamId, teams.id))
-        .where(eq(teamMembers.userId, req.user.id));
+        .where(eq(teamMembers.userId, req.user.id))
+        .where(eq(teams.isDeleted, false));
       
       // Combine and format the results
       const allTeams = [
@@ -2303,11 +2316,12 @@ export function registerRoutes(app: Express): Server {
     try {
       const teamId = parseInt(req.params.id);
       
-      // Get team details
+      // Get team details (non-deleted only)
       const [team] = await db
         .select()
         .from(teams)
         .where(eq(teams.id, teamId))
+        .where(eq(teams.isDeleted, false))
         .limit(1);
       
       if (!team) {
@@ -2352,11 +2366,12 @@ export function registerRoutes(app: Express): Server {
         .innerJoin(users, eq(teamMembers.userId, users.id))
         .where(eq(teamMembers.teamId, teamId));
       
-      // Get team projects
+      // Get team projects (non-deleted only)
       const teamProjects = await db
         .select()
         .from(projects)
         .where(eq(projects.teamId, teamId))
+        .where(eq(projects.isDeleted, false))
         .orderBy(projects.createdAt);
       
       // Get pending invitations
@@ -2487,17 +2502,13 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      // Delete team and related records in a transaction
+      // Soft delete the team in a transaction
       await db.transaction(async (tx) => {
-        // Delete team invitations
+        // Mark the team as deleted instead of hard deleting
         await tx
-          .delete(teamInvitations)
-          .where(eq(teamInvitations.teamId, teamId));
-        
-        // Delete team members
-        await tx
-          .delete(teamMembers)
-          .where(eq(teamMembers.teamId, teamId));
+          .update(teams)
+          .set({ isDeleted: true })
+          .where(eq(teams.id, teamId));
         
         // Remove team association from projects
         await tx
@@ -2505,10 +2516,7 @@ export function registerRoutes(app: Express): Server {
           .set({ teamId: null })
           .where(eq(projects.teamId, teamId));
         
-        // Delete the team
-        await tx
-          .delete(teams)
-          .where(eq(teams.id, teamId));
+        // Keep team members and invitations for potential restoration
       });
       
       return res.json({
@@ -2998,12 +3006,13 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
-      // Get user's personal projects
+      // Get user's personal projects (non-deleted only)
       const personalProjects = await db
         .select()
         .from(projects)
         .where(eq(projects.userId, req.user.id))
         .where(sql`${projects.teamId} IS NULL`)
+        .where(eq(projects.isDeleted, false))
         .orderBy(projects.createdAt);
       
       // Get teams the user belongs to
@@ -3112,4 +3121,3 @@ async function updateRunStatus(runId: number) {
 
   console.log(`Updated run ${runId} to status: ${status}`);
   return updatedRun;
-}

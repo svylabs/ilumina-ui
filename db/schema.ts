@@ -24,6 +24,7 @@ export const teams = pgTable("teams", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: integer("created_by").notNull(), // User who created the team
+  isDeleted: boolean("is_deleted").default(false).notNull(), // Soft delete flag
 });
 
 // Define team members table to track team membership
@@ -76,6 +77,7 @@ export const projects = pgTable("projects", {
   userId: integer("user_id").notNull(),
   teamId: integer("team_id"), // Optional, null for personal projects
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  isDeleted: boolean("is_deleted").default(false).notNull(), // Soft delete flag
 });
 
 export const submissions = pgTable("submissions", {
