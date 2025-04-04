@@ -802,7 +802,7 @@ export default function AnalysisPage() {
                               disabled={getStepStatus(currentStep.id) === "in_progress"}
                             >
                               <RefreshCcw className="h-4 w-4 mr-1" />
-                              Re-evaluate
+                              Refine
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="bg-black/95 border-primary/20">
