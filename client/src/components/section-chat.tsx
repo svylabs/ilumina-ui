@@ -123,8 +123,9 @@ export default function SectionChat({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 text-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col border border-gray-700 shadow-xl">
+    <div className="fixed inset-0 bg-black/60 z-50 flex md:block">
+      {/* Desktop: Right sidebar layout - Mobile: Full screen layout */}
+      <div className="md:absolute md:right-0 md:top-0 md:bottom-0 bg-gray-900 text-white w-full md:w-1/3 max-w-full md:max-w-md flex flex-col border-l border-gray-700 shadow-xl">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-700 flex justify-between items-center">
           <h3 className="font-semibold flex items-center">
@@ -152,7 +153,7 @@ export default function SectionChat({
               <div 
                 key={message.id} 
                 className={cn(
-                  "mb-4 p-3 rounded-lg max-w-[80%]",
+                  "mb-4 p-3 rounded-lg max-w-[85%]",
                   message.role === "user" 
                     ? "ml-auto bg-blue-600 text-white" 
                     : "mr-auto bg-gray-800 text-gray-100"
@@ -216,6 +217,12 @@ export default function SectionChat({
           </div>
         </div>
       </div>
+      
+      {/* Semi-transparent backdrop area that allows closing the chat when clicked */}
+      <div 
+        className="hidden md:block absolute inset-0 right-[33.333%] md:right-[400px]" 
+        onClick={onClose}
+      />
     </div>
   );
 }
