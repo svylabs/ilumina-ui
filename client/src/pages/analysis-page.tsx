@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCcw, FileCode, Users, Box, Laptop, PlayCircle } from "lucide-react";
+import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCcw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
@@ -20,6 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState, useCallback, useRef } from "react";
 import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
@@ -1128,19 +1129,91 @@ export default function AnalysisPage() {
                                                         <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
                                                           <div className="space-y-3">
                                                             <div>
-                                                              <h5 className="text-sm font-medium text-blue-300 mb-1">Implementation</h5>
-                                                              <div className="bg-black/40 p-3 rounded text-xs">
-                                                                <p className="text-green-400 mb-2">
-                                                                  This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
-                                                                </p>
+                                                              <h5 className="text-sm font-medium text-blue-300 mb-2">Implementation</h5>
+                                                              
+                                                              <Tabs defaultValue="summary">
+                                                                <TabsList className="bg-gray-800 text-gray-400 mb-2">
+                                                                  <TabsTrigger value="summary" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                                                    <Eye className="h-3.5 w-3.5 mr-1" />
+                                                                    Summary
+                                                                  </TabsTrigger>
+                                                                  <TabsTrigger value="code" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                                                    <Code className="h-3.5 w-3.5 mr-1" />
+                                                                    Code
+                                                                  </TabsTrigger>
+                                                                  <TabsTrigger value="preview" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                                                    <FileEdit className="h-3.5 w-3.5 mr-1" />
+                                                                    Preview Changes
+                                                                  </TabsTrigger>
+                                                                </TabsList>
                                                                 
-                                                                <div className="text-white/80 space-y-2">
-                                                                  <p>Contract interaction: {action.contract_name}</p>
-                                                                  <p>Function: {action.function_name}</p>
-                                                                  <p>Actor: {actor.name}</p>
-                                                                  <p>Parameters will be passed according to the function specification</p>
-                                                                </div>
-                                                              </div>
+                                                                <TabsContent value="summary" className="mt-0">
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <p className="text-green-400 mb-2">
+                                                                      This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
+                                                                    </p>
+                                                                    
+                                                                    <div className="text-white/80 space-y-2">
+                                                                      <p>Contract interaction: {action.contract_name}</p>
+                                                                      <p>Function: {action.function_name}</p>
+                                                                      <p>Actor: {actor.name}</p>
+                                                                      <p>Parameters will be passed according to the function specification</p>
+                                                                    </div>
+                                                                  </div>
+                                                                </TabsContent>
+                                                                
+                                                                <TabsContent value="code" className="mt-0">
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <pre className="whitespace-pre-wrap text-green-300 font-mono text-xs">{`
+// Implementation for ${action.name}
+// Contract: ${action.contract_name}
+// Function: ${action.function_name}
+
+async function execute() {
+  // Setup required parameters
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
+  
+  // Execute the transaction
+  const tx = await ${action.contract_name.toLowerCase()}.${action.function_name.split('(')[0]}(
+    // Parameters will depend on the specific function
+  );
+  
+  // Wait for confirmation
+  await tx.wait();
+  
+  // Log the result
+  console.log("${action.name} executed successfully");
+}
+`}</pre>
+                                                                  </div>
+                                                                </TabsContent>
+                                                                
+                                                                <TabsContent value="preview" className="mt-0">
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                      <div className="text-gray-300 text-xs">Modified implementation code:</div>
+                                                                      <div className="flex gap-2">
+                                                                        <Button size="sm" variant="outline" className="h-6 text-xs">
+                                                                          Reject Changes
+                                                                        </Button>
+                                                                        <Button size="sm" variant="default" className="h-6 text-xs">
+                                                                          Accept Changes
+                                                                        </Button>
+                                                                      </div>
+                                                                    </div>
+                                                                    <div className="border border-gray-700 rounded-md overflow-hidden">
+                                                                      <div className="bg-red-950/30 p-2 text-red-300 font-mono text-xs line-through">{`async function execute() {
+  // Setup required parameters
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");`}</div>
+                                                                      <div className="bg-green-950/30 p-2 text-green-300 font-mono text-xs">{`async function execute() {
+  // Setup required parameters with provider and signer
+  const provider = ethers.provider;
+  const signer = await ethers.getSigner();
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address", signer);`}</div>
+                                                                    </div>
+                                                                  </div>
+                                                                </TabsContent>
+                                                              </Tabs>
                                                               
                                                               <Dialog>
                                                                 <DialogTrigger asChild>
@@ -1173,17 +1246,90 @@ export default function AnalysisPage() {
                                                             </div>
                                                             
                                                             <div>
-                                                              <h5 className="text-sm font-medium text-yellow-300 mb-1">Validation Rules</h5>
-                                                              <div className="bg-black/40 p-3 rounded text-xs">
-                                                                <ul className="list-disc pl-5 text-yellow-400 space-y-1">
-                                                                  <li>All required parameters must be provided and valid</li>
-                                                                  <li>Actor must have appropriate permissions/role</li>
-                                                                  <li>Actor must have sufficient balance if operations involve transfers</li>
-                                                                  <li>Contract state must allow this operation</li>
-                                                                  <li>Gas estimation must be within reasonable limits</li>
-                                                                  <li>Operation must not violate any business logic constraints</li>
-                                                                </ul>
-                                                              </div>
+                                                              <h5 className="text-sm font-medium text-yellow-300 mb-2">Validation Rules</h5>
+                                                              
+                                                              <Tabs defaultValue="summary">
+                                                                <TabsList className="bg-gray-800 text-gray-400 mb-2">
+                                                                  <TabsTrigger value="summary" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                                                    <Eye className="h-3.5 w-3.5 mr-1" />
+                                                                    Summary
+                                                                  </TabsTrigger>
+                                                                  <TabsTrigger value="code" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                                                    <Code className="h-3.5 w-3.5 mr-1" />
+                                                                    Code
+                                                                  </TabsTrigger>
+                                                                  <TabsTrigger value="preview" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                                                    <FileEdit className="h-3.5 w-3.5 mr-1" />
+                                                                    Preview Changes
+                                                                  </TabsTrigger>
+                                                                </TabsList>
+                                                                
+                                                                <TabsContent value="summary" className="mt-0">
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+                                                                      <li>All required parameters must be provided and valid</li>
+                                                                      <li>Actor must have appropriate permissions/role</li>
+                                                                      <li>Actor must have sufficient balance if operations involve transfers</li>
+                                                                      <li>Contract state must allow this operation</li>
+                                                                      <li>Gas estimation must be within reasonable limits</li>
+                                                                      <li>Operation must not violate any business logic constraints</li>
+                                                                    </ul>
+                                                                  </div>
+                                                                </TabsContent>
+                                                                
+                                                                <TabsContent value="code" className="mt-0">
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <pre className="whitespace-pre-wrap text-yellow-300 font-mono text-xs">{`
+// Validation for ${action.name}
+// Contract: ${action.contract_name}
+// Function: ${action.function_name}
+
+function validate${action.function_name.split('(')[0]}Result(result) {
+  // Assertion 1: Check that the transaction was successful
+  expect(result.status).to.equal(1);
+  
+  // Assertion 2: Check state changes (will depend on the function)
+  // Examples:
+  // - For token transfers: check balances changed correctly
+  // - For market creation: check market exists with correct parameters
+  
+  // Assertion 3: Check event emissions
+  // expectEvent(result, "${action.function_name.split('(')[0]}Event", {
+  //   param1: expectedValue1,
+  //   param2: expectedValue2
+  // });
+}
+`}</pre>
+                                                                  </div>
+                                                                </TabsContent>
+                                                                
+                                                                <TabsContent value="preview" className="mt-0">
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                      <div className="text-gray-300 text-xs">Modified validation code:</div>
+                                                                      <div className="flex gap-2">
+                                                                        <Button size="sm" variant="outline" className="h-6 text-xs">
+                                                                          Reject Changes
+                                                                        </Button>
+                                                                        <Button size="sm" variant="default" className="h-6 text-xs">
+                                                                          Accept Changes
+                                                                        </Button>
+                                                                      </div>
+                                                                    </div>
+                                                                    <div className="border border-gray-700 rounded-md overflow-hidden">
+                                                                      <div className="bg-red-950/30 p-2 text-red-300 font-mono text-xs line-through">{`function validate${action.function_name.split('(')[0]}Result(result) {
+  // Assertion 1: Check that the transaction was successful
+  expect(result.status).to.equal(1);`}</div>
+                                                                      <div className="bg-green-950/30 p-2 text-green-300 font-mono text-xs">{`function validate${action.function_name.split('(')[0]}Result(result) {
+  // Assertion 1: Check that the transaction was successful
+  expect(result.status).to.equal(1);
+  
+  // Assertion 2: Check that the transaction didn't revert
+  expect(result.confirmations).to.be.gt(0);`}</div>
+                                                                    </div>
+                                                                  </div>
+                                                                </TabsContent>
+                                                              </Tabs>
                                                               
                                                               <Dialog>
                                                                 <DialogTrigger asChild>
