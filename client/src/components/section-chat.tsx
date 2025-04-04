@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, ArrowUpCircle, Bot, User, MessageSquare, X } from "lucide-react";
+import { Loader2, ArrowUpCircle, Bot, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -34,13 +34,44 @@ export default function SectionChat({
   initialMessages = [],
   isOpen
 }: SectionChatProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  // Generate the welcome message content based on section type
+  const getWelcomeMessage = () => {
+    switch(sectionType) {
+      case "project_summary":
+        return `I see you want to refine the project summary for this project. I'll help you improve it.\n\nThe current summary describes the overall purpose and key components of the project. What specific aspects would you like to enhance or modify?`;
+      case "actor_summary":
+        return `I see you want to refine the actor summary for "${sectionName}". I'll help you update it.\n\nThis actor represents a key role in the system that interacts with the smart contracts. What specific details about this actor would you like to change or add?`;
+      case "deployment_instructions":
+        return `I see you want to modify the deployment instructions for this project. I'll help you update them.\n\nThese instructions outline the steps to deploy the smart contracts in the correct sequence. What specific parts would you like to change or add more detail to?`;
+      case "implementation":
+        return `I see you want to modify the implementation for action "${sectionName}". I'll help you improve it.\n\nThis implementation defines how the action will be executed in the simulation. What specific functionality would you like to change or enhance?`;
+      case "validation_rules":
+        return `I see you want to modify the validation rules for action "${sectionName}". I'll help you refine them.\n\nThese validation rules ensure the action produces the expected results and maintains the system's integrity. What specific rules would you like to add, remove, or modify?`;
+      default:
+        return `I'll help you with your request. What would you like to modify?`;
+    }
+  };
+
+  // Function to create initial messages
+  const createInitialMessages = () => {
+    if (initialMessages.length > 0) return initialMessages;
+    
+    // Add welcome message from assistant
+    return [{
+      id: `welcome-${Date.now()}`,
+      role: "assistant",
+      content: getWelcomeMessage(),
+      timestamp: new Date()
+    }];
+  };
+  
+  const [messages, setMessages] = useState<Message[]>(createInitialMessages);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Ensure messages container is scrolled into view
+  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       const container = messagesEndRef.current.closest('.chat-messages-container');
@@ -50,23 +81,19 @@ export default function SectionChat({
     }
   }, [messages]);
 
-  // Function to generate a unique message ID
-  const generateMessageId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  };
-
   // Send a message and get a response
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
-    // Add user message
+    // Create user message
     const userMessage: Message = {
-      id: generateMessageId(),
+      id: `user-${Date.now()}`,
       role: "user",
       content: input,
       timestamp: new Date()
     };
     
+    // Add user message to chat
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -76,17 +103,15 @@ export default function SectionChat({
       // For now, simulate a response after a delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Generate a response based on the section type
-      let responseText = getDefaultResponse(sectionType, sectionName);
-      let codeSnippet = "";
+      // Generate a simple response
+      const responseText = `Thank you for your input about ${sectionType.replace('_', ' ')}. In a full implementation, I would process your request and make the requested changes. What else would you like to modify?`;
       
-      // Add assistant message
+      // Add assistant response
       const assistantMessage: Message = {
-        id: generateMessageId(),
+        id: `assistant-${Date.now()}`,
         role: "assistant",
         content: responseText,
-        timestamp: new Date(),
-        codeSnippet
+        timestamp: new Date()
       };
       
       setMessages(prev => [...prev, assistantMessage]);
@@ -101,25 +126,7 @@ export default function SectionChat({
     }
   };
 
-  // Generate a default response based on section type
-  const getDefaultResponse = (type: string, name: string) => {
-    switch(type) {
-      case "project_summary":
-        return `I'll help you refine the project summary. What aspects would you like to improve?`;
-      case "actor_summary":
-        return `I'll help you refine the actor summary for "${name}". What changes would you like to make?`;
-      case "deployment_instructions":
-        return `I'll help you modify the deployment instructions. What specific changes are you looking for?`;
-      case "implementation":
-        return `I'll help you modify the implementation for "${name}". What functionality would you like to change?`;
-      case "validation_rules":
-        return `I'll help you modify the validation rules for "${name}". What rules would you like to add or change?`;
-      default:
-        return `I'll help you with your request. What would you like to modify?`;
-    }
-  };
-
-  // If chat is not open, don't render
+  // Don't render if chat is not open
   if (!isOpen) return null;
 
   return (
@@ -129,12 +136,8 @@ export default function SectionChat({
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-700 flex justify-between items-center">
           <h3 className="font-semibold flex items-center">
-            <MessageSquare className="h-5 w-5 mr-2 text-blue-400" />
-            {sectionType === "project_summary" && "Refine Project Summary"}
-            {sectionType === "actor_summary" && `Refine Actor: ${sectionName}`}
-            {sectionType === "deployment_instructions" && "Refine Deployment Instructions"}
-            {sectionType === "implementation" && `Modify Implementation: ${sectionName}`}
-            {sectionType === "validation_rules" && `Modify Validation Rules: ${sectionName}`}
+            <Bot className="h-5 w-5 mr-2 text-blue-400" />
+            AI Assistant
           </h3>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
