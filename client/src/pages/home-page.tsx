@@ -455,7 +455,7 @@ export default function HomePage() {
                 Our team has built several decentralized applications—including supply-chain settlement contracts, Trustlex (a decentralized exchange), Predify (a DeFi prediction market), and Stablebase (a stablecoin protocol). During development, we found that simulation and testing consumed significant time and slowed us down.
               </p>
               <p className="text-white/70">
-                To address this, we created ilumina, an open-source framework for efficient simulations. We're now launching ilumina.dev to provide other smart contract developers with a seamless, cost-effective way to run these simulations.
+                To address this, we created ilumina, an open-source framework for efficient simulations. We're now launching ilumina.dev to provide other smart contract developers with a seamless, cost-effective way to create and run these simulations.
               </p>
             </div>
           </div>
