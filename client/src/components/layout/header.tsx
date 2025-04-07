@@ -156,6 +156,14 @@ export default function Header() {
                 >
                   About
                 </Button>
+                
+              <Button 
+                variant="ghost" 
+                className="text-white/90 hover:text-white hidden sm:flex"
+                onClick={() => scrollToSection("team")}
+                >
+                  Team
+                </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild className="sm:hidden">
@@ -167,6 +175,7 @@ export default function Header() {
                   <DropdownMenuItem onClick={() => scrollToSection("features")}>Features</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => scrollToSection("pricing")}>Pricing</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => scrollToSection("about")}>About</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => scrollToSection("team")}>Team</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 

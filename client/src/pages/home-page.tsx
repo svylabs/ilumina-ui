@@ -462,6 +462,74 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Team Section */}
+      <section id="team" className="scroll-mt-20 py-24 px-6 bg-gradient-to-b from-black/95 to-black">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Our Team
+            </h2>
+            <p className="text-lg text-white/70">
+              Meet the minds behind Ilumina
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {/* Team Member 1 - Sridhar G */}
+            <div className="flex flex-col items-center md:items-start md:flex-row gap-6">
+              <div className="w-32 h-32 rounded-full overflow-hidden flex-shrink-0">
+                <img 
+                  src="https://www.stablebase.org/static/media/sridhar.0f88d01bba2539ee4dba.jpeg" 
+                  alt="Sridhar G" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <h3 className="text-2xl font-semibold text-white mb-1 text-center md:text-left">Sridhar G</h3>
+                <p className="text-primary mb-2 text-center md:text-left">Founder</p>
+                <p className="text-white/70 mb-4">
+                  17+ years of Software Engineering experience with companies like Amazon.com, Booking.com and in web3 since 2022, working with companies like skuchain, and having built dApps like Trustlex (a decentralized exchange to exchange native BTC with ETH/ERC20), Predify (a prediction market for DeFi) and Stablebase (a stablecoin protocol).
+                </p>
+                <div className="flex space-x-4 justify-center md:justify-start">
+                  <a href="https://github.com/svylabs" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-primary transition-colors">
+                    <Github className="h-5 w-5" />
+                  </a>
+                  <a href="https://www.linkedin.com/in/sridhar-g-b10902284/" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Team Member 2 - Rohit Bharti */}
+            <div className="flex flex-col items-center md:items-start md:flex-row gap-6">
+              <div className="w-32 h-32 rounded-full overflow-hidden flex-shrink-0">
+                <img 
+                  src="https://www.stablebase.org/static/media/rohit.b48fc6eefa16bd6c8363.jpg" 
+                  alt="Rohit Bharti" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <h3 className="text-2xl font-semibold text-white mb-1 text-center md:text-left">Rohit Bharti</h3>
+                <p className="text-primary mb-2 text-center md:text-left">Software Engineer</p>
+                <p className="text-white/70 mb-4">
+                  Software Engineer with 1 year of experience, working on products like microcraft.dev and Stablebase.
+                </p>
+                <div className="flex space-x-4 justify-center md:justify-start">
+                  <a href="https://github.com/rohitbharti279" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-primary transition-colors">
+                    <Github className="h-5 w-5" />
+                  </a>
+                  <a href="https://www.linkedin.com/in/rohit-bharti-b9a437211/" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Terms of Service Section */}
       <section id="terms" className="scroll-mt-20 py-24 px-6 bg-gradient-to-b from-black/95 to-black">
         <div className="max-w-4xl mx-auto">
@@ -538,6 +606,7 @@ export default function HomePage() {
               <h3 className="text-white font-semibold text-lg mb-4">Company</h3>
               <ul className="space-y-2">
                 <li><a href="#about" className="text-white/70 hover:text-primary transition-colors">About Us</a></li>
+                <li><a href="#team" className="text-white/70 hover:text-primary transition-colors">Our Team</a></li>
                 <li><a href="#contact" className="text-white/70 hover:text-primary transition-colors">Contact</a></li>
               </ul>
             </div>
