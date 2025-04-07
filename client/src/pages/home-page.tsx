@@ -443,19 +443,19 @@ export default function HomePage() {
             <div>
               <h3 className="text-2xl font-semibold text-white mb-4">Our Mission</h3>
               <p className="text-white/70 mb-6">
-                At Ilumina, we're on a mission to make blockchain development safer and more reliable through advanced smart contract testing. We believe that robust testing is essential for the growth and adoption of decentralized technologies.
+                At Ilumina, we're on a mission to make blockchain development safer and more reliable through advanced agent-based simulations. We believe that robust simulations are essential for the growth and adoption of decentralized technologies.
               </p>
               <p className="text-white/70">
-                Our platform combines cutting-edge AI with deep blockchain expertise to deliver comprehensive testing solutions that help developers identify and fix vulnerabilities before deployment.
+                Our platform combines cutting-edge AI with deep blockchain expertise to deliver comprehensive simulation solutions that help developers identify and fix vulnerabilities before deployment.
               </p>
             </div>
             <div>
               <h3 className="text-2xl font-semibold text-white mb-4">Our Story</h3>
               <p className="text-white/70 mb-6">
-                Founded by a team of blockchain developers and security experts, Ilumina was born out of frustration with existing testing tools that failed to capture the complexity of real-world scenarios.
+                Our team has built several decentralized applications: Settlement contracts for supply chain space, Trustlex (a decentralized exchange), Predify (a prediction market for DeFi), Stablebase (A stablecoin protocol), and while working on these protocols we discovered creating simulations / testing is what takes the most time and even slowed us down.
               </p>
               <p className="text-white/70">
-                We built Ilumina to simulate how actual users would interact with smart contracts, accounting for the diverse behaviors, intentions, and capabilities of different actors in the ecosystem.
+                We created an open source framework, ilumina to develop our simulations. This naturally led us to work on ilumina.dev, to offer the framework we used to run simulations for some of our protocols in a seamless, cost effective manner to other Smart contract developers.
               </p>
             </div>
           </div>
