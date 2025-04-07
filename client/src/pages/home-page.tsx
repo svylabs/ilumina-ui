@@ -249,7 +249,7 @@ export default function HomePage() {
                   </CardContent>
                 </Card>
               ))}
-              
+
               {/* Custom Plan Card */}
               <Card className="border-2 border-primary/20 bg-black/50 backdrop-blur relative">
                 <CardContent className="p-6">
@@ -452,10 +452,10 @@ export default function HomePage() {
             <div>
               <h3 className="text-2xl font-semibold text-white mb-4">Our Story</h3>
               <p className="text-white/70 mb-6">
-                Our team has built several decentralized applications—including supply-chain settlement contracts, Trustlex (a decentralized exchange), Predify (a DeFi prediction market), and Stablebase (a stablecoin protocol). Throughout these projects, we realized that testing and simulation were some of the most time-consuming and complex parts of the development process.
+                Our team has built several decentralized applications—including supply-chain settlement contracts, Trustlex (a decentralized exchange), Predify (a DeFi prediction market), and Stablebase (a stablecoin protocol). Throughout these projects, we realized that testing and simulation were some of the most time-consuming and important part of the development process.
               </p>
               <p className="text-white/70">
-                To solve this, we built ilumina—an open-source framework designed to make simulations faster and more efficient. Now, with ilumina.dev, we're making this capability accessible to all smart contract developers through a seamless, cost-effective platform for building and running powerful simulations.
+                To address this, we created ilumina, an open-source framework for efficient simulations. We're now launching ilumina.dev to provide other smart contract developers with a seamless, cost-effective way to create and run these simulations.
               </p>
             </div>
           </div>
