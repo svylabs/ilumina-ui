@@ -443,19 +443,19 @@ export default function HomePage() {
             <div>
               <h3 className="text-2xl font-semibold text-white mb-4">Our Mission</h3>
               <p className="text-white/70 mb-6">
-                At Ilumina, we're on a mission to make blockchain development safer and more reliable through advanced agent-based simulations. We believe that robust simulations are essential for the growth and adoption of decentralized technologies.
+                At Ilumina, we're on a mission to make dApp testing cost effective using our advanced agent-based simulation engine.
               </p>
               <p className="text-white/70">
-                Our platform combines cutting-edge AI with deep blockchain expertise to deliver comprehensive simulation solutions that help developers identify and fix vulnerabilities before deployment.
+                Our platform combines cutting-edge AI with deep smart contract expertise to deliver comprehensive simulation solutions that help developers run simulation testing in cloud to identify vulnerabilities and fix them.
               </p>
             </div>
             <div>
               <h3 className="text-2xl font-semibold text-white mb-4">Our Story</h3>
               <p className="text-white/70 mb-6">
-                Our team has built several decentralized applications: Settlement contracts for supply chain space, Trustlex (a decentralized exchange), Predify (a prediction market for DeFi), Stablebase (A stablecoin protocol), and while working on these protocols we discovered creating simulations / testing is what takes the most time and even slowed us down.
+                Our team has built several decentralized applications—including supply-chain settlement contracts, Trustlex (a decentralized exchange), Predify (a DeFi prediction market), and Stablebase (a stablecoin protocol). During development, we found that simulation and testing consumed significant time and slowed us down.
               </p>
               <p className="text-white/70">
-                We created an open source framework, ilumina to develop our simulations. This naturally led us to work on ilumina.dev, to offer the framework we used to run simulations for some of our protocols in a seamless, cost effective manner to other Smart contract developers.
+                To address this, we created ilumina, an open-source framework for efficient simulations. We're now launching ilumina.dev to provide other smart contract developers with a seamless, cost-effective way to run these simulations.
               </p>
             </div>
           </div>
