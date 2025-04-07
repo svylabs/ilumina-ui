@@ -443,10 +443,10 @@ export default function HomePage() {
             <div>
               <h3 className="text-2xl font-semibold text-white mb-4">Our Mission</h3>
               <p className="text-white/70 mb-6">
-                At Ilumina, we're on a mission to make dApp testing cost effective using our advanced agent-based simulation engine.
+                At Ilumina, we're on a mission to make dApp testing faster, smarter, and more cost-effective through our advanced agent-based simulation engine.
               </p>
               <p className="text-white/70">
-                Our platform combines cutting-edge AI with deep smart contract expertise to deliver comprehensive simulation solutions that help developers run simulation testing in cloud to identify vulnerabilities and fix them.
+                Our platform blends cutting-edge AI with deep smart contract expertise to deliver powerful cloud-based simulations—helping developers uncover vulnerabilities early and optimize their protocols with confidence.
               </p>
             </div>
             <div>
