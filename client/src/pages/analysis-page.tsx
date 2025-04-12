@@ -1538,8 +1538,9 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                             </div>
                           </div>
                         </div>
-                      ) : currentStep.id === "files" && getStepStatus(currentStep.id) === "completed" ? (
+                      ) : currentStep.id === "files" ? (
                         <div className="space-y-6">
+                          <h2 className="text-xl font-bold text-red-500">PROJECT ANALYSIS SECTION</h2>
                           {/* Show both the details and the full project analysis info */}
                           {getStepDetails(currentStep.id) && (
                             <div className="p-4 bg-gray-800/50 rounded-md">
@@ -1566,8 +1567,9 @@ Compiler version: 0.8.17
 `}
                           </pre>
                         </div>
-                      ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
+                      ) : currentStep.id === "test_setup" ? (
                         <div className="space-y-6">
+                          <h2 className="text-xl font-bold text-red-500">TEST SETUP SECTION</h2>
                           {/* Show both the details and the full test setup info */}
                           {getStepDetails(currentStep.id) && (
                             <div className="p-4 bg-gray-800/50 rounded-md">
