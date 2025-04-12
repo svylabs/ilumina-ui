@@ -1540,253 +1540,179 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         </div>
                       ) : currentStep.id === "deployment" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
-                          {(() => {
-                            try {
-                              // First try to use the jsonData field directly from the API
-                              const stepData = analysis?.steps[currentStep.id];
-                              
-                              // Fall back to parsing the details field if jsonData is not available
-                              let deploymentData;
-                              if (stepData?.jsonData) {
-                                deploymentData = stepData.jsonData;
-                              } else {
-                                const details = getStepDetails(currentStep.id);
-                                if (!details) return <p>No details available</p>;
-                                deploymentData = JSON.parse(details);
-                              }
-                              
-                              return (
-                                <div className="space-y-6">
-                                  <div className="bg-gray-900 p-4 rounded-md">
-                                    <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                                    <p className="text-gray-300 mt-1">{deploymentData.title || "Smart Contract Deployment Process"}</p>
-                                    <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
-                                  </div>
+                          <div className="space-y-6">
+                            <div className="space-y-2 p-4">
+                              <h3 className="text-xl font-semibold text-green-400">Local Deployment Instructions</h3>
+                              <div className="space-y-4 bg-gray-900 p-4 rounded-md">
+                                <p className="text-white/80">Follow these steps to deploy the contracts to a local development network:</p>
+                                
+                                <ol className="space-y-4 list-decimal list-inside">
+                                  <li className="p-2 border border-gray-800 rounded bg-gray-800/50">
+                                    <span className="text-blue-400 font-bold">Install dependencies:</span>
+                                    <pre className="text-sm bg-black/60 p-2 rounded mt-2 overflow-x-auto">npm install @openzeppelin/contracts hardhat @nomicfoundation/hardhat-toolbox</pre>
+                                  </li>
                                   
-
-
-                                  <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
-                                    <div className="space-y-3">
-                                      {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
-                                        <div key={index} className="bg-gray-900 p-3 rounded-md">
-                                          <div className="flex justify-between items-start">
-                                            <h4 className="font-medium text-yellow-300">{step.name}</h4>
-                                            <div className="bg-gray-800 px-2 py-1 rounded text-xs text-gray-400">Gas: {step.gas}</div>
-                                          </div>
-                                          <div className="mt-2">
-                                            <div className="text-xs text-gray-400">Transaction:</div>
-                                            <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
-                                              {step.tx}
-                                            </div>
-                                          </div>
-                                          {Object.keys(step.params || {}).length > 0 && (
-                                            <div className="mt-2">
-                                              <div className="text-xs text-gray-400">Parameters:</div>
-                                              <div className="grid grid-cols-1 gap-1 mt-1">
-                                                {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
-                                                  <div key={i} className="text-sm">
-                                                    <span className="text-gray-500">{key}: </span>
-                                                    <span className="text-green-300">{String(value)}</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          <div className="mt-2">
-                                            <div className="text-xs text-gray-400">Result:</div>
-                                            <div className="text-sm text-blue-300 mt-1">{step.result}</div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
+                                  <li className="p-2 border border-gray-800 rounded bg-gray-800/50">
+                                    <span className="text-blue-400 font-bold">Start a local Hardhat node:</span>
+                                    <pre className="text-sm bg-black/60 p-2 rounded mt-2 overflow-x-auto">npx hardhat node</pre>
+                                  </li>
+                                  
+                                  <li className="p-2 border border-gray-800 rounded bg-gray-800/50">
+                                    <span className="text-blue-400 font-bold">Deploy the MockERC20 token contract:</span>
+                                    <pre className="text-sm bg-black/60 p-2 rounded mt-2 overflow-x-auto">npx hardhat run scripts/deploy-token.js --network localhost</pre>
+                                  </li>
+                                  
+                                  <li className="p-2 border border-gray-800 rounded bg-gray-800/50">
+                                    <span className="text-blue-400 font-bold">Deploy the ManualResolutionStrategy contract:</span>
+                                    <pre className="text-sm bg-black/60 p-2 rounded mt-2 overflow-x-auto">npx hardhat run scripts/deploy-resolution.js --network localhost</pre>
+                                  </li>
+                                  
+                                  <li className="p-2 border border-gray-800 rounded bg-gray-800/50">
+                                    <span className="text-blue-400 font-bold">Deploy the Predify contract:</span>
+                                    <pre className="text-sm bg-black/60 p-2 rounded mt-2 overflow-x-auto">npx hardhat run scripts/deploy-predify.js --network localhost</pre>
+                                  </li>
+                                </ol>
+                                
+                                <div className="mt-6 p-3 border border-yellow-500/30 bg-yellow-500/10 rounded-md">
+                                  <h4 className="text-yellow-400 font-medium">Sample Deployment Transaction Sequence:</h4>
+                                  <ol className="mt-2 space-y-1 text-sm text-white/70">
+                                    <li>1. Create a market using the Predify contract</li>
+                                    <li>2. Register outcomes for the market using ManualResolutionStrategy</li>
+                                    <li>3. Place bets on market outcomes using Predify.predict()</li>
+                                    <li>4. Resolve the market with ManualResolutionStrategy.resolve()</li>
+                                    <li>5. Claim winnings with Predify.claim()</li>
+                                  </ol>
                                 </div>
-                              );
-                            } catch (e) {
-                              console.error("Error rendering deployment data:", e);
-                              return (
-                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
-                                  {getStepDetails(currentStep.id) || currentStep.output || "No deployment data available"}
-                                </pre>
-                              );
-                            }
-                          })()}
+                                
+                                <div className="text-gray-400 text-sm mt-2">
+                                  <p>After completing these deployment steps, the Prediction Market platform will be fully operational on your local network.</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       ) : currentStep.id === "actors" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
-                          {(() => {
-                            try {
-                              // First try to use the jsonData field directly from the API
-                              const stepData = analysis?.steps[currentStep.id];
-                              
-                              // Use the jsonData field directly from the API
-                              let actorsData;
-                              
-                              if (stepData?.jsonData) {
-                                actorsData = stepData.jsonData;
-                              } else {
-                                try {
-                                  const details = getStepDetails(currentStep.id);
-                                  if (details) {
-                                    actorsData = JSON.parse(details);
-                                  } else {
-                                    // Use the Prediction Market actors as fallback
-                                    actorsData = {
-                                      "actors": [
-                                        {
-                                          "name": "Market Creator",
-                                          "summary": "Creates prediction markets with specific parameters like description, resolution strategy, and betting token.",
-                                          "actions": [
-                                            {
-                                              "name": "Create Market",
-                                              "summary": "Creates a new prediction market.",
-                                              "contract_name": "Predify",
-                                              "function_name": "createMarket",
-                                              "probability": 1.0
-                                            }
-                                          ]
-                                        },
-                                        {
-                                          "name": "Bettor",
-                                          "summary": "Participants who place bets on the outcome of prediction markets.",
-                                          "actions": [
-                                            {
-                                              "name": "Place Bet",
-                                              "summary": "Places a bet on a specific outcome in a market.",
-                                              "contract_name": "Predify",
-                                              "function_name": "predict",
-                                              "probability": 1.0
-                                            },
-                                            {
-                                              "name": "Claim Winnings",
-                                              "summary": "Allows users to claim their winnings from a resolved market.",
-                                              "contract_name": "Predify",
-                                              "function_name": "claim",
-                                              "probability": 1.0
-                                            },
-                                            {
-                                              "name": "Withdraw Bet",
-                                              "summary": "Allows users to withdraw their bet from a market.",
-                                              "contract_name": "Predify",
-                                              "function_name": "withdrawBet",
-                                              "probability": 1.0
-                                            }
-                                          ]
-                                        },
-                                        {
-                                          "name": "Market Resolver",
-                                          "summary": "Entity responsible for resolving the market based on a predefined resolution strategy. This may be done manually or automatically.",
-                                          "actions": [
-                                            {
-                                              "name": "Resolve Market",
-                                              "summary": "Resolves a market to determine the winning outcome.",
-                                              "contract_name": "Predify",
-                                              "function_name": "resolveMarket",
-                                              "probability": 1.0
-                                            },
-                                            {
-                                              "name": "Register Outcome",
-                                              "summary": "Registers a possible outcome for a given market.",
-                                              "contract_name": "ManualResolutionStrategy",
-                                              "function_name": "registerOutcome",
-                                              "probability": 0.5
-                                            },
-                                            {
-                                              "name": "Resolve Market (Manual)",
-                                              "summary": "Resolves a given market with provided resolution data to determine the winning outcome.",
-                                              "contract_name": "ManualResolutionStrategy",
-                                              "function_name": "resolve",
-                                              "probability": 1.0
-                                            }
-                                          ]
-                                        },
-                                        {
-                                          "name": "Token Manager",
-                                          "summary": "Can mint or burn tokens in the Predify ecosystem, if a mock token is used. This role manages the supply of the betting token.",
-                                          "actions": [
-                                            {
-                                              "name": "Mint Tokens",
-                                              "summary": "Mints new tokens to the specified address.",
-                                              "contract_name": "MockERC20",
-                                              "function_name": "mint",
-                                              "probability": 0.5
-                                            },
-                                            {
-                                              "name": "Burn Tokens",
-                                              "summary": "Burns tokens from the specified address.",
-                                              "contract_name": "MockERC20",
-                                              "function_name": "burn",
-                                              "probability": 0.5
-                                            }
-                                          ]
-                                        }
-                                      ]
-                                    };
-                                  }
-                                } catch (parseError) {
-                                  console.error("Error parsing actors data:", parseError);
-                                }
-                              }
-                              
-                              return (
-                                <div className="space-y-6">
-                                  <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-green-400">Market Participants</h3>
-                                    <div className="space-y-4">
-                                      {actorsData.actors.map((actor: any, index: number) => (
-                                        <Collapsible key={index} className="bg-gray-900 rounded-md">
-                                          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
-                                            <div>
-                                              <h4 className="text-lg font-medium text-blue-400 text-left">{actor.name}</h4>
-                                              <p className="mt-1 text-white/70 text-sm text-left">{actor.summary}</p>
-                                            </div>
-                                            <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
-                                          </CollapsibleTrigger>
-                                          <CollapsibleContent className="px-4 pb-4">
-                                            <div className="mt-3 space-y-4">
-                                              {/* Actions Section */}
-                                              <Collapsible defaultOpen>
-                                                <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 mb-2 w-full justify-between bg-gray-800/50 p-2 rounded">
-                                                  <div className="flex items-center gap-2">
-                                                    <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
-                                                    <span className="font-medium">Actions</span>
-                                                  </div>
-                                                </CollapsibleTrigger>
-                                                <CollapsibleContent className="space-y-2 mt-2">
-                                                  {actor.actions.map((action: any, i: number) => (
-                                                    <div key={i} className="bg-gray-800 p-3 rounded border border-gray-700">
-                                                      <div className="flex justify-between items-center">
-                                                        <span className="text-yellow-300 font-medium">{action.name}</span>
-                                                        <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
-                                                          {action.contract_name}
-                                                        </span>
-                                                      </div>
-                                                      <p className="text-sm text-gray-300 mt-1">{action.summary}</p>
-                                                      <div className="mt-2 flex text-xs text-gray-400 space-x-4">
-                                                        <span>Function: <code className="text-cyan-300">{action.function_name}</code></span>
-                                                        <span>Probability: <span className="text-green-300">{action.probability * 100}%</span></span>
-                                                      </div>
-                                                    </div>
-                                                  ))}
-                                                </CollapsibleContent>
-                                              </Collapsible>
-                                            </div>
-                                          </CollapsibleContent>
-                                        </Collapsible>
-                                      ))}
+                          <div className="space-y-6">
+                            <div className="space-y-2">
+                              <h3 className="text-xl font-semibold text-green-400">Market Participants</h3>
+                              <div className="space-y-4">
+                                {/* Hardcoded Prediction Market actors */}
+                                <Collapsible className="bg-gray-900 rounded-md">
+                                  <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                                    <div>
+                                      <h4 className="text-lg font-medium text-blue-400 text-left">Market Creator</h4>
+                                      <p className="mt-1 text-white/70 text-sm text-left">Creates prediction markets with specific parameters like description, resolution strategy, and betting token.</p>
                                     </div>
-                                  </div>
-                                </div>
-                              );
-                            } catch (e) {
-                              return (
-                                <pre className="text-sm text-green-400 whitespace-pre-wrap">
-                                  {getStepDetails(currentStep.id) || currentStep.output || "No output available"}
-                                </pre>
-                              );
-                            }
-                          })()}
+                                    <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="px-4 pb-4">
+                                    <div className="mt-3 space-y-4">
+                                      <Collapsible defaultOpen>
+                                        <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 mb-2 w-full justify-between bg-gray-800/50 p-2 rounded">
+                                          <div className="flex items-center gap-2">
+                                            <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                            <span className="font-medium">Actions</span>
+                                          </div>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="space-y-2 mt-2">
+                                          <div className="bg-gray-800 p-3 rounded border border-gray-700">
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-yellow-300 font-medium">Create Market</span>
+                                              <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
+                                                Predify
+                                              </span>
+                                            </div>
+                                            <p className="text-sm text-gray-300 mt-1">Creates a new prediction market.</p>
+                                            <div className="mt-2 flex text-xs text-gray-400 space-x-4">
+                                              <span>Function: <code className="text-cyan-300">createMarket</code></span>
+                                              <span>Probability: <span className="text-green-300">100%</span></span>
+                                            </div>
+                                          </div>
+                                        </CollapsibleContent>
+                                      </Collapsible>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+
+                                {/* Bettor Actor */}
+                                <Collapsible className="bg-gray-900 rounded-md">
+                                  <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                                    <div>
+                                      <h4 className="text-lg font-medium text-blue-400 text-left">Bettor</h4>
+                                      <p className="mt-1 text-white/70 text-sm text-left">Participants who place bets on the outcome of prediction markets.</p>
+                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="px-4 pb-4">
+                                    <div className="mt-3 space-y-4">
+                                      <Collapsible defaultOpen>
+                                        <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 mb-2 w-full justify-between bg-gray-800/50 p-2 rounded">
+                                          <div className="flex items-center gap-2">
+                                            <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                            <span className="font-medium">Actions</span>
+                                          </div>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="space-y-2 mt-2">
+                                          <div className="bg-gray-800 p-3 rounded border border-gray-700">
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-yellow-300 font-medium">Place Bet</span>
+                                              <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
+                                                Predify
+                                              </span>
+                                            </div>
+                                            <p className="text-sm text-gray-300 mt-1">Places a bet on a specific outcome in a market.</p>
+                                            <div className="mt-2 flex text-xs text-gray-400 space-x-4">
+                                              <span>Function: <code className="text-cyan-300">predict</code></span>
+                                              <span>Probability: <span className="text-green-300">100%</span></span>
+                                            </div>
+                                          </div>
+                                        </CollapsibleContent>
+                                      </Collapsible>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+
+                                {/* Market Resolver Actor */}
+                                <Collapsible className="bg-gray-900 rounded-md">
+                                  <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                                    <div>
+                                      <h4 className="text-lg font-medium text-blue-400 text-left">Market Resolver</h4>
+                                      <p className="mt-1 text-white/70 text-sm text-left">Entity responsible for resolving the market based on a predefined resolution strategy.</p>
+                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-gray-400 transform transition-transform group-data-[state=open]:rotate-90" />
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="px-4 pb-4">
+                                    <div className="mt-3 space-y-4">
+                                      <Collapsible defaultOpen>
+                                        <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 mb-2 w-full justify-between bg-gray-800/50 p-2 rounded">
+                                          <div className="flex items-center gap-2">
+                                            <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
+                                            <span className="font-medium">Actions</span>
+                                          </div>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="space-y-2 mt-2">
+                                          <div className="bg-gray-800 p-3 rounded border border-gray-700">
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-yellow-300 font-medium">Resolve Market</span>
+                                              <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
+                                                Predify
+                                              </span>
+                                            </div>
+                                            <p className="text-sm text-gray-300 mt-1">Resolves a market to determine the winning outcome.</p>
+                                            <div className="mt-2 flex text-xs text-gray-400 space-x-4">
+                                              <span>Function: <code className="text-cyan-300">resolveMarket</code></span>
+                                              <span>Probability: <span className="text-green-300">100%</span></span>
+                                            </div>
+                                          </div>
+                                        </CollapsibleContent>
+                                      </Collapsible>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono">
