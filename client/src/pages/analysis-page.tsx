@@ -1539,8 +1539,15 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                           </div>
                         </div>
                       ) : currentStep.id === "files" && getStepStatus(currentStep.id) === "completed" ? (
-                        <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono">
-                        {currentStep.output || getStepDetails(currentStep.id) || `// Project Analysis Results
+                        <div className="space-y-6">
+                          {/* Show both the details and the full project analysis info */}
+                          {getStepDetails(currentStep.id) && (
+                            <div className="p-4 bg-gray-800/50 rounded-md">
+                              <p className="text-sm text-green-400">{getStepDetails(currentStep.id)}</p>
+                            </div>
+                          )}
+                          <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono p-4 bg-gray-900 rounded-md">
+                          {currentStep.output || `// Project Analysis Results
 Found 3 Solidity files:
 - contracts/Predify.sol
 - contracts/ManualResolutionStrategy.sol
@@ -1556,10 +1563,18 @@ Dependencies:
 
 Compiler version: 0.8.17
 `}
-                        </pre>
+                          </pre>
+                        </div>
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
-                        <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono">
-                        {currentStep.output || getStepDetails(currentStep.id) || `// Test Environment Setup
+                        <div className="space-y-6">
+                          {/* Show both the details and the full test setup info */}
+                          {getStepDetails(currentStep.id) && (
+                            <div className="p-4 bg-gray-800/50 rounded-md">
+                              <p className="text-sm text-green-400">{getStepDetails(currentStep.id)}</p>
+                            </div>
+                          )}
+                          <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono p-4 bg-gray-900 rounded-md">
+                          {currentStep.output || `// Test Environment Setup
 Setting up Hardhat environment...
 Compiling contracts with solc 0.8.17...
 Compilation successful
@@ -1585,7 +1600,8 @@ Agent Configuration:
 
 All test accounts configured with appropriate initial balances
 `}
-                        </pre>
+                          </pre>
+                        </div>
                       ) : currentStep.id === "deployment" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
                           <div className="space-y-6">
