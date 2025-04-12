@@ -1480,6 +1480,136 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Get team details by ID
+  app.get("/api/teams/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const teamId = parseInt(req.params.id);
+      if (isNaN(teamId)) {
+        return res.status(400).json({ message: "Invalid team ID" });
+      }
+      
+      // First, check if the team exists
+      const [team] = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .where(eq(teams.isDeleted, false));
+        
+      if (!team) {
+        return res.status(404).json({ 
+          message: "The team you're looking for could not be found or you don't have access to it."
+        });
+      }
+      
+      // Check access: Either the user created the team or they're a member
+      const isCreator = team.createdBy === req.user.id;
+      
+      if (!isCreator) {
+        // Check if they're a member
+        const [teamMembership] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, teamId))
+          .where(eq(teamMembers.userId, req.user.id))
+          .where(eq(teamMembers.status, 'active'));
+          
+        if (!teamMembership) {
+          return res.status(403).json({ 
+            message: "The team you're looking for could not be found or you don't have access to it."
+          });
+        }
+      }
+      
+      // Get team members
+      const members = await db
+        .select({
+          id: users.id, 
+          name: users.name,
+          email: users.email,
+          role: teamMembers.role,
+          status: teamMembers.status,
+          joinedAt: teamMembers.joinedAt,
+          invitedBy: teamMembers.invitedBy
+        })
+        .from(teamMembers)
+        .innerJoin(users, eq(teamMembers.userId, users.id))
+        .where(eq(teamMembers.teamId, teamId))
+        .where(eq(teamMembers.status, 'active'));
+        
+      // Add creator if they're not in team members
+      const creatorInMembers = members.some(m => m.id === team.createdBy);
+      
+      let allMembers = [...members];
+      
+      if (!creatorInMembers) {
+        // Get creator's details
+        const [creator] = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email
+          })
+          .from(users)
+          .where(eq(users.id, team.createdBy));
+          
+        if (creator) {
+          allMembers.push({
+            ...creator,
+            role: 'admin',
+            status: 'active',
+            joinedAt: team.createdAt,
+            invitedBy: creator.id
+          });
+        }
+      }
+      
+      // Get pending invitations
+      const pendingInvitations = await db
+        .select()
+        .from(teamInvitations)
+        .where(eq(teamInvitations.teamId, teamId))
+        .where(eq(teamInvitations.status, 'pending'));
+        
+      // Add inviter info to each invitation
+      const invitationsWithNames = await Promise.all(
+        pendingInvitations.map(async (invitation) => {
+          const [inviter] = await db
+            .select({
+              name: users.name,
+              email: users.email
+            })
+            .from(users)
+            .where(eq(users.id, invitation.invitedBy));
+            
+          return {
+            ...invitation,
+            inviterName: inviter?.name || 'Unknown',
+            inviterEmail: inviter?.email || 'unknown@example.com'
+          };
+        })
+      );
+      
+      // Get role of current user
+      const userRole = isCreator 
+        ? 'admin' 
+        : members.find(m => m.id === req.user.id)?.role || 'member';
+      
+      // Return team details with members and role
+      res.json({
+        ...team,
+        members: allMembers,
+        pendingInvitations: invitationsWithNames,
+        userRole,
+        isCreator
+      });
+    } catch (error) {
+      console.error("Error fetching team details:", error);
+      res.status(500).json({ message: "Failed to fetch team details" });
+    }
+  });
+  
   // Begin analysis for a submission with external API
   app.post("/api/begin_analysis", async (req, res) => {
     try {
