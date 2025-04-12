@@ -450,6 +450,124 @@ export function registerRoutes(app: Express): Server {
 
     res.json(userProjects);
   });
+  
+  // Get all projects (both personal and team projects)
+  app.get("/api/all-projects", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // 1. Get personal projects (those without a team)
+      const personalProjects = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.userId, req.user.id))
+        .where(eq(projects.isDeleted, false))
+        .where(sql`${projects.teamId} IS NULL`)
+        .orderBy(projects.createdAt);
+        
+      // 2. Get teams the user has access to
+      // First, get teams the user created
+      const createdTeams = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.createdBy, req.user.id))
+        .where(eq(teams.isDeleted, false));
+        
+      // Then, get teams the user is a member of
+      const memberTeams = await db
+        .select({
+          teamId: teamMembers.teamId,
+          role: teamMembers.role,
+          status: teamMembers.status
+        })
+        .from(teamMembers)
+        .where(eq(teamMembers.userId, req.user.id))
+        .where(eq(teamMembers.status, 'active'));
+        
+      const memberTeamIds = memberTeams
+        .map(m => m.teamId)
+        .filter(id => !createdTeams.some(t => t.id === id)); // Exclude teams they created
+        
+      // Get details for member teams
+      const memberTeamDetails = memberTeamIds.length > 0 
+        ? await db
+            .select()
+            .from(teams)
+            .where(inArray(teams.id, memberTeamIds))
+            .where(eq(teams.isDeleted, false))
+        : [];
+      
+      // Combine teams with proper roles
+      const userTeams = [
+        ...createdTeams.map(team => ({
+          ...team,
+          role: 'admin',
+          status: 'active',
+          isCreator: true
+        })),
+        ...memberTeamDetails.map(team => {
+          const membership = memberTeams.find(m => m.teamId === team.id);
+          return {
+            ...team,
+            role: membership?.role || 'member',
+            status: membership?.status || 'active',
+            isCreator: false
+          };
+        })
+      ];
+        
+      // 3. Get team projects based on the teams the user has access to
+      const allTeamIds = [
+        ...createdTeams.map(t => t.id),
+        ...memberTeamIds
+      ];
+      
+      const teamProjects = allTeamIds.length > 0
+        ? await db
+            .select({
+              ...projects,
+              teamName: teams.name
+            })
+            .from(projects)
+            .leftJoin(teams, eq(projects.teamId, teams.id))
+            .where(inArray(projects.teamId, allTeamIds))
+            .where(eq(projects.isDeleted, false))
+            .where(eq(teams.isDeleted, false))
+            .orderBy(projects.createdAt)
+        : [];
+      
+      // 4. Organize projects by team
+      const projectsByTeam = [
+        // Personal projects section
+        {
+          teamId: null,
+          teamName: "Personal Projects",
+          projects: personalProjects
+        },
+        // Team projects grouped by team
+        ...userTeams.map(team => {
+          const teamProjs = teamProjects.filter(p => p.teamId === team.id);
+          return {
+            teamId: team.id,
+            teamName: team.name,
+            role: team.role,
+            projects: teamProjs
+          };
+        }).filter(group => group.projects.length > 0) // Only include teams with projects
+      ];
+      
+      console.log(`Found ${personalProjects.length} personal projects and ${teamProjects.length} team projects for user ${req.user.id}`);
+      
+      res.json({
+        personalProjects, 
+        teamProjects,
+        projectsByTeam
+      });
+    } catch (error) {
+      console.error("Error fetching all projects:", error);
+      res.status(500).json({ message: "Failed to fetch projects" });
+    }
+  });
 
   // Modify the project creation endpoint
   app.post("/api/projects", async (req, res) => {
