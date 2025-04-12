@@ -803,15 +803,15 @@ export function TeamDetailPage() {
                   Team Projects
                 </CardTitle>
                 <CardDescription className="text-white/70">
-                  {teamDetails?.projects?.filter((p: any) => p.teamId === parseInt(teamId))?.length || 0} {(teamDetails?.projects?.filter((p: any) => p.teamId === parseInt(teamId))?.length || 0) === 1 ? "project" : "projects"} in this team
+                  {teamDetails.projects.filter((p: any) => p.teamId === parseInt(teamId)).length} {teamDetails.projects.filter((p: any) => p.teamId === parseInt(teamId)).length === 1 ? "project" : "projects"} in this team
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {(teamDetails?.projects?.filter((p: any) => p.teamId === parseInt(teamId))?.length || 0) === 0 ? (
+                {teamDetails.projects.filter((p: any) => p.teamId === parseInt(teamId)).length === 0 ? (
                   <p className="text-white/70 text-center py-4">No projects in this team yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {teamDetails?.projects?.filter((p: any) => p.teamId === parseInt(teamId))?.slice(0, 5)?.map((project: any) => (
+                    {teamDetails.projects.filter((p: any) => p.teamId === parseInt(teamId)).slice(0, 5).map((project: any) => (
                       <div 
                         key={project.id} 
                         className="p-3 rounded-md bg-black/30 border border-primary/10"
@@ -824,9 +824,9 @@ export function TeamDetailPage() {
                         )}
                       </div>
                     ))}
-                    {(teamDetails?.projects?.filter((p: any) => p.teamId === parseInt(teamId))?.length || 0) > 5 && (
+                    {teamDetails.projects.filter((p: any) => p.teamId === parseInt(teamId)).length > 5 && (
                       <p className="text-sm text-primary text-center">
-                        +{(teamDetails?.projects?.filter((p: any) => p.teamId === parseInt(teamId))?.length || 0) - 5} more projects
+                        +{teamDetails.projects.filter((p: any) => p.teamId === parseInt(teamId)).length - 5} more projects
                       </p>
                     )}
                   </div>
