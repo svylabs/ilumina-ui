@@ -1297,6 +1297,71 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Get teams the user belongs to or created
+  app.get("/api/teams", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      // Get all teams the user created
+      const createdTeams = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.createdBy, req.user.id))
+        .where(eq(teams.isDeleted, false));
+        
+      // Now get teams they're a member of (but didn't create)
+      const memberTeams = await db
+        .select({
+          teamId: teamMembers.teamId,
+          role: teamMembers.role,
+          status: teamMembers.status
+        })
+        .from(teamMembers)
+        .where(eq(teamMembers.userId, req.user.id))
+        .where(eq(teamMembers.status, 'active'));
+        
+      const memberTeamIds = memberTeams
+        .map(m => m.teamId)
+        .filter(id => !createdTeams.some(t => t.id === id)); // Exclude teams they created
+        
+      // Get details for member teams
+      const memberTeamDetails = memberTeamIds.length > 0 
+        ? await db
+            .select()
+            .from(teams)
+            .where(inArray(teams.id, memberTeamIds))
+            .where(eq(teams.isDeleted, false))
+        : [];
+        
+      // Combine results
+      const teamsWithRoles = [
+        // Teams they created (always admin role)
+        ...createdTeams.map(team => ({
+          ...team,
+          role: 'admin',
+          status: 'active',
+          isCreator: true
+        })),
+        // Teams they're members of
+        ...memberTeamDetails.map(team => {
+          const membership = memberTeams.find(m => m.teamId === team.id);
+          return {
+            ...team,
+            role: membership?.role || 'member',
+            status: membership?.status || 'active',
+            isCreator: false
+          };
+        })
+      ];
+      
+      console.log(`Found ${teamsWithRoles.length} teams for user ${req.user.id} (${req.user.email})`);
+      res.json(teamsWithRoles);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+  
   // Begin analysis for a submission with external API
   app.post("/api/begin_analysis", async (req, res) => {
     try {
