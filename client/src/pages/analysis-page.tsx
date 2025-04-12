@@ -1538,6 +1538,184 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                             </div>
                           </div>
                         </div>
+                      ) : currentStep.id === "files" && getStepStatus(currentStep.id) === "completed" ? (
+                        <div className="text-white font-mono">
+                          <div className="space-y-6">
+                            <div className="space-y-2 p-4">
+                              <h3 className="text-xl font-semibold text-green-400">Project Analysis</h3>
+                              <div className="space-y-4 bg-gray-900 p-4 rounded-md">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {/* Contract Overview */}
+                                  <div>
+                                    <h4 className="text-lg font-medium text-blue-400 mb-3">Smart Contracts</h4>
+                                    <div className="space-y-3">
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <h5 className="text-yellow-300 font-medium">Predify.sol</h5>
+                                        <p className="text-gray-300 text-sm mt-1">Main prediction market contract that handles market creation, betting, and payouts.</p>
+                                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                          <div>
+                                            <span className="text-gray-400">LOC:</span>
+                                            <span className="text-white ml-1">358</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-gray-400">Interfaces:</span>
+                                            <span className="text-white ml-1">3</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <h5 className="text-yellow-300 font-medium">ManualResolutionStrategy.sol</h5>
+                                        <p className="text-gray-300 text-sm mt-1">Implements the resolution strategy for manually resolving markets by an authorized resolver.</p>
+                                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                          <div>
+                                            <span className="text-gray-400">LOC:</span>
+                                            <span className="text-white ml-1">156</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-gray-400">Interfaces:</span>
+                                            <span className="text-white ml-1">1</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="bg-gray-800 p-3 rounded-md">
+                                        <h5 className="text-yellow-300 font-medium">MockERC20.sol</h5>
+                                        <p className="text-gray-300 text-sm mt-1">ERC20 token implementation used for betting in the prediction markets.</p>
+                                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                          <div>
+                                            <span className="text-gray-400">LOC:</span>
+                                            <span className="text-white ml-1">92</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-gray-400">Extends:</span>
+                                            <span className="text-white ml-1">ERC20</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Technical Details */}
+                                  <div>
+                                    <h4 className="text-lg font-medium text-blue-400 mb-3">Technical Summary</h4>
+                                    <div className="bg-gray-800 p-4 rounded-md">
+                                      <div className="space-y-4">
+                                        <div>
+                                          <h5 className="text-yellow-300 font-medium">Development Environment</h5>
+                                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-sm">
+                                            <div className="text-gray-400">Compiler:</div>
+                                            <div className="text-green-300">Solidity 0.8.17</div>
+                                            
+                                            <div className="text-gray-400">Framework:</div>
+                                            <div className="text-green-300">Hardhat</div>
+                                            
+                                            <div className="text-gray-400">EVM Version:</div>
+                                            <div className="text-green-300">London</div>
+                                          </div>
+                                        </div>
+                                        
+                                        <div>
+                                          <h5 className="text-yellow-300 font-medium">Dependencies</h5>
+                                          <div className="space-y-1 mt-2 text-sm">
+                                            <div className="grid grid-cols-6">
+                                              <div className="col-span-4 text-cyan-300">@openzeppelin/contracts</div>
+                                              <div className="col-span-2 text-white">4.8.3</div>
+                                            </div>
+                                            <div className="grid grid-cols-6">
+                                              <div className="col-span-4 text-cyan-300">@chainlink/contracts</div>
+                                              <div className="col-span-2 text-white">0.6.1</div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        <div>
+                                          <h5 className="text-yellow-300 font-medium">Architecture</h5>
+                                          <div className="mt-2 text-sm text-gray-300">
+                                            <p>Modular design with separate concerns:</p>
+                                            <ul className="list-disc list-inside space-y-1 mt-1 text-white/80">
+                                              <li>Market management (Predify)</li>
+                                              <li>Resolution strategies (IResolutionStrategy)</li>
+                                              <li>Token operations (ERC20)</li>
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
+                        <div className="text-white font-mono">
+                          <div className="space-y-6">
+                            <div className="space-y-2 p-4">
+                              <h3 className="text-xl font-semibold text-green-400">Simulation Environment</h3>
+                              <div className="space-y-4 bg-gray-900 p-4 rounded-md">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                  <div className="bg-gray-800 p-3 rounded-md">
+                                    <h4 className="text-blue-400 font-medium">Runtime</h4>
+                                    <p className="text-white mt-1">Hardhat & Ethers.js</p>
+                                    <div className="text-xs text-gray-400 mt-2">Local JavaScript environment</div>
+                                  </div>
+                                  
+                                  <div className="bg-gray-800 p-3 rounded-md">
+                                    <h4 className="text-blue-400 font-medium">Network</h4>
+                                    <p className="text-white mt-1">Local Hardhat Network</p>
+                                    <div className="text-xs text-gray-400 mt-2">Chain ID: 31337</div>
+                                  </div>
+                                  
+                                  <div className="bg-gray-800 p-3 rounded-md">
+                                    <h4 className="text-blue-400 font-medium">Test Accounts</h4>
+                                    <p className="text-white mt-1">10 Accounts</p>
+                                    <div className="text-xs text-gray-400 mt-2">1000 ETH each</div>
+                                  </div>
+                                </div>
+                                
+                                <div className="border-t border-gray-700 pt-4 mt-4">
+                                  <h4 className="text-lg font-medium text-yellow-400 mb-3">Simulation Scenarios</h4>
+                                  
+                                  <div className="space-y-3">
+                                    <div className="bg-gray-800 p-3 rounded-md">
+                                      <div className="flex justify-between">
+                                        <h5 className="text-cyan-300 font-medium">Market Creation Scenario</h5>
+                                        <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">Basic</span>
+                                      </div>
+                                      <p className="text-gray-300 text-sm mt-1">Tests the creation of prediction markets with different parameters.</p>
+                                      <div className="mt-2 text-xs text-gray-400">
+                                        Actors: Market Creator
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="bg-gray-800 p-3 rounded-md">
+                                      <div className="flex justify-between">
+                                        <h5 className="text-cyan-300 font-medium">Betting Scenario</h5>
+                                        <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">Intermediate</span>
+                                      </div>
+                                      <p className="text-gray-300 text-sm mt-1">Tests the betting mechanism with multiple users and outcomes.</p>
+                                      <div className="mt-2 text-xs text-gray-400">
+                                        Actors: Market Creator, Bettors
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="bg-gray-800 p-3 rounded-md">
+                                      <div className="flex justify-between">
+                                        <h5 className="text-cyan-300 font-medium">Resolution & Payout Scenario</h5>
+                                        <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">Advanced</span>
+                                      </div>
+                                      <p className="text-gray-300 text-sm mt-1">Tests the full lifecycle of markets including resolution and payouts.</p>
+                                      <div className="mt-2 text-xs text-gray-400">
+                                        Actors: Market Creator, Bettors, Market Resolver
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       ) : currentStep.id === "deployment" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
                           <div className="space-y-6">
