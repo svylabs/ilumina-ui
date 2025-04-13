@@ -103,10 +103,13 @@ export default function ProjectsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (projectId: number) => {
+      console.log(`Attempting to delete project with ID: ${projectId}`);
       try {
         const response = await apiRequest("DELETE", `/api/projects/${projectId}`);
+        console.log(`Delete API response:`, response);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          console.error(`Delete API error response:`, errorData);
           throw new Error(errorData.message || "Failed to delete project");
         }
         return response;
@@ -354,13 +357,9 @@ function ProjectCard({
                       Cancel
                     </AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        try {
-                          onDelete();
-                        } catch (err) {
-                          console.error("Error in delete action:", err);
-                        }
+                      onClick={() => {
+                        console.log("Delete confirmation clicked");
+                        onDelete();
                       }}
                       className="bg-red-600 text-white hover:bg-red-700 delete-action"
                     >
