@@ -103,7 +103,17 @@ export default function ProjectsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (projectId: number) => {
-      await apiRequest("DELETE", `/api/projects/${projectId}`);
+      try {
+        const response = await apiRequest("DELETE", `/api/projects/${projectId}`);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Failed to delete project");
+        }
+        return response;
+      } catch (err) {
+        console.error("Project deletion error:", err);
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
@@ -114,9 +124,10 @@ export default function ProjectsPage() {
       });
     },
     onError: (error: Error) => {
+      console.error("Project deletion error:", error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error deleting project",
+        description: error.message || "Failed to delete the project. Please try again.",
         variant: "destructive",
       });
     },
@@ -282,7 +293,13 @@ function ProjectCard({
 }) {
   return (
     <Card className="border-primary/20 bg-black/50 hover:border-primary/40 transition-colors overflow-hidden">
-      <Link href={`/analysis/${project.id}`} className="block">
+      <div onClick={(e) => {
+        // Only navigate if the click wasn't on the delete button or dialog
+        const target = e.target as HTMLElement;
+        if (!target.closest('.delete-action')) {
+          window.location.href = `/analysis/${project.id}`;
+        }
+      }}>
         <CardContent className="p-6">
           <div className="flex justify-between items-start">
             <div>
@@ -305,11 +322,25 @@ function ProjectCard({
                 Created {format(new Date(project.createdAt), "PPP")}
               </p>
             </div>
-            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <div 
+              className="flex gap-2 delete-action" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
               {canDelete && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon">
+                    <Button 
+                      variant="destructive" 
+                      size="icon"
+                      className="delete-action"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -325,8 +356,16 @@ function ProjectCard({
                         Cancel
                       </AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={onDelete}
-                        className="bg-red-600 text-white hover:bg-red-700"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          try {
+                            onDelete();
+                          } catch (err) {
+                            console.error("Error in delete action:", err);
+                          }
+                        }}
+                        className="bg-red-600 text-white hover:bg-red-700 delete-action"
                       >
                         Delete
                       </AlertDialogAction>
@@ -337,7 +376,7 @@ function ProjectCard({
             </div>
           </div>
         </CardContent>
-      </Link>
+      </div>
     </Card>
   );
 }
