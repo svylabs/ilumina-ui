@@ -1754,16 +1754,40 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                               // First try to use the jsonData field directly from the API
                               const stepData = analysis?.steps[currentStep.id];
                               
-                              // Use the jsonData field directly from the API
-                              let actorsData;
+                              // Prepare actors data
+                              let actorsData = { actors: [] };
                               
                               if (stepData?.jsonData) {
-                                actorsData = stepData.jsonData;
+                                // Handle the new API format where actors_summary is a string
+                                if (stepData.jsonData.actors_summary && typeof stepData.jsonData.actors_summary === 'string') {
+                                  try {
+                                    const parsedData = JSON.parse(stepData.jsonData.actors_summary);
+                                    console.log("Parsed actors data:", parsedData);
+                                    actorsData = parsedData;
+                                  } catch (e) {
+                                    console.error("Failed to parse actors_summary:", e);
+                                  }
+                                } else {
+                                  // Use the old format directly
+                                  actorsData = stepData.jsonData;
+                                }
                               } else {
                                 try {
                                   const details = getStepDetails(currentStep.id);
                                   if (details) {
-                                    actorsData = JSON.parse(details);
+                                    try {
+                                      // Try to parse the details, which might be a JSON string
+                                      const parsedDetails = JSON.parse(details);
+                                      
+                                      // Check if we have actors_summary in the details
+                                      if (parsedDetails.actors_summary && typeof parsedDetails.actors_summary === 'string') {
+                                        actorsData = JSON.parse(parsedDetails.actors_summary);
+                                      } else {
+                                        actorsData = parsedDetails;
+                                      }
+                                    } catch (e) {
+                                      console.error("Failed to parse actors JSON:", e);
+                                    }
                                   } else {
                                     // Use the Prediction Market actors as fallback
                                     actorsData = {
