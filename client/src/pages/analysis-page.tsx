@@ -716,13 +716,23 @@ export default function AnalysisPage() {
   };
   
   const getStepStatus = (stepId: string): StepStatus => {
-    // First check if the step is in the completed_steps array from the API
+    // ONLY use the completedSteps array to determine if a step is completed
     if (isStepActuallyCompleted(stepId)) {
       return "completed";
     }
     
-    // Otherwise use the status from the steps object
-    return analysis.steps[stepId]?.status || "pending";
+    // Check if the step is in progress
+    if (analysis.steps[stepId]?.status === "in_progress") {
+      return "in_progress";
+    }
+    
+    // Check if the step is failed
+    if (analysis.steps[stepId]?.status === "failed") {
+      return "failed";
+    }
+    
+    // Default to pending
+    return "pending";
   };
 
   const getStepDetails = (stepId: string): string | null => {
@@ -731,10 +741,9 @@ export default function AnalysisPage() {
 
   const calculateProgress = (): number => {
     const totalSteps = analysisSteps.length;
-    const completedSteps = Object.values(analysis.steps).filter(
-      step => step.status === "completed"
-    ).length;
-    return Math.round((completedSteps / totalSteps) * 100);
+    // Use completedSteps array for counting
+    const completedStepsCount = analysis.completedSteps?.length || 0;
+    return Math.round((completedStepsCount / totalSteps) * 100);
   };
 
   // Find the selected step object
