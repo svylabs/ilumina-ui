@@ -112,7 +112,13 @@ export default function ProjectsPage() {
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           console.error(`Delete API error response:`, errorData);
-          throw new Error(errorData.message || "Failed to delete project");
+          
+          // Handle 403 permission errors specifically
+          if (response.status === 403) {
+            throw new Error(errorData.message || "You don't have permission to delete this project");
+          } else {
+            throw new Error(errorData.message || "Failed to delete project");
+          }
         }
         return response;
       } catch (err) {
