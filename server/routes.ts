@@ -1003,20 +1003,146 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Function to handle special test submission from external API
+  async function getTestSubmissionAnalysis(submissionId: string) {
+    // Test submission special case - we only use external API data
+    console.log("Fetching test submission from external API");
+    const externalSubmissionData = await fetchFromExternalApi('submission', submissionId);
+    
+    if (!externalSubmissionData) {
+      return { error: "Test submission data not found" };
+    }
+    
+    // Initialize steps with default pending status
+    const stepsStatus: Record<string, AnalysisStepStatus> = {
+      files: { 
+        status: "pending" as "pending" | "in_progress" | "completed" | "failed", 
+        details: null, 
+        startTime: null,
+        jsonData: null
+      },
+      actors: { 
+        status: "pending" as "pending" | "in_progress" | "completed" | "failed", 
+        details: null, 
+        startTime: null,
+        jsonData: null
+      },
+      test_setup: { 
+        status: "pending" as "pending" | "in_progress" | "completed" | "failed", 
+        details: null, 
+        startTime: null,
+        jsonData: null
+      },
+      deployment: { 
+        status: "pending" as "pending" | "in_progress" | "completed" | "failed", 
+        details: null, 
+        startTime: null,
+        jsonData: null
+      },
+      simulations: { 
+        status: "pending" as "pending" | "in_progress" | "completed" | "failed", 
+        details: null, 
+        startTime: null,
+        jsonData: null
+      },
+      // Legacy steps
+      workspace: { 
+        status: "pending" as "pending" | "in_progress" | "completed" | "failed", 
+        details: null, 
+        startTime: null 
+      },
+      abi: { 
+        status: "pending" as "pending" | "in_progress" | "completed" | "failed", 
+        details: null, 
+        startTime: null 
+      }
+    };
+    
+    try {
+      // Get project summary data for the files step
+      const projectSummaryData = await fetchFromExternalApi('project_summary', submissionId);
+      if (projectSummaryData) {
+        stepsStatus.files = {
+          status: "completed",
+          details: null,
+          startTime: null,
+          jsonData: projectSummaryData
+        };
+      }
+      
+      // Get actors summary data for the actors step
+      const actorsSummaryData = await fetchFromExternalApi('actors_summary', submissionId);
+      if (actorsSummaryData) {
+        stepsStatus.actors = {
+          status: "completed",
+          details: null,
+          startTime: null,
+          jsonData: actorsSummaryData
+        };
+      }
+      
+      // Update completed steps based on external API data
+      if (externalSubmissionData.completed_steps) {
+        for (const stepData of externalSubmissionData.completed_steps) {
+          // Map external API step names to our internal step names
+          let stepName = stepData.step;
+          if (stepName === 'analyze_project') stepName = 'files';
+          if (stepName === 'analyze_actors') stepName = 'actors';
+          
+          if (stepsStatus[stepName]) {
+            stepsStatus[stepName].status = "completed";
+          }
+        }
+      }
+      
+      // Set current step to in_progress if it exists
+      if (externalSubmissionData.step) {
+        let currentStep = externalSubmissionData.step;
+        if (currentStep === 'analyze_project') currentStep = 'files';
+        if (currentStep === 'analyze_actors') currentStep = 'actors';
+        
+        if (stepsStatus[currentStep]) {
+          stepsStatus[currentStep].status = "in_progress";
+        }
+      }
+      
+      return { 
+        status: externalSubmissionData.status || "in_progress", 
+        steps: stepsStatus 
+      };
+    } catch (error) {
+      console.error("Error processing test submission:", error);
+      return { error: "Error processing test submission" };
+    }
+  }
+
   app.get("/api/analysis/:id", async (req, res) => {
     try {
       const submissionId = req.params.id;
       
+      // Special case for test submission ID
+      if (submissionId === 'test-submission-id') {
+        const testResult = await getTestSubmissionAnalysis(submissionId);
+        if (testResult.error) {
+          return res.status(404).send(testResult.error);
+        }
+        return res.json(testResult);
+      }
+      
+      // Regular flow for database submissions
       // First check external API for submission status
       const externalSubmissionData = await fetchFromExternalApi('submission', submissionId);
       
-      // First try to get submission by project ID
-      let submission = await db
-        .select()
-        .from(submissions)
-        .where(eq(submissions.projectId, parseInt(submissionId)))
-        .orderBy(submissions.createdAt, "desc")
-        .limit(1);
+      // Try to get submission by project ID if it's a numeric ID
+      let submission = [];
+      if (/^\d+$/.test(submissionId)) {
+        submission = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.projectId, parseInt(submissionId)))
+          .orderBy(submissions.createdAt, "desc")
+          .limit(1);
+      }
         
       // If not found, try UUID format
       if (!submission.length && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) {
@@ -1030,9 +1156,9 @@ export function registerRoutes(app: Express): Server {
       if (!submission.length) {
         return res.status(404).send("Submission not found");
       }
-
+      
       // Get all steps for this submission from database
-      const steps = await db
+      let steps = await db
         .select()
         .from(analysisSteps)
         .where(eq(analysisSteps.submissionId, submission[0].id))
