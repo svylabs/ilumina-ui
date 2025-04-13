@@ -1122,39 +1122,46 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Create test setup data based on available information
+      // Create minimal test setup data only if we have actual data to work with
       if (stepsStatus.files.status === "completed" && stepsStatus.actors.status === "completed") {
-        // Create test environment data based on project and actors data
-        const testSetupData = {
-          testEnvironment: "Hardhat",
-          networkSettings: {
-            name: "Local Hardhat",
-            chainId: "31337"
-          },
-          // Use previously parsed actors data if available
-          actors: stepsStatus.actors.jsonData?.actors || [],
-          substeps: [
-            {
-              id: "setup",
-              name: "Setup Workspace",
-              description: "Create and configure the test environment workspace",
-              output: "Workspace initialized with Hardhat\nContract ABIs generated\nTest accounts created with 1000 ETH each"
-            },
-            {
-              id: "contract_deployment",
-              name: "Contract Deployment",
-              description: "Implement contract deployment and initialization",
-              output: "Contract deployment scripts generated\nInitialization scripts prepared"
-            },
-            {
-              id: "actors",
-              name: "Implement Actors",
-              description: "Create actor implementations based on the identified roles",
-              output: "Actor implementations prepared based on contract interactions"
-            }
-          ]
+        // Extract environment information from project summary if available
+        const projectData = stepsStatus.files.jsonData;
+        const actorsData = stepsStatus.actors.jsonData;
+        
+        // Construct test setup with only the data we have from the API
+        const testSetupData: Record<string, any> = {};
+        
+        // Add environment info if available from project data
+        if (projectData && projectData.dev_tool) {
+          testSetupData.testEnvironment = projectData.dev_tool;
+        } else if (projectData && projectData.devEnvironment) {
+          testSetupData.testEnvironment = projectData.devEnvironment;
+        } else if (projectData && projectData._original && projectData._original.dev_tool) {
+          testSetupData.testEnvironment = projectData._original.dev_tool;
+        }
+        
+        // Add basic network settings 
+        testSetupData.networkSettings = {
+          name: "Local Development Network",
+          chainId: "31337"
         };
         
+        // Only include actors if actually present in the data
+        if (actorsData && actorsData.actors && Array.isArray(actorsData.actors)) {
+          testSetupData.actors = actorsData.actors;
+        }
+        
+        // Include minimal substeps
+        testSetupData.substeps = [
+          {
+            id: "setup",
+            name: "Setup Test Environment",
+            description: "Configure the test environment",
+            output: "Test environment configured"
+          }
+        ];
+        
+        // Only add the test_setup step if we have some data to show
         stepsStatus.test_setup = {
           status: "completed",
           details: JSON.stringify(testSetupData),
