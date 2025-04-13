@@ -392,9 +392,15 @@ type AnalysisStepStatus = {
   jsonData?: any; // Match server-side type definition
 };
 
+type CompletedStep = {
+  step: string;
+  updatedAt: string;
+};
+
 type AnalysisResponse = {
   status: string;
   steps: Record<string, AnalysisStepStatus>;
+  completedSteps?: CompletedStep[];
 };
 
 // Updated analysis steps with new sequence
@@ -677,27 +683,40 @@ export default function AnalysisPage() {
     );
   }
 
-  // Check if a step is actually completed based on the API status
-  const isStepActuallyCompleted = (stepId: string): boolean => {
-    if (!analysis?.steps) return false;
-    
-    // Get the corresponding step in the completed_steps array
-    const apiStepName = 
-      stepId === "files" ? "analyze_project" :
+  // Map UI step IDs to API step names
+  const getApiStepName = (stepId: string): string => {
+    return stepId === "files" ? "analyze_project" :
       stepId === "actors" ? "analyze_actors" :
       stepId === "test_setup" ? "simulation_setup" :
       stepId === "deployment" ? "deployment_instructions" :
       stepId === "simulations" ? "run_simulation" : "";
-      
-    // Check if we have data
-    const hasData = analysis.steps[stepId]?.jsonData;
+  };
+  
+  // Get timestamp for completed step from API data
+  const getCompletedStepTimestamp = (stepId: string): string | null => {
+    // First convert the UI stepId to API step name
+    const apiStepName = getApiStepName(stepId);
     
-    // Return true if we have completed step data
-    return hasData !== undefined && hasData !== null;
+    // Look for this step in the steps data
+    const completedStep = 
+      analysis.completedSteps?.find(step => step.step === apiStepName);
+    
+    return completedStep?.updatedAt || null;
+  };
+  
+  // Check if a step is actually completed based on the API status
+  const isStepActuallyCompleted = (stepId: string): boolean => {
+    if (!analysis?.completedSteps) return false;
+    
+    // Get the corresponding step name used in the API
+    const apiStepName = getApiStepName(stepId);
+    
+    // Check if this step is in the completed_steps array
+    return analysis.completedSteps.some(step => step.step === apiStepName);
   };
   
   const getStepStatus = (stepId: string): StepStatus => {
-    // First check the official API status
+    // First check if the step is in the completed_steps array from the API
     if (isStepActuallyCompleted(stepId)) {
       return "completed";
     }
@@ -879,26 +898,40 @@ export default function AnalysisPage() {
                   } else if (stepStatus === "failed") {
                     return "Analysis failed";
                   } else if (stepStatus === "completed") {
-                    // If we have a timestamp, display it
-                    if (analysis.steps[currentStep.id]?.startTime) {
-                      return `Completed ${format(new Date(analysis.steps[currentStep.id].startTime), 'MMM d, yyyy h:mm a')}`;
-                    } 
+                    // Get the timestamp from the completed_steps array if available
+                    const timestamp = getCompletedStepTimestamp(currentStep.id);
                     
-                    // Special case for each step type - check if we have data to display
-                    if (currentStep.id === "files" && analysis.steps[currentStep.id]?.jsonData) {
-                      return "Analysis complete";
-                    } else if (currentStep.id === "actors" && analysis.steps[currentStep.id]?.jsonData) {
-                      return "Analysis complete";
-                    } else if (currentStep.id === "deployment" && analysis.steps[currentStep.id]?.jsonData) {
-                      return "Analysis complete";
-                    } else if (currentStep.id === "test_setup" && analysis.steps[currentStep.id]?.jsonData) {
-                      return "Analysis complete";
-                    } else if (currentStep.id === "simulations" && analysis.steps[currentStep.id]?.jsonData) {
-                      return "Analysis complete";
+                    if (timestamp) {
+                      try {
+                        // Parse and format the timestamp from the API
+                        const dateObj = new Date(timestamp);
+                        if (!isNaN(dateObj.getTime())) {
+                          return `Last analyzed: ${format(dateObj, 'MMM d, yyyy h:mm a')}`;
+                        } else {
+                          return `Last analyzed: ${timestamp}`;
+                        }
+                      } catch (e) {
+                        console.error("Error formatting timestamp:", e, timestamp);
+                        return `Last analyzed: ${timestamp}`;
+                      }
                     }
                     
-                    // If we don't have data but the status is "completed"
-                    return "Analysis marked as complete";
+                    // Fallback to using startTime if no timestamp in completed_steps
+                    if (analysis.steps[currentStep.id]?.startTime) {
+                      try {
+                        const dateObj = new Date(analysis.steps[currentStep.id].startTime);
+                        if (!isNaN(dateObj.getTime())) {
+                          return `Last analyzed: ${format(dateObj, 'MMM d, yyyy h:mm a')}`;
+                        } else {
+                          return `Last analyzed: ${analysis.steps[currentStep.id].startTime}`;
+                        }
+                      } catch (e) {
+                        return `Last analyzed: ${analysis.steps[currentStep.id].startTime}`;
+                      }
+                    } 
+                    
+                    // If no timestamp available at all
+                    return "Analysis complete";
                   }
                   
                   // Default state for pending
