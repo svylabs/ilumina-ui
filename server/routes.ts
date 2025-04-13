@@ -1336,7 +1336,6 @@ export function registerRoutes(app: Express): Server {
                   status: 'completed',
                   details: 'Updated via external API',
                   jsonData: projectSummaryData,
-                  updatedAt: new Date(),
                 }
               });
           }
@@ -1359,7 +1358,6 @@ export function registerRoutes(app: Express): Server {
                   status: 'completed',
                   details: 'Updated via external API',
                   jsonData: actorsSummaryData,
-                  updatedAt: new Date(),
                 }
               });
           }
