@@ -613,7 +613,7 @@ export function registerRoutes(app: Express): Server {
 
     // Call the external analysis API
     try {
-      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/begin_analysis', {
+      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/api/begin_analysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -787,7 +787,7 @@ export function registerRoutes(app: Express): Server {
 
     // Call the external analysis API
     try {
-      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/begin_analysis', {
+      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/api/begin_analysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
