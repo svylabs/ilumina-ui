@@ -437,15 +437,22 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const userProjects = await db
-      .select()
-      .from(projects)
-      .where(eq(projects.userId, req.user.id))
-      .where(eq(projects.isDeleted, false)) // Filter out soft-deleted projects
-      .where(sql`${projects.teamId} IS NULL`) // Only include personal projects (not team projects)
-      .orderBy(projects.createdAt);
+    try {
+      // Get only personal projects created by the current user (not deleted)
+      const userProjects = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.userId, req.user.id)) // Only projects owned by the current user
+        .where(eq(projects.isDeleted, false)) // Filter out soft-deleted projects
+        .where(sql`${projects.teamId} IS NULL`) // Only include personal projects (not team projects)
+        .orderBy(projects.createdAt);
 
-    res.json(userProjects);
+      console.log("Personal projects:", userProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
+      res.json(userProjects);
+    } catch (error) {
+      console.error("Error fetching user projects:", error);
+      res.status(500).json({ message: "Failed to fetch projects" });
+    }
   });
 
   // Modify the project creation endpoint
