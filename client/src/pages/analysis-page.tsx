@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCcw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare } from "lucide-react";
+import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
@@ -784,6 +784,16 @@ export default function AnalysisPage() {
                        currentStep.id}
                     </span>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetch()}
+                        className="flex items-center"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        Refresh
+                      </Button>
+                      
                       {(currentStep.id === "files" || currentStep.id === "actors" || currentStep.id === "deployment") && (
                         <Button
                           variant="outline"
