@@ -113,7 +113,13 @@ export const analysisSteps = pgTable("analysis_steps", {
     enum: ["pending", "in_progress", "completed", "failed"]
   }).default("pending").notNull(),
   details: text("details"),
+  jsonData: jsonb("json_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    submissionStepIdx: primaryKey({ columns: [table.submissionId, table.stepId] })
+  };
 });
 
 export const contacts = pgTable("contacts", {
