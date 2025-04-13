@@ -677,7 +677,32 @@ export default function AnalysisPage() {
     );
   }
 
+  // Check if a step is actually completed based on the API status
+  const isStepActuallyCompleted = (stepId: string): boolean => {
+    if (!analysis?.steps) return false;
+    
+    // Get the corresponding step in the completed_steps array
+    const apiStepName = 
+      stepId === "files" ? "analyze_project" :
+      stepId === "actors" ? "analyze_actors" :
+      stepId === "test_setup" ? "simulation_setup" :
+      stepId === "deployment" ? "deployment_instructions" :
+      stepId === "simulations" ? "run_simulation" : "";
+      
+    // Check if we have data
+    const hasData = analysis.steps[stepId]?.jsonData;
+    
+    // Return true if we have completed step data
+    return hasData !== undefined && hasData !== null;
+  };
+  
   const getStepStatus = (stepId: string): StepStatus => {
+    // First check the official API status
+    if (isStepActuallyCompleted(stepId)) {
+      return "completed";
+    }
+    
+    // Otherwise use the status from the steps object
     return analysis.steps[stepId]?.status || "pending";
   };
 
@@ -845,11 +870,40 @@ export default function AnalysisPage() {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  {getStepStatus(currentStep.id) === "in_progress" ? "Analysis in progress..." : 
-                   getStepStatus(currentStep.id) === "failed" ? "Analysis failed" : 
-                   getStepStatus(currentStep.id) === "completed" && analysis.steps[currentStep.id]?.startTime ? 
-                   `Completed ${format(new Date(analysis.steps[currentStep.id].startTime || new Date()), 'MMM d, yyyy h:mm a')}` : 
-                   "Waiting to start..."}
+                  {(() => {
+                  // Determine the status text based on step status and data availability
+                  const stepStatus = getStepStatus(currentStep.id);
+                  
+                  if (stepStatus === "in_progress") {
+                    return "Analysis in progress...";
+                  } else if (stepStatus === "failed") {
+                    return "Analysis failed";
+                  } else if (stepStatus === "completed") {
+                    // If we have a timestamp, display it
+                    if (analysis.steps[currentStep.id]?.startTime) {
+                      return `Completed ${format(new Date(analysis.steps[currentStep.id].startTime), 'MMM d, yyyy h:mm a')}`;
+                    } 
+                    
+                    // Special case for each step type - check if we have data to display
+                    if (currentStep.id === "files" && analysis.steps[currentStep.id]?.jsonData) {
+                      return "Analysis complete";
+                    } else if (currentStep.id === "actors" && analysis.steps[currentStep.id]?.jsonData) {
+                      return "Analysis complete";
+                    } else if (currentStep.id === "deployment" && analysis.steps[currentStep.id]?.jsonData) {
+                      return "Analysis complete";
+                    } else if (currentStep.id === "test_setup" && analysis.steps[currentStep.id]?.jsonData) {
+                      return "Analysis complete";
+                    } else if (currentStep.id === "simulations" && analysis.steps[currentStep.id]?.jsonData) {
+                      return "Analysis complete";
+                    }
+                    
+                    // If we don't have data but the status is "completed"
+                    return "Analysis marked as complete";
+                  }
+                  
+                  // Default state for pending
+                  return "Ready for analysis";
+                })()}
                 </CardDescription>
               </CardHeader>
               <CardContent>
