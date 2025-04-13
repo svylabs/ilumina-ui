@@ -637,9 +637,15 @@ export function registerRoutes(app: Express): Server {
 
   // Add this route after the other project routes
   app.delete("/api/projects/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    console.log(`Delete request received for project ID: ${req.params.id}`);
+    
+    if (!req.isAuthenticated()) {
+      console.log("Unauthorized delete attempt - user not authenticated");
+      return res.sendStatus(401);
+    }
 
     const projectId = parseInt(req.params.id);
+    console.log(`Parsed project ID for deletion: ${projectId}, user ID: ${req.user.id}`);
 
     // Get the project
     const [project] = await db
@@ -647,6 +653,8 @@ export function registerRoutes(app: Express): Server {
       .from(projects)
       .where(eq(projects.id, projectId))
       .limit(1);
+    
+    console.log(`Project fetch result:`, project);
 
     if (!project) {
       return res.status(404).json({
@@ -690,12 +698,19 @@ export function registerRoutes(app: Express): Server {
     }
 
     // Soft delete the project instead of hard delete
-    await db
-      .update(projects)
-      .set({ isDeleted: true })
-      .where(eq(projects.id, projectId));
-    
-    res.sendStatus(204);
+    try {
+      console.log(`Attempting to soft delete project ID: ${projectId}`);
+      const result = await db
+        .update(projects)
+        .set({ isDeleted: true })
+        .where(eq(projects.id, projectId));
+      
+      console.log(`Delete result:`, result);
+      res.sendStatus(204);
+    } catch (error) {
+      console.error(`Error deleting project ID: ${projectId}`, error);
+      res.status(500).json({ message: "Failed to delete project" });
+    }
   });
 
   // Modify the submission endpoint to handle authentication
