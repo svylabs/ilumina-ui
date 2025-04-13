@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Trash2, Users, UserPlus, Settings } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { SelectProject } from "@db/schema";
 import { format } from "date-fns";
 import {
@@ -291,92 +291,88 @@ function ProjectCard({
   onDelete: () => void, 
   canDelete?: boolean 
 }) {
+  const navigate = useLocation()[1];
+  
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If the click was on the delete button or dialog, don't navigate
+    const target = e.target as HTMLElement;
+    if (!target.closest('.delete-action')) {
+      // Using navigate instead of direct window.location to avoid page reload
+      navigate(`/analysis/${project.id}`);
+    }
+  };
+
   return (
-    <Card className="border-primary/20 bg-black/50 hover:border-primary/40 transition-colors overflow-hidden">
-      <div onClick={(e) => {
-        // Only navigate if the click wasn't on the delete button or dialog
-        const target = e.target as HTMLElement;
-        if (!target.closest('.delete-action')) {
-          window.location.href = `/analysis/${project.id}`;
-        }
-      }}>
-        <CardContent className="p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-semibold text-white">
-                  {project.name}
-                </h3>
-                {isTeamProject && (
-                  <Badge variant="secondary" className="bg-primary/10 text-xs">
-                    {teamName || 'Team Project'}
-                  </Badge>
-                )}
-              </div>
-              {project.githubUrl && (
-                <p className="text-sm text-white/70 mt-1 truncate max-w-[400px]">
-                  {project.githubUrl}
-                </p>
+    <Card className="border-primary/20 bg-black/50 hover:border-primary/40 transition-colors overflow-hidden cursor-pointer">
+      <CardContent className="p-6" onClick={handleCardClick}>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-white">
+                {project.name}
+              </h3>
+              {isTeamProject && (
+                <Badge variant="secondary" className="bg-primary/10 text-xs">
+                  {teamName || 'Team Project'}
+                </Badge>
               )}
-              <p className="text-sm text-white/50 mt-2">
-                Created {format(new Date(project.createdAt), "PPP")}
+            </div>
+            {project.githubUrl && (
+              <p className="text-sm text-white/70 mt-1 truncate max-w-[400px]">
+                {project.githubUrl}
               </p>
-            </div>
-            <div 
-              className="flex gap-2 delete-action" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            >
-              {canDelete && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      size="icon"
-                      className="delete-action"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-black/95 border-primary/20">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-white">Delete Project</AlertDialogTitle>
-                      <AlertDialogDescription className="text-white/70">
-                        Are you sure you want to delete "{project.name}"? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-muted text-white hover:bg-muted/90">
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          try {
-                            onDelete();
-                          } catch (err) {
-                            console.error("Error in delete action:", err);
-                          }
-                        }}
-                        className="bg-red-600 text-white hover:bg-red-700 delete-action"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
+            )}
+            <p className="text-sm text-white/50 mt-2">
+              Created {format(new Date(project.createdAt), "PPP")}
+            </p>
           </div>
-        </CardContent>
-      </div>
+          {canDelete && (
+            <div className="delete-action">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    size="icon"
+                    className="delete-action"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-black/95 border-primary/20">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white">Delete Project</AlertDialogTitle>
+                    <AlertDialogDescription className="text-white/70">
+                      Are you sure you want to delete "{project.name}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-muted text-white hover:bg-muted/90">
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        try {
+                          onDelete();
+                        } catch (err) {
+                          console.error("Error in delete action:", err);
+                        }
+                      }}
+                      className="bg-red-600 text-white hover:bg-red-700 delete-action"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 }
