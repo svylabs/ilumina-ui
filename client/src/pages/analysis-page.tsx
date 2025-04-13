@@ -721,17 +721,31 @@ export default function AnalysisPage() {
       return "completed";
     }
     
-    // Check if the step is in progress
+    // Check if the step is explicitly marked as in_progress from the API
     if (analysis.steps[stepId]?.status === "in_progress") {
       return "in_progress";
     }
     
-    // Check if the step is failed
+    // Check if the step is explicitly marked as failed from the API
     if (analysis.steps[stepId]?.status === "failed") {
       return "failed";
     }
     
-    // Default to pending
+    // Determine the next step that should be "in progress"
+    // First, determine the index of the current step in our analysis steps array
+    const stepIndex = analysisSteps.findIndex(step => step.id === stepId);
+    if (stepIndex >= 0) {
+      // Count how many steps are completed so far
+      const completedCount = analysis.completedSteps?.length || 0;
+      
+      // If this step's index matches the completed count, it should be the next in progress
+      // This assumes steps must be completed in sequential order
+      if (stepIndex === completedCount) {
+        return "in_progress";
+      }
+    }
+    
+    // Default to pending for any other case
     return "pending";
   };
 
@@ -913,29 +927,33 @@ export default function AnalysisPage() {
                     if (timestamp) {
                       try {
                         // Parse and format the timestamp from the API
-                        const dateObj = new Date(timestamp);
+                        // Ensure we have a valid string before creating a Date object
+                        const dateStr = String(timestamp);
+                        const dateObj = new Date(dateStr);
                         if (!isNaN(dateObj.getTime())) {
                           return `Last analyzed: ${format(dateObj, 'MMM d, yyyy h:mm a')}`;
                         } else {
-                          return `Last analyzed: ${timestamp}`;
+                          return `Last analyzed: ${dateStr}`;
                         }
                       } catch (e) {
                         console.error("Error formatting timestamp:", e, timestamp);
-                        return `Last analyzed: ${timestamp}`;
+                        return `Last analyzed: ${String(timestamp)}`;
                       }
                     }
                     
                     // Fallback to using startTime if no timestamp in completed_steps
                     if (analysis.steps[currentStep.id]?.startTime) {
                       try {
-                        const dateObj = new Date(analysis.steps[currentStep.id].startTime);
+                        // Ensure we have a valid string before creating a Date object
+                        const startTime = String(analysis.steps[currentStep.id].startTime || "");
+                        const dateObj = new Date(startTime);
                         if (!isNaN(dateObj.getTime())) {
                           return `Last analyzed: ${format(dateObj, 'MMM d, yyyy h:mm a')}`;
                         } else {
-                          return `Last analyzed: ${analysis.steps[currentStep.id].startTime}`;
+                          return `Last analyzed: ${startTime}`;
                         }
                       } catch (e) {
-                        return `Last analyzed: ${analysis.steps[currentStep.id].startTime}`;
+                        return `Last analyzed: ${String(analysis.steps[currentStep.id].startTime || "")}`;
                       }
                     } 
                     
