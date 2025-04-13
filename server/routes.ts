@@ -2433,7 +2433,19 @@ export function registerRoutes(app: Express): Server {
           
           // Override with the overall status from external API if available
           const status = externalSubmissionData.status || "completed";
-          return res.json({ status, steps: stepsStatus });
+          
+          // Include the completed_steps from the external API if available
+          const completedSteps = externalSubmissionData.completed_steps ? 
+            externalSubmissionData.completed_steps.map(step => ({
+              step: step.step,
+              updatedAt: step.updated_at
+            })) : [];
+            
+          return res.json({ 
+            status, 
+            steps: stepsStatus,
+            completedSteps
+          });
           
         } catch (error) {
           console.error("Error fetching additional data from external API:", error);
@@ -2509,7 +2521,19 @@ export function registerRoutes(app: Express): Server {
         const hasInProgressStep = steps.some(step => step.status === "in_progress");
         const status = hasInProgressStep ? "in_progress" : "completed";
         
-        res.json({ status, steps: stepsStatus });
+        // Format completed steps from database data
+        const completedSteps = steps
+          .filter(step => step.status === "completed")
+          .map(step => ({
+            step: step.stepId,
+            updatedAt: step.updatedAt?.toISOString() || step.createdAt.toISOString()
+          }));
+        
+        res.json({ 
+          status, 
+          steps: stepsStatus,
+          completedSteps 
+        });
       } else {
         console.log("No database entries found, using sample data for submission:", uuidSubmissionId);
         
