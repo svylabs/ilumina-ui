@@ -85,22 +85,79 @@ export default function ProjectsPage() {
   const isTeamsUser = user?.plan === 'teams';
   const isLoading = isLoadingProjects || isLoadingTeams || isLoadingOldProjects;
   
+  // Fetch project verification data to check which projects are accessible
+  const [verifiedProjects, setVerifiedProjects] = React.useState<Record<number, boolean>>({});
+  const [isVerifying, setIsVerifying] = React.useState(false);
+
+  // Helper to verify project accessibility
+  const verifyProjectAccess = React.useCallback(async (projectId: number) => {
+    try {
+      const response = await fetch(`/api/project/${projectId}`);
+      return response.ok;
+    } catch (error) {
+      console.error(`Error verifying access to project ${projectId}:`, error);
+      return false;
+    }
+  }, []);
+
+  // Verify all projects when they are loaded
+  React.useEffect(() => {
+    const projectsToVerify = [...(allProjectsData?.personalProjects || []), ...(allProjectsData?.teamProjects || [])];
+    
+    if (projectsToVerify.length > 0 && !isVerifying) {
+      setIsVerifying(true);
+      
+      const verifyAllProjects = async () => {
+        const verificationResults: Record<number, boolean> = {};
+        
+        // Verify each project in sequence to avoid overwhelming the server
+        for (const project of projectsToVerify) {
+          verificationResults[project.id] = await verifyProjectAccess(project.id);
+        }
+        
+        setVerifiedProjects(verificationResults);
+        setIsVerifying(false);
+      };
+      
+      verifyAllProjects();
+    }
+  }, [allProjectsData, verifyProjectAccess, isVerifying]);
+
   // Determine which projects to display
-  // Make sure personal projects only includes projects with no teamId
+  // Make sure personal projects only includes projects with no teamId and are accessible
   const rawPersonalProjects = allProjectsData?.personalProjects || projects || [];
   console.log("Raw personal projects:", rawPersonalProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId, teamIdType: typeof p.teamId })));
   
-  const personalProjects = rawPersonalProjects.filter(p => p.teamId === null);
+  const personalProjects = rawPersonalProjects.filter(p => {
+    // Only include projects that have no teamId AND are verified accessible
+    // If verification is ongoing or not done yet, include them for now
+    return p.teamId === null && (Object.keys(verifiedProjects).length === 0 || verifiedProjects[p.id] !== false);
+  });
   console.log("Filtered personal projects:", personalProjects.map(p => ({ id: p.id, name: p.name })));
   
-  // Filter team projects to only include actual team projects (those with teamId)
+  // Filter team projects to only include actual team projects (those with teamId) and are accessible
   const rawTeamProjects = allProjectsData?.teamProjects || [];
   console.log("Raw team projects:", rawTeamProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId, teamIdType: typeof p.teamId })));
   
-  const teamProjects = rawTeamProjects.filter(p => p.teamId !== null);
+  const teamProjects = rawTeamProjects.filter(p => {
+    // Only include projects that have a teamId AND are verified accessible
+    // If verification is ongoing or not done yet, include them for now
+    return p.teamId !== null && (Object.keys(verifiedProjects).length === 0 || verifiedProjects[p.id] !== false);
+  });
   console.log("Filtered team projects:", teamProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
   
-  const projectsByTeam = allProjectsData?.projectsByTeam || [];
+  // Filter projectsByTeam to only include accessible projects
+  const projectsByTeam = allProjectsData?.projectsByTeam?.map(teamGroup => {
+    // If we're still verifying or have no verification results, return all projects
+    if (Object.keys(verifiedProjects).length === 0) return teamGroup;
+    
+    // Otherwise filter out inaccessible projects
+    return {
+      ...teamGroup,
+      projects: teamGroup.projects.filter(p => verifiedProjects[p.id] !== false)
+    };
+  }) || [];
+  
   const hasTeamProjects = isTeamsUser && teamProjects.length > 0;
 
   const deleteMutation = useMutation({
