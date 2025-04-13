@@ -2375,12 +2375,12 @@ export function registerRoutes(app: Express): Server {
 
       // Check if we have external API data first
       if (externalSubmissionData) {
-        console.log("Using external API data for submission:", submissionId);
+        console.log("Using external API data for submission:", uuidSubmissionId);
         
         // Fetch additional data from external API as needed
         try {
           // Get project summary data
-          const projectSummaryData = await fetchFromExternalApi('project_summary', submissionId);
+          const projectSummaryData = await fetchFromExternalApi('project_summary', uuidSubmissionId);
           if (projectSummaryData) {
             stepsStatus.files = {
               status: "completed",
@@ -2391,7 +2391,7 @@ export function registerRoutes(app: Express): Server {
           }
           
           // Get actors summary data
-          const actorsSummaryData = await fetchFromExternalApi('actors_summary', submissionId);
+          const actorsSummaryData = await fetchFromExternalApi('actors_summary', uuidSubmissionId);
           if (actorsSummaryData) {
             stepsStatus.actors = {
               status: "completed",
@@ -2403,7 +2403,7 @@ export function registerRoutes(app: Express): Server {
           
           // Get test environment data if needed
           if (externalSubmissionData.test_environment_configured) {
-            const testSetupData = await fetchFromExternalApi('test_environment', submissionId);
+            const testSetupData = await fetchFromExternalApi('test_environment', uuidSubmissionId);
             if (testSetupData) {
               stepsStatus.test_setup = {
                 status: "completed",
@@ -2443,7 +2443,7 @@ export function registerRoutes(app: Express): Server {
       
       // Check if there are any database entries for this submission
       if (steps.length > 0) {
-        console.log("Using database entries for submission:", submissionId);
+        console.log("Using database entries for submission:", uuidSubmissionId);
         
         // Update our step data with anything that exists in the database
         steps.forEach(step => {
@@ -2454,7 +2454,7 @@ export function registerRoutes(app: Express): Server {
               details: step.details,
               startTime: step.status === 'in_progress' ? step.createdAt.toISOString() : null,
               // Keep the jsonData from our sample if there's none in the database
-              jsonData: step.json_data || stepsStatus[step.stepId].jsonData
+              jsonData: step.jsonData || stepsStatus[step.stepId].jsonData
             };
           }
         });
@@ -2464,28 +2464,16 @@ export function registerRoutes(app: Express): Server {
         if (stepsStatus.files.status === "in_progress") {
           try {
             // Try to fetch from projectFiles table
-            // We need to handle both UUID and project ID format cases
-            let actualSubmissionId = submissionId;
+            // We're using the uuidSubmissionId that was validated earlier
+            let actualSubmissionId = uuidSubmissionId;
 
-            // If this is a project ID (number), we need to get the actual submission ID
-            if (/^\d+$/.test(submissionId)) {
-              // Find the submission associated with this project ID
-              const projectSubmission = await db
-                .select()
-                .from(submissions)
-                .where(eq(submissions.projectId, parseInt(submissionId)))
-                .orderBy(submissions.createdAt, "desc")
-                .limit(1);
-                
-              if (projectSubmission.length > 0) {
-                actualSubmissionId = projectSubmission[0].id;
-              } else {
-                console.warn(`No submission found for project ID: ${submissionId}`);
-                // If there is sample data, use it
-                if (sampleData?.files?.jsonData) {
-                  stepsStatus.files.jsonData = sampleData.files.jsonData;
-                  return;
-                }
+            // If we don't have a valid submission ID, log and continue
+            if (!actualSubmissionId) {
+              console.warn(`No valid submission ID for this request`);
+              // If there is sample data, use it
+              if (sampleData?.files?.jsonData) {
+                stepsStatus.files.jsonData = sampleData.files.jsonData;
+                return;
               }
             }
 
@@ -2523,7 +2511,7 @@ export function registerRoutes(app: Express): Server {
         
         res.json({ status, steps: stepsStatus });
       } else {
-        console.log("No database entries found, using sample data for submission:", submissionId);
+        console.log("No database entries found, using sample data for submission:", uuidSubmissionId);
         
         // If no actual steps at all, use our sample data with all steps marked completed
         stepsStatus.files.status = "completed";

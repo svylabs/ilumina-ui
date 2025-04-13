@@ -604,22 +604,10 @@ export default function AnalysisPage() {
     enabled: !!id
   });
 
-  const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
+  const { data: analysis, isLoading, refetch } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
-    refetchInterval: (data: unknown) => {
-      if (!data || typeof data !== 'object' || !('steps' in data)) return 2000;
-      
-      // Type assertion
-      const analysisData = data as AnalysisResponse;
-      const steps = analysisData.steps;
-      
-      // Check if any step is in progress
-      const hasInProgressStep = Object.values(steps).some(
-        (step: AnalysisStepStatus) => step.status === "in_progress"
-      );
-      
-      return hasInProgressStep ? 2000 : false;
-    },
+    // Removed auto-refresh interval to prevent constant page refreshing
+    refetchInterval: false,
   });
 
   // Set the selected step to the current in-progress step or the first completed one
