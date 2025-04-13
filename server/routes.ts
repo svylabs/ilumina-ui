@@ -2038,8 +2038,78 @@ export function registerRoutes(app: Express): Server {
       // Set up our steps status with the sample data
       const stepsStatus: Record<string, AnalysisStepStatus> = { ...sampleData };
 
+      // Check if we have external API data first
+      if (externalSubmissionData) {
+        console.log("Using external API data for submission:", submissionId);
+        
+        // Fetch additional data from external API as needed
+        try {
+          // Get project summary data
+          const projectSummaryData = await fetchFromExternalApi('project_summary', submissionId);
+          if (projectSummaryData) {
+            stepsStatus.files = {
+              status: "completed",
+              details: null,
+              startTime: null,
+              jsonData: projectSummaryData
+            };
+          }
+          
+          // Get actors summary data
+          const actorsSummaryData = await fetchFromExternalApi('actors_summary', submissionId);
+          if (actorsSummaryData) {
+            stepsStatus.actors = {
+              status: "completed",
+              details: null,
+              startTime: null,
+              jsonData: actorsSummaryData
+            };
+          }
+          
+          // Get test environment data if needed
+          if (externalSubmissionData.test_environment_configured) {
+            const testSetupData = await fetchFromExternalApi('test_environment', submissionId);
+            if (testSetupData) {
+              stepsStatus.test_setup = {
+                status: "completed",
+                details: null,
+                startTime: null,
+                jsonData: testSetupData
+              };
+            }
+          }
+          
+          // Update step status based on external API data
+          if (externalSubmissionData.completed_steps) {
+            for (const step of externalSubmissionData.completed_steps) {
+              if (stepsStatus[step]) {
+                stepsStatus[step].status = "completed";
+              }
+            }
+          }
+          
+          if (externalSubmissionData.in_progress_steps) {
+            for (const step of externalSubmissionData.in_progress_steps) {
+              if (stepsStatus[step]) {
+                stepsStatus[step].status = "in_progress";
+              }
+            }
+          }
+          
+          // Override with the overall status from external API if available
+          const status = externalSubmissionData.status || "completed";
+          return res.json({ status, steps: stepsStatus });
+          
+        } catch (error) {
+          console.error("Error fetching additional data from external API:", error);
+          // Continue with database data as fallback
+        }
+      }
+      
       // Check if there are any database entries for this submission
       if (steps.length > 0) {
+        console.log("Using database entries for submission:", submissionId);
+        
         // Update our step data with anything that exists in the database
         steps.forEach(step => {
           if (stepsStatus[step.stepId]) {
@@ -2118,6 +2188,8 @@ export function registerRoutes(app: Express): Server {
         
         res.json({ status, steps: stepsStatus });
       } else {
+        console.log("No database entries found, using sample data for submission:", submissionId);
+        
         // If no actual steps at all, use our sample data with all steps marked completed
         stepsStatus.files.status = "completed";
         stepsStatus.actors.status = "completed";
