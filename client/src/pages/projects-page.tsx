@@ -6,6 +6,8 @@ import { Loader2, Plus, Trash2, Users, UserPlus, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { SelectProject } from "@db/schema";
 import { format } from "date-fns";
+import * as React from "react";
+import DeleteProjectDialog from "@/components/delete-project-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -330,44 +332,14 @@ function ProjectCard({
             </p>
           </div>
           {canDelete && (
-            <div className="delete-action">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    size="icon"
-                    className="delete-action"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="bg-black/95 border-primary/20">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white">Delete Project</AlertDialogTitle>
-                    <AlertDialogDescription className="text-white/70">
-                      Are you sure you want to delete "{project.name}"? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-muted text-white hover:bg-muted/90">
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        console.log("Delete confirmation clicked");
-                        onDelete();
-                      }}
-                      className="bg-red-600 text-white hover:bg-red-700 delete-action"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            <div className="delete-action" onClick={(e) => e.stopPropagation()}>
+              <DeleteProjectDialog 
+                projectName={project.name}
+                onDelete={() => {
+                  console.log(`Triggering delete for project ${project.id} - ${project.name}`);
+                  onDelete();
+                }}
+              />
             </div>
           )}
         </div>
