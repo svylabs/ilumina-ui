@@ -870,29 +870,52 @@ export default function AnalysisPage() {
                               
                               // Fall back to parsing the details field if jsonData is not available
                               let projectData;
+                              let projectSummaryObj;
+                              
                               if (stepData?.jsonData) {
                                 projectData = stepData.jsonData;
+                                // Check if this is the new format with project_summary as a string
+                                if (projectData.project_summary && typeof projectData.project_summary === 'string') {
+                                  try {
+                                    projectSummaryObj = JSON.parse(projectData.project_summary);
+                                    console.log("Parsed project summary:", projectSummaryObj);
+                                  } catch (e) {
+                                    console.error("Failed to parse project_summary:", e);
+                                  }
+                                }
                               } else {
                                 const details = getStepDetails(currentStep.id);
                                 if (!details) return <p>No details available</p>;
                                 projectData = JSON.parse(details);
                               }
+                              
+                              // Use the parsed project summary object if available
+                              const displayData = projectSummaryObj || projectData;
+                              
                               return (
                                 <div className="space-y-6">
                                   <div className="bg-gray-900 p-4 rounded-md">
                                     <div className="flex justify-between items-start mb-4">
                                       <div>
-                                        <h3 className="text-xl font-semibold text-blue-400">{projectData.projectName}</h3>
-                                        <p className="text-gray-300 mt-1">{projectData.projectSummary}</p>
+                                        <h3 className="text-xl font-semibold text-blue-400">
+                                          {displayData.projectName || displayData.name || project?.name || "Project"}
+                                        </h3>
+                                        <p className="text-gray-300 mt-1">
+                                          {displayData.projectSummary || displayData.summary || "No summary available"}
+                                        </p>
                                       </div>
                                       <div className="bg-gray-800 px-3 py-2 rounded-md text-sm">
                                         <div className="flex gap-2 items-center">
                                           <span className="text-gray-400">Environment:</span>
-                                          <span className="text-green-400">{projectData.devEnvironment}</span>
+                                          <span className="text-green-400">
+                                            {displayData.devEnvironment || displayData.dev_tool || "N/A"}
+                                          </span>
                                         </div>
                                         <div className="flex gap-2 items-center mt-1">
-                                          <span className="text-gray-400">Compiler:</span>
-                                          <span className="text-cyan-300">v{projectData.compiler}</span>
+                                          <span className="text-gray-400">Type:</span>
+                                          <span className="text-cyan-300">
+                                            {displayData.type || displayData.compiler ? `v${displayData.compiler}` : "N/A"}
+                                          </span>
                                         </div>
                                       </div>
                                     </div>
@@ -901,50 +924,109 @@ export default function AnalysisPage() {
                                   <div className="space-y-4">
                                     <h3 className="text-lg font-semibold text-green-400">Smart Contracts</h3>
                                     <div className="space-y-3">
-                                      {projectData.contracts.map((contract: { name: string; summary: string; interfaces: string[]; libraries: string[] }, index: number) => (
-                                        <div key={index} className="bg-gray-900 p-3 rounded-md">
-                                          <div className="flex justify-between items-start">
-                                            <h4 className="font-medium text-yellow-300">{contract.name}</h4>
-                                          </div>
-                                          <p className="text-sm text-gray-300 mt-1">{contract.summary}</p>
-                                          <div className="mt-3 flex flex-wrap gap-2">
-                                            {contract.interfaces && contract.interfaces.length > 0 && (
-                                              <div>
-                                                <span className="text-xs text-gray-400">Interfaces: </span>
-                                                <div className="inline-flex flex-wrap gap-1 ml-1">
-                                                  {contract.interfaces.map((iface: string, i: number) => (
-                                                    <span key={i} className="text-xs bg-blue-900 px-2 py-0.5 rounded-full text-blue-300">{iface}</span>
-                                                  ))}
-                                                </div>
+                                      {(() => {
+                                        let contractsToRender = [];
+                                        
+                                        // Check if using new format with project_summary
+                                        if (projectSummaryObj && projectSummaryObj.contracts) {
+                                          contractsToRender = projectSummaryObj.contracts;
+                                        } 
+                                        // Check old format
+                                        else if (displayData.contracts) {
+                                          contractsToRender = displayData.contracts;
+                                        }
+                                        
+                                        return contractsToRender.map((contract: any, index: number) => (
+                                          <div key={index} className="bg-gray-900 p-3 rounded-md">
+                                            <div className="flex justify-between items-start">
+                                              <h4 className="font-medium text-yellow-300">{contract.name}</h4>
+                                            </div>
+                                            <p className="text-sm text-gray-300 mt-1">{contract.summary}</p>
+                                            <div className="mt-2 text-xs text-gray-400">
+                                              <span className="mr-2">Type:</span>
+                                              <span className="text-green-300">{contract.type || "Contract"}</span>
+                                            </div>
+                                            {contract.path && (
+                                              <div className="mt-1 text-xs text-gray-400">
+                                                <span className="mr-2">Path:</span>
+                                                <span className="text-cyan-300">{contract.path}</span>
                                               </div>
                                             )}
-                                            {contract.libraries && contract.libraries.length > 0 && (
-                                              <div className="ml-3">
-                                                <span className="text-xs text-gray-400">Libraries: </span>
-                                                <div className="inline-flex flex-wrap gap-1 ml-1">
-                                                  {contract.libraries.map((lib: string, i: number) => (
-                                                    <span key={i} className="text-xs bg-purple-900 px-2 py-0.5 rounded-full text-purple-300">{lib}</span>
-                                                  ))}
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                              {contract.interfaces && contract.interfaces.length > 0 && (
+                                                <div>
+                                                  <span className="text-xs text-gray-400">Interfaces: </span>
+                                                  <div className="inline-flex flex-wrap gap-1 ml-1">
+                                                    {contract.interfaces.map((iface: string, i: number) => (
+                                                      <span key={i} className="text-xs bg-blue-900 px-2 py-0.5 rounded-full text-blue-300">{iface}</span>
+                                                    ))}
+                                                  </div>
                                                 </div>
-                                              </div>
-                                            )}
+                                              )}
+                                              {contract.libraries && contract.libraries.length > 0 && (
+                                                <div className="ml-3">
+                                                  <span className="text-xs text-gray-400">Libraries: </span>
+                                                  <div className="inline-flex flex-wrap gap-1 ml-1">
+                                                    {contract.libraries.map((lib: string, i: number) => (
+                                                      <span key={i} className="text-xs bg-purple-900 px-2 py-0.5 rounded-full text-purple-300">{lib}</span>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {contract.functions && contract.functions.length > 0 && (
+                                                <div className="mt-2 w-full">
+                                                  <span className="text-xs text-gray-400 block mb-1">Functions: </span>
+                                                  <div className="grid grid-cols-1 gap-1">
+                                                    {contract.functions.map((func: any, i: number) => (
+                                                      <div key={i} className="text-xs bg-gray-800 p-2 rounded">
+                                                        <span className="text-yellow-300">{func.name}</span>
+                                                        <p className="text-gray-300 mt-1">{func.summary}</p>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
                                           </div>
-                                        </div>
-                                      ))}
+                                        ))
+                                      })()}
                                     </div>
                                   </div>
                                   
                                   <div>
-                                    <h3 className="text-lg font-semibold text-green-400 mb-3">Dependencies</h3>
+                                    <h3 className="text-lg font-semibold text-green-400 mb-3">Environment Details</h3>
                                     <div className="bg-gray-900 p-3 rounded-md">
-                                      <div className="grid grid-cols-2 gap-2">
-                                        {Object.entries(projectData.dependencies).map(([name, version]: [string, unknown], index: number) => (
-                                          <div key={name} className="flex justify-between text-sm">
-                                            <span className="text-blue-300">{name}</span>
-                                            <span className="text-gray-400">{version as string}</span>
-                                          </div>
-                                        ))}
-                                      </div>
+                                      {(() => {
+                                        // Use project_summary if available
+                                        if (projectSummaryObj) {
+                                          return (
+                                            <div>
+                                              <div className="mb-3">
+                                                <span className="text-gray-400">Project Type: </span>
+                                                <span className="text-cyan-300">{projectSummaryObj.type || "N/A"}</span>
+                                              </div>
+                                              <div className="mb-3">
+                                                <span className="text-gray-400">Development Tool: </span>
+                                                <span className="text-green-400">{projectSummaryObj.dev_tool || "N/A"}</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        } 
+                                        // Fall back to old format dependencies
+                                        else if (displayData.dependencies) {
+                                          return (
+                                            <div className="grid grid-cols-2 gap-2">
+                                              {Object.entries(displayData.dependencies).map(([name, version]: [string, unknown], index: number) => (
+                                                <div key={name} className="flex justify-between text-sm">
+                                                  <span className="text-blue-300">{name}</span>
+                                                  <span className="text-gray-400">{version as string}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          );
+                                        }
+                                        return <p className="text-sm text-gray-400">No environment details available</p>;
+                                      })()}
                                     </div>
                                   </div>
                                 </div>
