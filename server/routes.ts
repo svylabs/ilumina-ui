@@ -913,10 +913,103 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Helper function to fetch data from external Ilumina API
+  async function fetchFromExternalApi(endpoint: string, submissionId: string) {
+    console.log(`Fetching from external API: ${submissionId}`);
+    try {
+      const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/${endpoint}/${submissionId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer my_secure_password'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`External API returned ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching from external API:', error);
+      return null;
+    }
+  }
+  
+  // Get project summary data from external API
+  app.get("/api/project_summary/:id", async (req, res) => {
+    try {
+      const submissionId = req.params.id;
+      const data = await fetchFromExternalApi('project_summary', submissionId);
+      
+      if (!data) {
+        return res.status(404).json({ message: "Project summary not found" });
+      }
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching project summary:', error);
+      res.status(500).json({ message: "Failed to fetch project summary" });
+    }
+  });
+  
+  // Get actors summary data from external API
+  app.get("/api/actors_summary/:id", async (req, res) => {
+    try {
+      const submissionId = req.params.id;
+      const data = await fetchFromExternalApi('actors_summary', submissionId);
+      
+      if (!data) {
+        return res.status(404).json({ message: "Actors summary not found" });
+      }
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching actors summary:', error);
+      res.status(500).json({ message: "Failed to fetch actors summary" });
+    }
+  });
+  
+  // Get deployment instructions from external API
+  app.get("/api/deployment_instructions/:id", async (req, res) => {
+    try {
+      const submissionId = req.params.id;
+      const data = await fetchFromExternalApi('deployment_instructions', submissionId);
+      
+      if (!data) {
+        return res.status(404).json({ message: "Deployment instructions not found" });
+      }
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching deployment instructions:', error);
+      res.status(500).json({ message: "Failed to fetch deployment instructions" });
+    }
+  });
+  
+  // Get submission status and details
+  app.get("/api/submission/:id", async (req, res) => {
+    try {
+      const submissionId = req.params.id;
+      const data = await fetchFromExternalApi('submission', submissionId);
+      
+      if (!data) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching submission:', error);
+      res.status(500).json({ message: "Failed to fetch submission" });
+    }
+  });
+
   app.get("/api/analysis/:id", async (req, res) => {
     try {
       const submissionId = req.params.id;
-
+      
+      // First check external API for submission status
+      const externalSubmissionData = await fetchFromExternalApi('submission', submissionId);
+      
       // First try to get submission by project ID
       let submission = await db
         .select()
