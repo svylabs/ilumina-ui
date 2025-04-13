@@ -2543,8 +2543,32 @@ export function registerRoutes(app: Express): Server {
         stepsStatus.test_setup.status = "completed";
         stepsStatus.simulations.status = "completed";
         
+        // Create sample completed steps with timestamps
+        const completedSteps = [
+          {
+            step: "files",
+            updatedAt: new Date().toISOString()
+          },
+          {
+            step: "actors",
+            updatedAt: new Date().toISOString()
+          },
+          {
+            step: "test_setup",
+            updatedAt: new Date().toISOString()
+          },
+          {
+            step: "simulations",
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        
         // Send the response with sample data
-        res.json({ status: "completed", steps: stepsStatus });
+        res.json({ 
+          status: "completed", 
+          steps: stepsStatus,
+          completedSteps 
+        });
       }
     } catch (error) {
       console.error('Error in analysis endpoint:', error);
