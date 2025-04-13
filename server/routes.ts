@@ -1237,43 +1237,135 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/analysis/:id", async (req, res) => {
     try {
-      const submissionId = req.params.id;
+      const requestedId = req.params.id;
+      console.log(`Analysis requested for ID: ${requestedId}`);
       
       // Special case for test submission ID
-      if (submissionId === 'test-submission-id') {
-        const testResult = await getTestSubmissionAnalysis(submissionId);
+      if (requestedId === 'test-submission-id') {
+        const testResult = await getTestSubmissionAnalysis(requestedId);
         if (testResult.error) {
           return res.status(404).send(testResult.error);
         }
         return res.json(testResult);
       }
       
-      // Regular flow for database submissions
-      // First check external API for submission status
-      const externalSubmissionData = await fetchFromExternalApi('submission', submissionId);
+      // Convert project ID to submission ID if needed
+      let uuidSubmissionId = null;
       
-      // Try to get submission by project ID if it's a numeric ID
-      let submission = [];
-      if (/^\d+$/.test(submissionId)) {
-        submission = await db
+      // Check if this is a numeric ID (project ID)
+      if (/^\d+$/.test(requestedId)) {
+        console.log(`${requestedId} appears to be a project ID, finding corresponding submission...`);
+        // Get the latest submission for this project
+        const projectSubmissions = await db
           .select()
           .from(submissions)
-          .where(eq(submissions.projectId, parseInt(submissionId)))
+          .where(eq(submissions.projectId, parseInt(requestedId)))
           .orderBy(submissions.createdAt, "desc")
           .limit(1);
+          
+        if (projectSubmissions.length > 0) {
+          uuidSubmissionId = projectSubmissions[0].id;
+          console.log(`Found submission ID ${uuidSubmissionId} for project ID ${requestedId}`);
+        }
+      } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestedId)) {
+        // It's already a UUID format, use it directly
+        uuidSubmissionId = requestedId;
+        console.log(`Using UUID submission ID directly: ${uuidSubmissionId}`);
       }
-        
-      // If not found, try UUID format
-      if (!submission.length && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) {
+      
+      // If we have a valid UUID submission ID, try the external API
+      let externalSubmissionData = null;
+      if (uuidSubmissionId) {
+        console.log(`Fetching from external API with submission ID: ${uuidSubmissionId}`);
+        externalSubmissionData = await fetchFromExternalApi('submission', uuidSubmissionId);
+      }
+      
+      // Get the submission from our database
+      let submission = [];
+      
+      // If we have a UUID, try that first
+      if (uuidSubmissionId) {
         submission = await db
           .select()
           .from(submissions)
-          .where(eq(submissions.id, submissionId))
+          .where(eq(submissions.id, uuidSubmissionId))
+          .limit(1);
+      }
+      
+      // If not found and it's a numeric ID, try by project ID
+      if (!submission.length && /^\d+$/.test(requestedId)) {
+        submission = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.projectId, parseInt(requestedId)))
+          .orderBy(submissions.createdAt, "desc")
           .limit(1);
       }
 
       if (!submission.length) {
+        console.log(`No submission found for ID: ${requestedId}`);
         return res.status(404).send("Submission not found");
+      }
+      
+      console.log(`Found submission in database:`, submission[0].id);
+      
+      // Use the external API data if we have it
+      if (uuidSubmissionId) {
+        try {
+          // Try to fetch from external API using the correct UUID
+          console.log(`Trying to fetch data from external API for submission ${uuidSubmissionId}`);
+          const projectSummaryData = await fetchFromExternalApi('project_summary', uuidSubmissionId);
+          const actorsSummaryData = await fetchFromExternalApi('actors_summary', uuidSubmissionId);
+          
+          // If we got external data, let's use it to update our database
+          if (projectSummaryData) {
+            console.log(`Successfully fetched project_summary data from external API, updating database...`);
+            // Update analysis steps with the data we got
+            await db
+              .insert(analysisSteps)
+              .values({
+                submissionId: submission[0].id,
+                stepId: 'files',
+                status: 'completed',
+                details: 'Completed via external API',
+                jsonData: projectSummaryData,
+              })
+              .onConflictDoUpdate({
+                target: [analysisSteps.submissionId, analysisSteps.stepId],
+                set: {
+                  status: 'completed',
+                  details: 'Updated via external API',
+                  jsonData: projectSummaryData,
+                  updatedAt: new Date(),
+                }
+              });
+          }
+          
+          if (actorsSummaryData) {
+            console.log(`Successfully fetched actors_summary data from external API, updating database...`);
+            // Update analysis steps with the data we got
+            await db
+              .insert(analysisSteps)
+              .values({
+                submissionId: submission[0].id,
+                stepId: 'actors',
+                status: 'completed',
+                details: 'Completed via external API',
+                jsonData: actorsSummaryData,
+              })
+              .onConflictDoUpdate({
+                target: [analysisSteps.submissionId, analysisSteps.stepId],
+                set: {
+                  status: 'completed',
+                  details: 'Updated via external API',
+                  jsonData: actorsSummaryData,
+                  updatedAt: new Date(),
+                }
+              });
+          }
+        } catch (error) {
+          console.error(`Error fetching or updating data from external API:`, error);
+        }
       }
       
       // Get all steps for this submission from database
