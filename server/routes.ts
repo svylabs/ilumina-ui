@@ -829,6 +829,8 @@ export function registerRoutes(app: Express): Server {
   // Fetch project details by ID or via submission ID
   app.get("/api/project/:id", async (req, res) => {
     try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
       // Get the project ID from the URL parameter
       const requestedId = req.params.id;
       console.log(`Project API request for ID: ${requestedId}`);
@@ -853,9 +855,8 @@ export function registerRoutes(app: Express): Server {
           console.log(`Project details:`, rows[0]);
         }
         
-        // If we found a project, return it
+        // If we found a project, check user access and return it
         if (rows.length > 0) {
-          // Convert snake_case to camelCase for frontend consistency
           const project = {
             id: rows[0].id,
             name: rows[0].name,
@@ -866,8 +867,41 @@ export function registerRoutes(app: Express): Server {
             isDeleted: rows[0].is_deleted
           };
           
-          console.log(`Returning project:`, project);
-          return res.json(project);
+          // Check if the user is the owner or has team access
+          const isOwner = project.userId === req.user.id;
+          let hasTeamAccess = false;
+          
+          // If it's a team project, check team membership
+          if (project.teamId !== null) {
+            // Check if user is a member of the team
+            const teamMembership = await db
+              .select()
+              .from(teamMembers)
+              .where(sql`${teamMembers.teamId} = ${project.teamId}`)
+              .where(sql`${teamMembers.userId} = ${req.user.id}`)
+              .where(sql`${teamMembers.status} = 'active'`);
+              
+            // Also check if user is the team creator
+            const isTeamCreator = await db
+              .select()
+              .from(teams)
+              .where(sql`${teams.id} = ${project.teamId}`)
+              .where(sql`${teams.createdBy} = ${req.user.id}`)
+              .where(sql`${teams.isDeleted} = false`);
+              
+            hasTeamAccess = teamMembership.length > 0 || isTeamCreator.length > 0;
+          }
+          
+          // Only return the project if the user has access
+          if (isOwner || hasTeamAccess) {
+            console.log(`Returning project:`, project);
+            return res.json(project);
+          } else {
+            console.log(`User ${req.user.id} has no access to project ${projectId}`);
+            return res.status(403).json({ 
+              message: "You don't have permission to access this project" 
+            });
+          }
         } else {
           console.log(`No project found with ID ${projectId}`);
         }
@@ -3418,10 +3452,11 @@ export function registerRoutes(app: Express): Server {
     
     try {
       // Get user's personal projects (non-team projects, non-deleted only)
+      // Only include projects where user is the owner (userId matches)
       const personalProjects = await db
         .select()
         .from(projects)
-        .where(eq(projects.userId, req.user.id))
+        .where(eq(projects.userId, req.user.id)) // Only projects owned by the current user
         .where(sql`${projects.teamId} IS NULL`) // Only projects without teamId
         .where(eq(projects.isDeleted, false))
         .orderBy(projects.createdAt);
