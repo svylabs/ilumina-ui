@@ -1751,48 +1751,146 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                               
                               return (
                                 <div className="space-y-6">
-                                  <div className="bg-gray-900 p-4 rounded-md">
-                                    <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                                    <p className="text-gray-300 mt-1">{deploymentData.title || "Smart Contract Deployment Process"}</p>
-                                    <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
+                                  {/* Header Section */}
+                                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-md shadow-lg border border-blue-900/30">
+                                    <div className="flex items-start gap-4">
+                                      <div className="bg-blue-600/20 p-3 rounded-md">
+                                        <Box className="h-7 w-7 text-blue-400" />
+                                      </div>
+                                      <div>
+                                        <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
+                                        <p className="text-gray-300 mt-1 font-medium">{deploymentData.title || "Smart Contract Deployment Process"}</p>
+                                        <p className="text-gray-400 mt-3 text-sm leading-relaxed">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
+                                      </div>
+                                    </div>
                                   </div>
                                   
+                                  {/* Environment Setup */}
+                                  <div className="bg-gray-900/60 p-4 rounded-md border border-green-900/30">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <Laptop className="h-5 w-5 text-green-400" />
+                                      <h3 className="text-lg font-semibold text-green-400">Environment Setup</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                      <div className="bg-black/30 p-3 rounded-md">
+                                        <h4 className="font-medium text-gray-300 mb-2">Prerequisites</h4>
+                                        <ul className="space-y-1 text-gray-400">
+                                          <li className="flex items-center gap-1">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                            <span>Node.js v16+ and npm v8+</span>
+                                          </li>
+                                          <li className="flex items-center gap-1">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                            <span>Git for repository cloning</span>
+                                          </li>
+                                          <li className="flex items-center gap-1">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                            <span>Solidity compiler {deploymentData.compiler || "v0.8.x"}</span>
+                                          </li>
+                                        </ul>
+                                      </div>
+                                      <div className="bg-black/30 p-3 rounded-md">
+                                        <h4 className="font-medium text-gray-300 mb-2">Local Network Setup</h4>
+                                        <div className="font-mono text-xs text-green-300 bg-black/50 p-2 rounded mb-2 overflow-x-auto">
+                                          npx hardhat node
+                                        </div>
+                                        <p className="text-gray-400 text-xs">Starts a local Ethereum network with 20 pre-funded accounts</p>
+                                      </div>
+                                    </div>
+                                  </div>
 
-
+                                  {/* Deployment Steps */}
                                   <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
-                                    <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                      <FileCode className="h-5 w-5 text-yellow-400" />
+                                      <h3 className="text-lg font-semibold text-yellow-400">Deployment Steps</h3>
+                                    </div>
+                                    
+                                    {/* Steps Timeline */}
+                                    <div className="relative space-y-0">
                                       {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
-                                        <div key={index} className="bg-gray-900 p-3 rounded-md">
-                                          <div className="flex justify-between items-start">
-                                            <h4 className="font-medium text-yellow-300">{step.name}</h4>
-                                            <div className="bg-gray-800 px-2 py-1 rounded text-xs text-gray-400">Gas: {step.gas}</div>
+                                        <div key={index} className="relative pl-8 pb-6">
+                                          {/* Timeline connector */}
+                                          {index < (deploymentData.deploymentSteps || []).length - 1 && (
+                                            <div className="absolute left-[0.9375rem] top-6 bottom-0 w-0.5 bg-gray-700"></div>
+                                          )}
+                                          
+                                          {/* Step number indicator */}
+                                          <div className="absolute left-0 top-0 bg-gray-800 text-yellow-400 rounded-full w-7 h-7 flex items-center justify-center border border-yellow-700 z-10">
+                                            {index + 1}
                                           </div>
-                                          <div className="mt-2">
-                                            <div className="text-xs text-gray-400">Transaction:</div>
-                                            <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
-                                              {step.tx}
-                                            </div>
-                                          </div>
-                                          {Object.keys(step.params || {}).length > 0 && (
-                                            <div className="mt-2">
-                                              <div className="text-xs text-gray-400">Parameters:</div>
-                                              <div className="grid grid-cols-1 gap-1 mt-1">
-                                                {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
-                                                  <div key={i} className="text-sm">
-                                                    <span className="text-gray-500">{key}: </span>
-                                                    <span className="text-green-300">{String(value)}</span>
-                                                  </div>
-                                                ))}
+                                          
+                                          {/* Step content */}
+                                          <div className="bg-gray-900 p-4 rounded-md border border-gray-800 hover:border-yellow-700/30 transition-colors">
+                                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-2 mb-3">
+                                              <h4 className="font-medium text-yellow-300 text-lg">{step.name}</h4>
+                                              <div className="bg-gray-800 px-2 py-1 rounded text-xs text-gray-400 flex items-center gap-1">
+                                                <span className="text-yellow-500">⛽</span> Gas: {step.gas}
                                               </div>
                                             </div>
-                                          )}
-                                          <div className="mt-2">
-                                            <div className="text-xs text-gray-400">Result:</div>
-                                            <div className="text-sm text-blue-300 mt-1">{step.result}</div>
+                                            
+                                            <div className="space-y-3">
+                                              {/* Transaction */}
+                                              <div>
+                                                <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
+                                                  <Code className="h-3.5 w-3.5" />
+                                                  <span>Transaction:</span>
+                                                </div>
+                                                <div className="text-sm font-mono text-cyan-300 bg-gray-800/80 p-2.5 rounded overflow-x-auto border border-gray-700">
+                                                  {step.tx}
+                                                </div>
+                                              </div>
+                                              
+                                              {/* Parameters */}
+                                              {Object.keys(step.params || {}).length > 0 && (
+                                                <div>
+                                                  <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
+                                                    <span>Parameters:</span>
+                                                  </div>
+                                                  <div className="grid grid-cols-1 gap-1.5 bg-gray-800/50 p-2.5 rounded border border-gray-700">
+                                                    {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
+                                                      <div key={i} className="text-sm flex items-start">
+                                                        <span className="text-gray-500 mr-2 whitespace-nowrap">{key}:</span>
+                                                        <span className="text-green-300 font-mono">{String(value)}</span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              
+                                              {/* Result */}
+                                              <div>
+                                                <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
+                                                  <span>Result:</span>
+                                                </div>
+                                                <div className="bg-gray-800/50 p-2.5 rounded border border-gray-700">
+                                                  <div className="text-sm text-blue-300">{step.result}</div>
+                                                </div>
+                                              </div>
+                                            </div>
                                           </div>
                                         </div>
                                       ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Tips and Next Steps */}
+                                  <div className="bg-gray-900/60 p-4 rounded-md border border-purple-900/30">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <MessageSquare className="h-5 w-5 text-purple-400" />
+                                      <h3 className="text-md font-semibold text-purple-400">Tips & Next Steps</h3>
+                                    </div>
+                                    <div className="text-sm text-gray-300 space-y-2">
+                                      <p>
+                                        After completing the deployment steps above, verify your contract addresses and store them securely.
+                                        You'll need these addresses to interact with the contracts in your frontend application.
+                                      </p>
+                                      <p>
+                                        Run integration tests against your deployed contracts to ensure everything is working as expected.
+                                      </p>
+                                      <p className="text-xs text-gray-400 mt-3">
+                                        For production deployments, consider using a testnet (Sepolia, Görli) before deploying to mainnet.
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
