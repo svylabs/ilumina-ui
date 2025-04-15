@@ -636,12 +636,23 @@ export default function AnalysisPage() {
   
   useEffect(() => {
     if (analysis && analysis.steps) {
+      // Reset user selection on each analysis update for testing
+      // userSelectedRef.current = false;
+      
       // Only auto-select a step if the user hasn't manually selected one yet
       if (!userSelectedRef.current) {
-        // Type safety: Explicitly cast entries to the right type
-        const entries = Object.entries(analysis.steps) as [string, AnalysisStepStatus][];
+        // First check: find any step that should be "in_progress" according to our logic
+        // This includes both explicitly marked as in_progress and the next logical step
+        for (const step of analysisSteps) {
+          const status = getStepStatus(step.id);
+          if (status === "in_progress") {
+            setSelectedStep(step.id);
+            return;
+          }
+        }
         
-        // Find any in-progress step
+        // Fallback: find any step that's explicitly marked as in_progress from the API
+        const entries = Object.entries(analysis.steps) as [string, AnalysisStepStatus][];
         const inProgressStep = entries.find(
           ([_, step]) => step.status === "in_progress"
         );
