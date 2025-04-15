@@ -454,40 +454,6 @@ Security Analysis:
 `
   },
   {
-    id: "test_setup",
-    title: "Simulation Setup",
-    description: "Configuring and implementing the simulation environment",
-    status: "pending",
-    output: `// Test Environment Setup
-Setting up Hardhat environment...
-Compiling contracts with solc 0.8.17...
-Compilation successful
-
-Configuring simulation environment:
-- Virtual network with 10 accounts
-- Each account funded with 1000 ETH
-- Gas price set to 1 gwei
-- Block time: 12 seconds
-- Actor wallets configured with test funds
-- Test trading pairs initialized
-- Automated test scenarios prepared
-
-Dependency versions:
-- ethers.js: 5.7.2
-- hardhat: 2.12.3
-- @nomiclabs/hardhat-ethers: 2.2.1
-
-Agent Configuration:
-- TokenOwner: Account 0
-- LiquidityProvider: Accounts 1-3
-- Traders: Accounts 4-7
-- Stakers: Accounts 8-9
-- Attackers: Accounts 3,7 (dual role)
-
-All test accounts configured with appropriate initial balances
-`
-  },
-  {
     id: "deployment",
     title: "Deployment Instructions",
     description: "Transaction sequence for local network setup",
@@ -529,7 +495,41 @@ Network Options:
 - Local Hardhat Network (for testing)
 `
   },
-  // Second test_setup entry removed to prevent duplication
+  {
+    id: "test_setup",
+    title: "Simulation Setup",
+    description: "Configuring and implementing the simulation environment",
+    status: "pending",
+    output: `// Test Environment Setup
+Setting up Hardhat environment...
+Compiling contracts with solc 0.8.17...
+Compilation successful
+
+Configuring simulation environment:
+- Virtual network with 10 accounts
+- Each account funded with 1000 ETH
+- Gas price set to 1 gwei
+- Block time: 12 seconds
+- Actor wallets configured with test funds
+- Test trading pairs initialized
+- Automated test scenarios prepared
+
+Dependency versions:
+- ethers.js: 5.7.2
+- hardhat: 2.12.3
+- @nomiclabs/hardhat-ethers: 2.2.1
+
+Agent Configuration:
+- TokenOwner: Account 0
+- LiquidityProvider: Accounts 1-3
+- Traders: Accounts 4-7
+- Stakers: Accounts 8-9
+- Attackers: Accounts 3,7 (dual role)
+
+All test accounts configured with appropriate initial balances
+`
+  },
+  // No extra curly brace needed here
   {
     id: "simulations",
     title: "Run Simulation",
