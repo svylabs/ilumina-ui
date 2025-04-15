@@ -591,6 +591,7 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
 
 export default function AnalysisPage() {
   const { id } = useParams();
+  const { toast } = useToast();
   const [selectedStep, setSelectedStep] = useState<string>("files");
   const [activeSubstep, setActiveSubstep] = useState<string>("");
   const [openChats, setOpenChats] = useState<Record<string, boolean>>({});
@@ -931,6 +932,10 @@ export default function AnalysisPage() {
                   const stepStatus = getStepStatus(currentStep.id);
                   
                   if (stepStatus === "in_progress") {
+                    // Special case for deployment instructions
+                    if (currentStep.id === "deployment") {
+                      return "Waiting for user input";
+                    }
                     return "Analysis in progress...";
                   } else if (stepStatus === "failed") {
                     return "Analysis failed";
@@ -987,10 +992,8 @@ export default function AnalysisPage() {
                       {currentStep.id === "deployment" ? (
                         <div className="space-y-6 text-white">
                           <div className="bg-gray-900/80 p-6 rounded-lg border border-gray-800">
-                            <h3 className="text-xl font-semibold mb-4 text-blue-400">Deployment Instructions</h3>
                             <p className="text-gray-300 mb-6">
-                              Describe how you want to deploy these smart contracts. Include any specific networks, 
-                              environments, or configuration details you want in the deployment process.
+                              The contracts will be deployed to a local network, describe the specific deployment sequence and any contract calls that are necessary to complete the full deployment.
                             </p>
                             
                             <Textarea 
