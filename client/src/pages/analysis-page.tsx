@@ -969,9 +969,36 @@ export default function AnalysisPage() {
               <CardContent>
                 <div className="rounded-md bg-black/90 p-4">
                   {getStepStatus(currentStep.id) === "in_progress" ? (
-                    <div className="flex items-center justify-center h-full">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="ml-2 text-primary">Processing...</p>
+                    <div>
+                      {currentStep.id === "deployment" ? (
+                        <div className="space-y-6 text-white">
+                          <div className="bg-gray-900/80 p-6 rounded-lg border border-gray-800">
+                            <h3 className="text-xl font-semibold mb-4 text-blue-400">Deployment Instructions</h3>
+                            <p className="text-gray-300 mb-6">
+                              Describe how you want to deploy these smart contracts. Include any specific networks, 
+                              environments, or configuration details you want in the deployment process.
+                            </p>
+                            
+                            <Textarea 
+                              placeholder="Example: I want to deploy these contracts to a local Hardhat network for testing. 
+The deployment should initialize the contracts with test values and set me as the admin."
+                              className="min-h-[200px] mb-4 bg-black/50 border-gray-700 focus:border-blue-500"
+                            />
+                            
+                            <div className="flex justify-end gap-3">
+                              <Button variant="outline" type="button">
+                                <Wand2 className="h-4 w-4 mr-2" />
+                                Generate
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <p className="ml-2 text-primary">Processing...</p>
+                        </div>
+                      )}
                     </div>
                   ) : getStepStatus(currentStep.id) === "completed" ? (
                     <div>
