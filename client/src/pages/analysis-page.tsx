@@ -598,6 +598,8 @@ export default function AnalysisPage() {
   const [deploymentInput, setDeploymentInput] = useState<string>("");
   const [isGeneratingDeployment, setIsGeneratingDeployment] = useState(false);
   const [generatedDeployment, setGeneratedDeployment] = useState<any>(null);
+  const [isAnalysisInProgress, setIsAnalysisInProgress] = useState(false);
+  const [refreshIntervalId, setRefreshIntervalId] = useState<NodeJS.Timeout | null>(null);
   
   // No content ref needed
 
@@ -630,6 +632,15 @@ export default function AnalysisPage() {
   useEffect(() => {
     // No scrolling when step changes
   }, [selectedStep]);
+  
+  // Clean up the refresh interval when component unmounts
+  useEffect(() => {
+    return () => {
+      if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+      }
+    };
+  }, [refreshIntervalId]);
 
   // This effect only runs once on initial load and whenever analysis changes,
   // and only sets the selected step if not manually selected by the user
@@ -934,7 +945,11 @@ export default function AnalysisPage() {
                   if (stepStatus === "in_progress") {
                     // Special case for deployment instructions
                     if (currentStep.id === "deployment") {
-                      return "Waiting for user input";
+                      if (isAnalysisInProgress) {
+                        return "Analysis in progress...";
+                      } else {
+                        return "Waiting for user input";
+                      }
                     }
                     return "Analysis in progress...";
                   } else if (stepStatus === "failed") {
@@ -1019,8 +1034,34 @@ The deployment should initialize the contracts with test values and set me as th
                                   }
                                   
                                   setIsGeneratingDeployment(true);
+                                  setIsAnalysisInProgress(true);
                                   
-                                  // Simulate API call to generate deployment instructions
+                                  // Set up 10-second interval refresh until analysis is available
+                                  if (refreshIntervalId) {
+                                    clearInterval(refreshIntervalId);
+                                  }
+                                  
+                                  const intervalId = setInterval(() => {
+                                    refetch().then((result) => {
+                                      // Check if deployment instructions are available
+                                      if (result.data?.steps?.deployment?.jsonData || 
+                                          (result.data?.completedSteps && 
+                                           result.data.completedSteps.some(
+                                             step => step.step === getApiStepName("deployment")
+                                           ))
+                                      ) {
+                                        // Clear interval once analysis is complete
+                                        clearInterval(intervalId);
+                                        setRefreshIntervalId(null);
+                                        setIsGeneratingDeployment(false);
+                                        setIsAnalysisInProgress(false);
+                                      }
+                                    });
+                                  }, 10000);
+                                  
+                                  setRefreshIntervalId(intervalId);
+                                  
+                                  // Initial API call to trigger deployment analysis
                                   setTimeout(() => {
                                     const mockDeploymentData = {
                                       title: "Smart Contract Deployment Process",
@@ -1060,10 +1101,13 @@ The deployment should initialize the contracts with test values and set me as th
                                       ]
                                     };
                                     
+                                    // Simulate updating data via API response
                                     setGeneratedDeployment(mockDeploymentData);
-                                    setIsGeneratingDeployment(false);
                                     
-                                    // Update the API step to completed
+                                    // In real implementation, we'd just wait for the refetch interval
+                                    // to pick up the updated data from the server
+                                    
+                                    // For testing, simulate the API update:
                                     if (analysis && analysis.steps) {
                                       const updatedAnalysis = { ...analysis };
                                       if (updatedAnalysis.steps["deployment"]) {
@@ -1084,7 +1128,7 @@ The deployment should initialize the contracts with test values and set me as th
                                         });
                                       }
                                       
-                                      // Refetch data
+                                      // Refetch data to update the UI
                                       refetch();
                                     }
                                   }, 3000);
