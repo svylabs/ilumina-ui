@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand2 } from "lucide-react";
+import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
@@ -986,12 +986,108 @@ export default function AnalysisPage() {
                               placeholder="Example: I want to deploy these contracts to a local Hardhat network for testing. 
 The deployment should initialize the contracts with test values and set me as the admin."
                               className="min-h-[200px] mb-4 bg-black/50 border-gray-700 focus:border-blue-500"
+                              value={deploymentInput}
+                              onChange={(e) => setDeploymentInput(e.target.value)}
                             />
                             
                             <div className="flex justify-end gap-3">
-                              <Button variant="outline" type="button">
-                                <Wand2 className="h-4 w-4 mr-2" />
-                                Generate
+                              <Button 
+                                variant="outline" 
+                                type="button"
+                                onClick={() => {
+                                  if (deploymentInput.trim().length === 0) {
+                                    toast({
+                                      title: "Input Required",
+                                      description: "Please describe how you want to deploy these contracts",
+                                      variant: "destructive"
+                                    });
+                                    return;
+                                  }
+                                  
+                                  setIsGeneratingDeployment(true);
+                                  
+                                  // Simulate API call to generate deployment instructions
+                                  setTimeout(() => {
+                                    const mockDeploymentData = {
+                                      title: "Smart Contract Deployment Process",
+                                      description: "Follow these steps to deploy the smart contracts based on your requirements.",
+                                      compiler: "0.8.17",
+                                      deploymentSteps: [
+                                        {
+                                          name: "Deploy Resolution Strategy",
+                                          tx: "npx hardhat deploy --tags ManualResolutionStrategy",
+                                          gas: "~1.2M gas",
+                                          params: {
+                                            admin: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+                                          },
+                                          result: "ManualResolutionStrategy deployed at: 0x5FbDB2315678afecb367f032d93F642f64180aa3"
+                                        },
+                                        {
+                                          name: "Deploy Token Contract",
+                                          tx: "npx hardhat deploy --tags MockERC20",
+                                          gas: "~2.3M gas",
+                                          params: {
+                                            name: "Test Token",
+                                            symbol: "TEST",
+                                            initialSupply: "1000000000000000000000000"
+                                          },
+                                          result: "MockERC20 deployed at: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+                                        },
+                                        {
+                                          name: "Deploy Predify Platform",
+                                          tx: "npx hardhat deploy --tags Predify",
+                                          gas: "~4.5M gas",
+                                          params: {
+                                            admin: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                            defaultResolutionStrategy: "[RESOLUTION_STRATEGY_ADDRESS]"
+                                          },
+                                          result: "Predify deployed at: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+                                        }
+                                      ]
+                                    };
+                                    
+                                    setGeneratedDeployment(mockDeploymentData);
+                                    setIsGeneratingDeployment(false);
+                                    
+                                    // Update the API step to completed
+                                    if (analysis && analysis.steps) {
+                                      const updatedAnalysis = { ...analysis };
+                                      if (updatedAnalysis.steps["deployment"]) {
+                                        updatedAnalysis.steps["deployment"].status = "completed";
+                                        updatedAnalysis.steps["deployment"].jsonData = mockDeploymentData;
+                                      }
+                                      
+                                      // Add to completed steps if not already there
+                                      if (!updatedAnalysis.completedSteps) {
+                                        updatedAnalysis.completedSteps = [];
+                                      }
+                                      
+                                      const deploymentStepName = getApiStepName("deployment");
+                                      if (!updatedAnalysis.completedSteps.some(step => step.step === deploymentStepName)) {
+                                        updatedAnalysis.completedSteps.push({
+                                          step: deploymentStepName,
+                                          updatedAt: new Date().toISOString()
+                                        });
+                                      }
+                                      
+                                      // Refetch data
+                                      refetch();
+                                    }
+                                  }, 3000);
+                                }}
+                                disabled={isGeneratingDeployment}
+                              >
+                                {isGeneratingDeployment ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Wand className="h-4 w-4 mr-2" />
+                                    Generate
+                                  </>
+                                )}
                               </Button>
                             </div>
                           </div>
