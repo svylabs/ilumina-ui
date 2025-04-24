@@ -125,9 +125,16 @@ export function registerRoutes(app: Express): Server {
         if (data && data.deployment_instructions) {
           try {
             // Try to parse the JSON string in deployment_instructions
-            console.log("Trying to parse deployment_instructions:", data.deployment_instructions);
-            const instructionsData = JSON.parse(data.deployment_instructions);
-            console.log("Successfully parsed deployment instructions:", JSON.stringify(instructionsData, null, 2));
+            console.log("Trying to parse deployment_instructions:", typeof data.deployment_instructions === 'string' 
+              ? data.deployment_instructions.substring(0, 200) + "..." 
+              : "Not a string");
+            
+            // Handle both string and already-parsed JSON object formats
+            const instructionsData = typeof data.deployment_instructions === 'string'
+              ? JSON.parse(data.deployment_instructions)
+              : data.deployment_instructions;
+              
+            console.log("Successfully parsed deployment instructions:", JSON.stringify(instructionsData, null, 2).substring(0, 200) + "...");
             
             // Transform the data to match our frontend's expected format
             const transformedData = {
@@ -139,27 +146,35 @@ export function registerRoutes(app: Express): Server {
             // Process each deployment or call step
             if (instructionsData.sequence && Array.isArray(instructionsData.sequence)) {
               transformedData.deploymentSteps = instructionsData.sequence.map((step, index) => {
+                // Get safe values from the step to handle potential undefined fields
+                const stepType = step.type || "unknown";
+                const contract = step.contract || "Contract";
+                const functionName = step.function || "execute";
+                const refName = step.ref_name || `step_${index}`;
+                
                 // Format the step for our frontend
                 const formattedStep = {
-                  name: step.type === "deploy" 
-                    ? `Deploy ${step.contract}` 
-                    : `Call ${step.contract}.${step.function}`,
+                  name: stepType === "deploy" 
+                    ? `Deploy ${contract}` 
+                    : `Call ${contract}.${functionName}`,
                   params: {},
                   gas: "~300K gas", // Default estimate
-                  tx: step.type === "deploy"
-                    ? `const ${step.ref_name} = await deploy${step.contract}()`
-                    : `await ${step.ref_name}.${step.function}(${formatParams(step.params)})`,
-                  result: step.type === "deploy"
-                    ? `${step.contract} deployed at: ${step.ref_name}`
+                  tx: stepType === "deploy"
+                    ? `const ${refName} = await deploy${contract}()`
+                    : `await ${refName}.${functionName}(${formatParams(step.params || [])})`,
+                  result: stepType === "deploy"
+                    ? `${contract} deployed at: ${refName}`
                     : `Function call succeeded`
                 };
                 
                 // Add parameters if they exist
                 if (step.params && Array.isArray(step.params) && step.params.length > 0) {
                   step.params.forEach(param => {
-                    formattedStep.params[param.name] = param.type === "ref" 
-                      ? `[Reference: ${param.value}]` 
-                      : param.value;
+                    if (param && param.name) { // Check that param and param.name exist
+                      formattedStep.params[param.name] = param.type === "ref" 
+                        ? `[Reference: ${param.value || 'Unknown'}]` 
+                        : param.value || 'Unknown';
+                    }
                   });
                 }
                 
@@ -207,15 +222,19 @@ export function registerRoutes(app: Express): Server {
     }
     
     return params.map(param => {
-      if (param.type === "ref") {
+      if (!param) return "undefined";
+      
+      if (param.type === "ref" && param.value) {
         return param.value; // Reference to another contract
-      } else {
+      } else if (param.value !== undefined) {
         // Format based on value type
         if (typeof param.value === "string") {
           return `"${param.value}"`;
         } else {
           return String(param.value);
         }
+      } else {
+        return "undefined"; // Fallback for missing value
       }
     }).join(", ");
   }

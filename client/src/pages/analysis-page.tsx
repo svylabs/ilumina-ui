@@ -589,6 +589,27 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
   }
 }
 
+// Function to check if deployment instructions are completed
+const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
+  try {
+    console.log("Checking deployment completion for:", submissionId);
+    const response = await fetch(`/api/deployment-status/${submissionId}`);
+    
+    if (!response.ok) {
+      console.error("Error checking deployment status:", response.status);
+      return false;
+    }
+    
+    const data = await response.json();
+    console.log("Deployment status check result:", data);
+    
+    return data?.isCompleted === true;
+  } catch (error) {
+    console.error("Error in checkDeploymentCompletion:", error);
+    return false;
+  }
+};
+
 export default function AnalysisPage() {
   const { id } = useParams();
   const { toast } = useToast();
