@@ -23,6 +23,84 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
+  // Fetch deployment instructions directly from external API
+  app.get("/api/fetch-deployment-instructions/:submission_id", async (req, res) => {
+    try {
+      const submissionId = req.params.submission_id;
+      
+      if (!submissionId) {
+        return res.status(400).json({ error: "Missing submission_id parameter" });
+      }
+      
+      // Call the external API to fetch deployment instructions
+      const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer my_secure_password',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        // If it's a 404, it might just mean the analysis isn't ready yet
+        if (response.status === 404) {
+          return res.status(404).json({ error: "Deployment instructions not ready yet" });
+        }
+        
+        const errorText = await response.text();
+        console.error(`Error fetching deployment instructions: ${errorText}`);
+        return res.status(response.status).json({ 
+          error: `Failed to fetch deployment instructions: ${errorText}` 
+        });
+      }
+      
+      const data = await response.json();
+      return res.json(data);
+    } catch (error) {
+      console.error("Error in fetch-deployment-instructions endpoint:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+  // Trigger deployment analysis with external API
+  app.post("/api/analyze-deployment", async (req, res) => {
+    try {
+      const { submission_id, user_prompt } = req.body;
+      
+      if (!submission_id) {
+        return res.status(400).json({ error: "Missing submission_id parameter" });
+      }
+      
+      // Call the external analyze API with the submission ID and user prompt
+      const response = await fetch('https://ilumina-451416.uc.r.appspot.com/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer my_secure_password'
+        },
+        body: JSON.stringify({
+          submission_id,
+          step: "analyze_deployment",
+          user_prompt
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error analyzing deployment: ${errorText}`);
+        return res.status(response.status).json({ 
+          error: `Failed to start deployment analysis: ${errorText}` 
+        });
+      }
+      
+      const data = await response.json();
+      return res.json(data);
+    } catch (error) {
+      console.error("Error in analyze-deployment endpoint:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
   // Check if user can run a simulation
   app.get("/api/can-run-simulation", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ 

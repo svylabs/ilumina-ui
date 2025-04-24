@@ -1041,97 +1041,109 @@ The deployment should initialize the contracts with test values and set me as th
                                     clearInterval(refreshIntervalId);
                                   }
                                   
-                                  const intervalId = setInterval(() => {
-                                    refetch().then((result) => {
-                                      // Check if deployment instructions are available
-                                      if (result.data?.steps?.deployment?.jsonData || 
-                                          (result.data?.completedSteps && 
-                                           result.data.completedSteps.some(
-                                             step => step.step === getApiStepName("deployment")
-                                           ))
-                                      ) {
-                                        // Clear interval once analysis is complete
-                                        clearInterval(intervalId);
-                                        setRefreshIntervalId(null);
-                                        setIsGeneratingDeployment(false);
-                                        setIsAnalysisInProgress(false);
-                                      }
-                                    });
-                                  }, 10000);
+                                  // First, trigger the deployment analysis via the API
+                                  const submissionData = { 
+                                    submission_id: "", 
+                                    user_prompt: deploymentInput 
+                                  };
                                   
-                                  setRefreshIntervalId(intervalId);
-                                  
-                                  // Initial API call to trigger deployment analysis
-                                  setTimeout(() => {
-                                    const mockDeploymentData = {
-                                      title: "Smart Contract Deployment Process",
-                                      description: "Follow these steps to deploy the smart contracts based on your requirements.",
-                                      compiler: "0.8.17",
-                                      deploymentSteps: [
-                                        {
-                                          name: "Deploy Resolution Strategy",
-                                          tx: "npx hardhat deploy --tags ManualResolutionStrategy",
-                                          gas: "~1.2M gas",
-                                          params: {
-                                            admin: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+                                  // Attempt to find submission ID from the project data
+                                  fetch(`/api/analysis/${id}`)
+                                    .then(res => res.json())
+                                    .then(data => {
+                                      if (data?.submissionId) {
+                                        submissionData.submission_id = data.submissionId;
+                                        
+                                        // Once we have the submission ID, trigger the deployment analysis
+                                        return fetch('/api/analyze-deployment', {
+                                          method: 'POST',
+                                          headers: {
+                                            'Content-Type': 'application/json'
                                           },
-                                          result: "ManualResolutionStrategy deployed at: 0x5FbDB2315678afecb367f032d93F642f64180aa3"
-                                        },
-                                        {
-                                          name: "Deploy Token Contract",
-                                          tx: "npx hardhat deploy --tags MockERC20",
-                                          gas: "~2.3M gas",
-                                          params: {
-                                            name: "Test Token",
-                                            symbol: "TEST",
-                                            initialSupply: "1000000000000000000000000"
-                                          },
-                                          result: "MockERC20 deployed at: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
-                                        },
-                                        {
-                                          name: "Deploy Predify Platform",
-                                          tx: "npx hardhat deploy --tags Predify",
-                                          gas: "~4.5M gas",
-                                          params: {
-                                            admin: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                            defaultResolutionStrategy: "[RESOLUTION_STRATEGY_ADDRESS]"
-                                          },
-                                          result: "Predify deployed at: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
-                                        }
-                                      ]
-                                    };
-                                    
-                                    // Simulate updating data via API response
-                                    setGeneratedDeployment(mockDeploymentData);
-                                    
-                                    // In real implementation, we'd just wait for the refetch interval
-                                    // to pick up the updated data from the server
-                                    
-                                    // For testing, simulate the API update:
-                                    if (analysis && analysis.steps) {
-                                      const updatedAnalysis = { ...analysis };
-                                      if (updatedAnalysis.steps["deployment"]) {
-                                        updatedAnalysis.steps["deployment"].status = "completed";
-                                        updatedAnalysis.steps["deployment"].jsonData = mockDeploymentData;
-                                      }
-                                      
-                                      // Add to completed steps if not already there
-                                      if (!updatedAnalysis.completedSteps) {
-                                        updatedAnalysis.completedSteps = [];
-                                      }
-                                      
-                                      const deploymentStepName = getApiStepName("deployment");
-                                      if (!updatedAnalysis.completedSteps.some(step => step.step === deploymentStepName)) {
-                                        updatedAnalysis.completedSteps.push({
-                                          step: deploymentStepName,
-                                          updatedAt: new Date().toISOString()
+                                          body: JSON.stringify(submissionData)
                                         });
+                                      } else {
+                                        throw new Error("Could not find submission ID for this project");
                                       }
+                                    })
+                                    .then(res => {
+                                      if (!res.ok) {
+                                        throw new Error(`Failed to start analysis: ${res.status}`);
+                                      }
+                                      return res.json();
+                                    })
+                                    .then(data => {
+                                      console.log("Deployment analysis started:", data);
                                       
-                                      // Refetch data to update the UI
-                                      refetch();
-                                    }
-                                  }, 3000);
+                                      // Start polling for deployment instructions
+                                      const intervalId = setInterval(() => {
+                                        // First check our main analysis endpoint for completion status
+                                        refetch().then((result) => {
+                                          // Check if deployment instructions are available in the analysis data
+                                          if (result.data?.steps?.deployment?.jsonData || 
+                                              (result.data?.completedSteps && 
+                                               result.data.completedSteps.some(
+                                                 step => step.step === getApiStepName("deployment")
+                                               ))
+                                          ) {
+                                            // If we have data in our main analysis endpoint, use that
+                                            clearInterval(intervalId);
+                                            setRefreshIntervalId(null);
+                                            setIsGeneratingDeployment(false);
+                                            setIsAnalysisInProgress(false);
+                                            
+                                            // Update the generated deployment if it's in the result
+                                            if (result.data?.steps?.deployment?.jsonData) {
+                                              setGeneratedDeployment(result.data.steps.deployment.jsonData);
+                                            }
+                                            return;
+                                          }
+                                          
+                                          // If not in main data, try the dedicated deployment instructions endpoint
+                                          fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`)
+                                            .then(res => {
+                                              if (!res.ok) {
+                                                if (res.status === 404) {
+                                                  // 404 is expected if instructions aren't ready yet
+                                                  console.log("Deployment instructions not ready yet, continuing to poll...");
+                                                  return null;
+                                                }
+                                                throw new Error(`Failed to fetch deployment instructions: ${res.status}`);
+                                              }
+                                              return res.json();
+                                            })
+                                            .then(data => {
+                                              if (data) {
+                                                // We have deployment instructions from the dedicated endpoint
+                                                console.log("Received deployment instructions:", data);
+                                                setGeneratedDeployment(data);
+                                                clearInterval(intervalId);
+                                                setRefreshIntervalId(null);
+                                                setIsGeneratingDeployment(false);
+                                                setIsAnalysisInProgress(false);
+                                                
+                                                // Refresh the main analysis data to update the UI
+                                                refetch();
+                                              }
+                                            })
+                                            .catch(error => {
+                                              console.error("Error fetching deployment instructions:", error);
+                                            });
+                                        });
+                                      }, 10000);
+                                      
+                                      setRefreshIntervalId(intervalId);
+                                    })
+                                    .catch(error => {
+                                      console.error("Error starting deployment analysis:", error);
+                                      toast({
+                                        title: "Analysis Error",
+                                        description: error.message,
+                                        variant: "destructive"
+                                      });
+                                      setIsGeneratingDeployment(false);
+                                      setIsAnalysisInProgress(false);
+                                    });
                                 }}
                                 disabled={isGeneratingDeployment}
                               >
