@@ -595,6 +595,25 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
   const [isLoading, setIsLoading] = useState(true);
   const [deploymentData, setDeploymentData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submissionDetails, setSubmissionDetails] = useState<any>(null);
+  const [isShowingDetails, setIsShowingDetails] = useState(false);
+
+  // Function to fetch submission details for troubleshooting
+  const fetchSubmissionDetails = async () => {
+    try {
+      console.log(`Fetching submission details for ${submissionId}`);
+      const detailsResponse = await fetch(`/api/submission-details/${submissionId}`);
+      if (detailsResponse.ok) {
+        const details = await detailsResponse.json();
+        setSubmissionDetails(details);
+        setIsShowingDetails(true);
+      } else {
+        console.error("Failed to fetch submission details");
+      }
+    } catch (detailsErr) {
+      console.error("Error fetching submission details:", detailsErr);
+    }
+  };
 
   useEffect(() => {
     const fetchDeploymentInstructions = async () => {
@@ -602,7 +621,23 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
         console.log(`Fetching deployment instructions for submission ${submissionId}`);
         const response = await fetch(`/api/fetch-deployment-instructions/${submissionId}`);
         if (!response.ok) {
-          throw new Error(`Failed to fetch deployment instructions: ${response.status}`);
+          // Try to get more detailed error information
+          let errorText = `Failed to fetch deployment instructions: ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              errorText = errorData.error;
+              
+              // If the error is from the external API, add more context
+              if (errorData.submissionId) {
+                errorText += ` (Using submission ID: ${errorData.submissionId})`;
+              }
+            }
+          } catch (e) {
+            // If the error response couldn't be parsed
+          }
+          
+          throw new Error(errorText);
         }
         
         const data = await response.json();
@@ -610,7 +645,10 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
         setDeploymentData(data);
       } catch (err) {
         console.error("Error fetching deployment instructions:", err);
-        setError(err.message || "Failed to fetch deployment instructions");
+        setError(err instanceof Error ? err.message : "Failed to fetch deployment instructions");
+        
+        // Automatically fetch submission details for troubleshooting when there's an error
+        fetchSubmissionDetails();
       } finally {
         setIsLoading(false);
       }
@@ -633,9 +671,37 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
       <div className="bg-red-900/30 border border-red-900 p-4 rounded-md">
         <h3 className="text-red-400 font-medium">Error Loading Deployment Instructions</h3>
         <p className="text-gray-300 mt-2">{error}</p>
-        <p className="text-gray-400 mt-4 text-sm">
-          Please try refreshing the page or contact support if the issue persists.
-        </p>
+        
+        <div className="mt-4 p-3 bg-black/40 border border-gray-700 rounded-md">
+          <h4 className="text-yellow-400 text-sm font-medium">Troubleshooting Help</h4>
+          <ul className="text-gray-400 mt-2 text-sm list-disc pl-5 space-y-1">
+            <li>Make sure the deployment analysis step has been completed</li>
+            <li>This could be a temporary issue with the external analysis service</li>
+            <li>The submission ID may not match any data in the external service</li>
+          </ul>
+          <p className="text-gray-400 mt-3 text-sm">
+            Try running the deployment analysis step first by clicking on the "Analyze Deployment" button in the steps list, then refresh this page.
+          </p>
+        </div>
+        
+        <div className="mt-4 flex space-x-4">
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-3 py-1 text-sm bg-blue-900/50 hover:bg-blue-900/80 border border-blue-700 rounded text-blue-200"
+          >
+            Refresh Page
+          </button>
+          <button 
+            onClick={() => {
+              // This would normally trigger the deployment analysis
+              // For now, just show an info message
+              alert("To run deployment analysis, go to the steps list and click 'Analyze Deployment'");
+            }}
+            className="px-3 py-1 text-sm bg-green-900/50 hover:bg-green-900/80 border border-green-700 rounded text-green-200"
+          >
+            Run Deployment Analysis
+          </button>
+        </div>
       </div>
     );
   }

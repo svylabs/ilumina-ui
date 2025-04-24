@@ -24,6 +24,99 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
   
   // Simple deployment status check - just check directly from external API
+  // Endpoint for debugging submission details - helps developers troubleshoot issues
+  app.get("/api/submission-details/:submission_id", async (req, res) => {
+    try {
+      const submissionId = req.params.submission_id;
+      
+      if (!submissionId) {
+        return res.status(400).json({ error: "Missing submission_id parameter" });
+      }
+      
+      let result: any = { 
+        originalId: submissionId,
+        type: "unknown"
+      };
+      
+      // Check if this is a project ID (numeric value)
+      if (/^\d+$/.test(submissionId)) {
+        result.type = "project_id";
+        
+        // Find the submissions for this project
+        const projectSubmissions = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.projectId, parseInt(submissionId)))
+          .orderBy(desc(submissions.createdAt))
+          .limit(5);
+          
+        if (projectSubmissions.length > 0) {
+          result.projectSubmissions = projectSubmissions.map(s => ({
+            id: s.id,
+            createdAt: s.createdAt,
+            status: s.status
+          }));
+          
+          result.latestSubmissionId = projectSubmissions[0].id;
+        } else {
+          result.error = "No submissions found for this project ID";
+        }
+      } else {
+        // Treat it as a submission ID (UUID)
+        result.type = "submission_id";
+        
+        // Find the submission directly
+        const submissionData = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.id, submissionId))
+          .limit(1);
+          
+        if (submissionData.length > 0) {
+          result.submission = {
+            id: submissionData[0].id,
+            projectId: submissionData[0].projectId,
+            createdAt: submissionData[0].createdAt,
+            status: submissionData[0].status
+          };
+          
+          // Get the steps for this submission
+          const steps = await db
+            .select()
+            .from(analysisSteps)
+            .where(eq(analysisSteps.submissionId, submissionId));
+            
+          if (steps.length > 0) {
+            result.steps = steps.map(step => ({
+              id: step.id,
+              stepId: step.stepId,
+              status: step.status,
+              createdAt: step.createdAt,
+              updatedAt: step.updatedAt
+            }));
+          }
+          
+          // Tell the user if this would be a valid submission to query from the external API
+          result.validForExternalApi = submissionData[0].status === "completed" && 
+                                      steps.some(s => s.stepId === "deployment" && s.status === "completed");
+        } else {
+          result.error = "No submission found with this ID";
+        }
+      }
+      
+      // Add a timestamp to the result
+      result.timestamp = new Date().toISOString();
+      
+      return res.json(result);
+    } catch (error) {
+      console.error("Error in submission-details endpoint:", error);
+      return res.status(500).json({ 
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/deployment-status/:submission_id", async (req, res) => {
     try {
       const submissionId = req.params.submission_id;
@@ -93,6 +186,9 @@ export function registerRoutes(app: Express): Server {
       
       console.log(`Fetching deployment instructions for submission ${submissionId} from external API`);
       
+      // Log more information to help with debugging
+      console.log(`Calling external API with submission ID: ${submissionId}`);
+      
       // Call the external API to fetch deployment instructions
       const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
         method: 'GET',
@@ -103,9 +199,14 @@ export function registerRoutes(app: Express): Server {
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
         console.error(`Error from external API: ${response.status}`);
+        console.error(`Error details: ${errorText}`);
+        
         return res.status(response.status).json({ 
-          error: `Failed to fetch deployment instructions from external API: ${response.status}` 
+          error: `Failed to fetch deployment instructions from external API: ${response.status}`,
+          details: errorText,
+          submissionId: submissionId
         });
       }
       
