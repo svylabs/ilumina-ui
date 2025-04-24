@@ -401,6 +401,7 @@ type AnalysisResponse = {
   status: string;
   steps: Record<string, AnalysisStepStatus>;
   completedSteps?: CompletedStep[];
+  submissionId?: string; // Added to match the API response
 };
 
 // Updated analysis steps with new sequence
@@ -589,6 +590,141 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
   }
 }
 
+// DeploymentInstructionsSection component for displaying deployment instructions
+function DeploymentInstructionsSection({ submissionId }: { submissionId: string }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [deploymentData, setDeploymentData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDeploymentInstructions = async () => {
+      try {
+        console.log(`Fetching deployment instructions for submission ${submissionId}`);
+        const response = await fetch(`/api/fetch-deployment-instructions/${submissionId}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch deployment instructions: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Successfully received deployment instructions:", data);
+        setDeploymentData(data);
+      } catch (err) {
+        console.error("Error fetching deployment instructions:", err);
+        setError(err.message || "Failed to fetch deployment instructions");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDeploymentInstructions();
+  }, [submissionId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <span className="ml-2 text-blue-500">Loading deployment instructions...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-900/30 border border-red-900 p-4 rounded-md">
+        <h3 className="text-red-400 font-medium">Error Loading Deployment Instructions</h3>
+        <p className="text-gray-300 mt-2">{error}</p>
+        <p className="text-gray-400 mt-4 text-sm">
+          Please try refreshing the page or contact support if the issue persists.
+        </p>
+      </div>
+    );
+  }
+
+  if (!deploymentData) {
+    return <p>No deployment data available. Please try refreshing or regenerating the instructions.</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-gray-900 p-4 rounded-md">
+        <h3 className="text-xl font-semibold text-blue-400">{deploymentData.title || "Deployment Instructions"}</h3>
+        <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
+      </div>
+      
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
+        <div className="space-y-3">
+          {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
+            <div key={index} className="border border-gray-700 p-4 rounded-md bg-black/30 relative">
+              <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                Step {index + 1}
+              </div>
+              <h4 className="text-blue-300 font-medium mb-2">{step.name}</h4>
+              <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                <div className="col-span-3 text-gray-400">Contract:</div>
+                <div className="col-span-9 text-green-300 font-mono">{step.contract}</div>
+                
+                {step.function && (
+                  <>
+                    <div className="col-span-3 text-gray-400">Function:</div>
+                    <div className="col-span-9 text-green-300 font-mono">{step.function}</div>
+                  </>
+                )}
+                
+                <div className="col-span-3 text-gray-400">Reference:</div>
+                <div className="col-span-9 text-green-300 font-mono">{step.reference}</div>
+                
+                <div className="col-span-3 text-gray-400">Gas Estimate:</div>
+                <div className="col-span-9 text-yellow-300 font-mono">{step.gas}</div>
+              </div>
+              
+              {Object.keys(step.params || {}).length > 0 && (
+                <div className="mt-2">
+                  <div className="text-xs text-gray-400">Parameters:</div>
+                  <div className="grid grid-cols-1 gap-1 mt-1 bg-gray-800/50 p-2 rounded">
+                    {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
+                      <div key={i} className="text-sm">
+                        <span className="text-gray-500">{key}: </span>
+                        <span className="text-green-300">{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-3">
+                <div className="text-xs text-gray-400">Transaction Code:</div>
+                <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
+                  {step.tx}
+                </div>
+              </div>
+              
+              <div className="mt-2">
+                <div className="text-xs text-gray-400">Expected Result:</div>
+                <div className="text-sm text-blue-300 mt-1">{step.result}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Add a helpful note for the deployment sequence */}
+      <div className="bg-yellow-950/30 border border-yellow-900/50 rounded p-4 mt-6">
+        <h4 className="text-yellow-400 text-sm font-medium flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          Important Note
+        </h4>
+        <p className="text-gray-300 mt-2 text-sm">
+          The deployment steps should be executed in sequence. Each step may reference contracts deployed in previous steps.
+          Make sure to save the deployment addresses after each contract deployment for use in subsequent steps.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // Function to check if deployment instructions are completed
 const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
   try {
@@ -619,6 +755,7 @@ export default function AnalysisPage() {
   const [deploymentInput, setDeploymentInput] = useState<string>("");
   const [isGeneratingDeployment, setIsGeneratingDeployment] = useState(false);
   const [generatedDeployment, setGeneratedDeployment] = useState<any>(null);
+  const [isDeploymentLoading, setIsDeploymentLoading] = useState<boolean>(false);
   const [isAnalysisInProgress, setIsAnalysisInProgress] = useState(false);
   const [refreshIntervalId, setRefreshIntervalId] = useState<NodeJS.Timeout | null>(null);
   
@@ -2041,169 +2178,17 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         <div className="text-white font-mono">
                           {(() => {
                             try {
-                              // First try to use generatedDeployment if it's available 
-                              let deploymentData = generatedDeployment;
+                              // Use a simplified approach for loading deployment data
+                              const submissionId = analysis?.submissionId;
                               
-                              // Fall back to API data if generatedDeployment is not set
-                              if (!deploymentData) {
-                                // Try to use the jsonData field from the API
-                                const stepData = analysis?.steps[currentStep.id];
-                                
-                                if (stepData?.jsonData) {
-                                  deploymentData = stepData.jsonData;
-                                } else {
-                                  // Last resort: try parsing details field
-                                  const details = getStepDetails(currentStep.id);
-                                  if (!details) {
-                                    // If we get here, we should try fetching the data directly
-                                    if (id) { // Use the project ID to fetch deployment instructions
-                                      // Find submission ID for this project from the analysis data
-                                      const projectId = id;
-                                      
-                                      // We need to display a loading state while we fetch
-                                      setTimeout(async () => {
-                                        try {
-                                          // First, try to get the analysis data to find the submission ID
-                                          const analysisRes = await fetch(`/api/analysis/${projectId}`);
-                                          if (!analysisRes.ok) {
-                                            console.error("Failed to fetch analysis data");
-                                            return;
-                                          }
-                                          
-                                          const analysisData = await analysisRes.json();
-                                          if (!analysisData || !analysisData.submissionId) {
-                                            console.error("No submission ID found in analysis data");
-                                            return;
-                                          }
-                                          
-                                          const submissionId = analysisData.submissionId;
-                                          
-                                          // Check if deployment is completed using our new status check endpoint
-                                          const isCompleted = await checkDeploymentCompletion(submissionId);
-                                          
-                                          if (isCompleted) {
-                                            console.log("Deployment step is completed, fetching instructions");
-                                            // Deployment is complete, fetch the instructions
-                                            const deploymentRes = await fetch(`/api/fetch-deployment-instructions/${submissionId}`);
-                                            if (!deploymentRes.ok) {
-                                              console.error("Failed to fetch deployment instructions");
-                                              return;
-                                            }
-                                            
-                                            const data = await deploymentRes.json();
-                                            if (data) {
-                                              console.log("Fetched deployment instructions directly:", data);
-                                              setGeneratedDeployment(data);
-                                              // Also refresh the main analysis data to update status
-                                              refetch();
-                                            }
-                                          } else {
-                                            console.log("Deployment step is not completed yet");
-                                          }
-                                        } catch (error) {
-                                          console.error("Error in deployment check process:", error);
-                                        }
-                                      }, 100);
-                                    }
-                                    return <p>Loading deployment instructions...</p>;
-                                  }
-                                  try {
-                                    deploymentData = JSON.parse(details);
-                                  } catch (parseError) {
-                                    return <p>Could not parse deployment details: {String(parseError)}</p>;
-                                  }
-                                }
+                              if (!submissionId) {
+                                return <p>No submission ID found. Please try refreshing the page.</p>;
                               }
                               
-                              if (!deploymentData) {
-                                return <p>No deployment data available. Please try refreshing or regenerating the instructions.</p>;
-                              }
-                              
-                              // Nicely format and display the deployment steps
-                              // This assumes the backend has already parsed the JSON from the deployment_instructions field
-                              // and formatted it into a structure with title, description, and deploymentSteps
-                              
-                              return (
-                                <div className="space-y-6">
-                                  <div className="bg-gray-900 p-4 rounded-md">
-                                    <h3 className="text-xl font-semibold text-blue-400">{deploymentData.title || "Deployment Instructions"}</h3>
-                                    <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
-                                  </div>
-                                  
-                                  <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
-                                    <div className="space-y-3">
-                                      {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
-                                        <div key={index} className="border border-gray-700 p-4 rounded-md bg-black/30 relative">
-                                          <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
-                                            Step {index + 1}
-                                          </div>
-                                          <h4 className="text-blue-300 font-medium mb-2">{step.name}</h4>
-                                          <div className="grid grid-cols-12 gap-2 text-xs mb-2">
-                                            <div className="col-span-3 text-gray-400">Contract:</div>
-                                            <div className="col-span-9 text-green-300 font-mono">{step.contract}</div>
-                                            
-                                            {step.function && (
-                                              <>
-                                                <div className="col-span-3 text-gray-400">Function:</div>
-                                                <div className="col-span-9 text-green-300 font-mono">{step.function}</div>
-                                              </>
-                                            )}
-                                            
-                                            <div className="col-span-3 text-gray-400">Reference:</div>
-                                            <div className="col-span-9 text-green-300 font-mono">{step.reference}</div>
-                                            
-                                            <div className="col-span-3 text-gray-400">Gas Estimate:</div>
-                                            <div className="col-span-9 text-yellow-300 font-mono">{step.gas}</div>
-                                          </div>
-                                          
-                                          {Object.keys(step.params || {}).length > 0 && (
-                                            <div className="mt-2">
-                                              <div className="text-xs text-gray-400">Parameters:</div>
-                                              <div className="grid grid-cols-1 gap-1 mt-1 bg-gray-800/50 p-2 rounded">
-                                                {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
-                                                  <div key={i} className="text-sm">
-                                                    <span className="text-gray-500">{key}: </span>
-                                                    <span className="text-green-300">{String(value)}</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          
-                                          <div className="mt-3">
-                                            <div className="text-xs text-gray-400">Transaction Code:</div>
-                                            <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
-                                              {step.tx}
-                                            </div>
-                                          </div>
-                                          
-                                          <div className="mt-2">
-                                            <div className="text-xs text-gray-400">Expected Result:</div>
-                                            <div className="text-sm text-blue-300 mt-1">{step.result}</div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Add a helpful note for the deployment sequence */}
-                                  <div className="bg-yellow-950/30 border border-yellow-900/50 rounded p-4 mt-6">
-                                    <h4 className="text-yellow-400 text-sm font-medium flex items-center">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                      </svg>
-                                      Important Note
-                                    </h4>
-                                    <p className="text-gray-300 mt-2 text-sm">
-                                      The deployment steps should be executed in sequence. Each step may reference contracts deployed in previous steps.
-                                      Make sure to save the deployment addresses after each contract deployment for use in subsequent steps.
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            } catch (e) {
-                              console.error("Error rendering deployment data:", e);
+                              // Let's fetch the data directly from the API
+                              return <DeploymentInstructionsSection submissionId={submissionId} />
+                            } catch (error) {
+                              console.error("Error rendering deployment section:", error);
                               return (
                                 <pre className="text-sm text-green-400 whitespace-pre-wrap">
                                   {getStepDetails(currentStep.id) || currentStep.output || "No deployment data available"}
