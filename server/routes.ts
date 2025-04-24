@@ -83,13 +83,105 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const data = await response.json();
-      return res.json(data);
+      try {
+        const data = await response.json();
+        
+        // Check if we have the deployment_instructions field
+        if (data && data.deployment_instructions) {
+          try {
+            // Try to parse the JSON string in deployment_instructions
+            const instructionsData = JSON.parse(data.deployment_instructions);
+            
+            // Transform the data to match our frontend's expected format
+            const transformedData = {
+              title: "Smart Contract Deployment Process",
+              description: "Follow these steps to deploy the smart contracts for your project.",
+              deploymentSteps: []
+            };
+            
+            // Process each deployment or call step
+            if (instructionsData.sequence && Array.isArray(instructionsData.sequence)) {
+              transformedData.deploymentSteps = instructionsData.sequence.map((step, index) => {
+                // Format the step for our frontend
+                const formattedStep = {
+                  name: step.type === "deploy" 
+                    ? `Deploy ${step.contract}` 
+                    : `Call ${step.contract}.${step.function}`,
+                  params: {},
+                  gas: "~300K gas", // Default estimate
+                  tx: step.type === "deploy"
+                    ? `const ${step.ref_name} = await deploy${step.contract}()`
+                    : `await ${step.ref_name}.${step.function}(${formatParams(step.params)})`,
+                  result: step.type === "deploy"
+                    ? `${step.contract} deployed at: ${step.ref_name}`
+                    : `Function call succeeded`
+                };
+                
+                // Add parameters if they exist
+                if (step.params && Array.isArray(step.params) && step.params.length > 0) {
+                  step.params.forEach(param => {
+                    formattedStep.params[param.name] = param.type === "ref" 
+                      ? `[Reference: ${param.value}]` 
+                      : param.value;
+                  });
+                }
+                
+                return formattedStep;
+              });
+            }
+            
+            console.log("Transformed deployment instructions for frontend:", transformedData);
+            return res.json(transformedData);
+          } catch (parseErr) {
+            console.error("Error parsing deployment instructions JSON:", parseErr);
+            // Return the raw data if parsing fails
+            return res.json({
+              title: "Smart Contract Deployment Process",
+              description: "Follow these steps to deploy the smart contracts for your project.",
+              deploymentSteps: [
+                {
+                  name: "Deployment Data",
+                  params: {},
+                  gas: "Variable",
+                  tx: "See raw data below",
+                  result: data.deployment_instructions
+                }
+              ]
+            });
+          }
+        } else {
+          // If no deployment_instructions field, just return the raw data
+          return res.json(data);
+        }
+      } catch (dataError) {
+        console.error("Error processing deployment instructions:", dataError);
+        return res.status(500).json({ error: "Failed to process deployment instructions" });
+      }
     } catch (error) {
       console.error("Error in fetch-deployment-instructions endpoint:", error);
       return res.status(500).json({ error: "Internal server error" });
     }
   });
+  
+  // Helper function to format parameters for display
+  function formatParams(params: any[]): string {
+    if (!params || !Array.isArray(params) || params.length === 0) {
+      return "";
+    }
+    
+    return params.map(param => {
+      if (param.type === "ref") {
+        return param.value; // Reference to another contract
+      } else {
+        // Format based on value type
+        if (typeof param.value === "string") {
+          return `"${param.value}"`;
+        } else {
+          return String(param.value);
+        }
+      }
+    }).join(", ");
+  }
   
   // Trigger deployment analysis with external API
   app.post("/api/analyze-deployment", async (req, res) => {
