@@ -750,6 +750,24 @@ export default function AnalysisPage() {
     return analysis.completedSteps.some(step => step.step === apiStepName);
   };
   
+  // Function to explicitly check if a deployment step is completed
+  const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
+    try {
+      if (!submissionId) return false;
+      
+      // Check the dedicated status endpoint that looks in both the 'analyze_deployment' and 'deployment' tables
+      const response = await fetch(`/api/deployment-status/${submissionId}`);
+      
+      if (!response.ok) return false;
+      
+      const data = await response.json();
+      return data.isCompleted;
+    } catch (error) {
+      console.error("Error checking deployment completion:", error);
+      return false;
+    }
+  };
+  
   const getStepStatus = (stepId: string): StepStatus => {
     // ONLY use the completedSteps array to determine if a step is completed
     if (isStepActuallyCompleted(stepId)) {
@@ -1086,7 +1104,37 @@ The deployment should initialize the contracts with test values and set me as th
                                       
                                       // Start polling for deployment instructions
                                       const intervalId = setInterval(() => {
-                                        // First check our main analysis endpoint for completion status
+                                        // First check if the deployment is marked as completed in our database
+                                        if (submissionData?.submission_id) {
+                                          fetch(`/api/deployment-status/${submissionData.submission_id}`)
+                                            .then(res => res.ok ? res.json() : null)
+                                            .then(statusData => {
+                                              if (statusData?.isCompleted) {
+                                                console.log("Deployment step is completed:", statusData);
+                                                // Deployment is completed, now fetch the actual instructions
+                                                fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`)
+                                                  .then(res => res.ok ? res.json() : null)
+                                                  .then(instructionsData => {
+                                                    if (instructionsData) {
+                                                      console.log("Fetched deployment instructions successfully:", instructionsData);
+                                                      setGeneratedDeployment(instructionsData);
+                                                      clearInterval(intervalId);
+                                                      setRefreshIntervalId(null);
+                                                      setIsGeneratingDeployment(false);
+                                                      setIsAnalysisInProgress(false);
+                                                      
+                                                      // Also refresh main analysis data
+                                                      refetch();
+                                                      return;
+                                                    }
+                                                  })
+                                                  .catch(err => console.error("Error fetching instructions:", err));
+                                              }
+                                            })
+                                            .catch(err => console.error("Error checking deployment status:", err));
+                                        }
+                                        
+                                        // Also check main analysis endpoint for completion status as fallback
                                         refetch().then((result) => {
                                           // Check if deployment instructions are available in the analysis data
                                           if (result.data?.steps?.deployment?.jsonData || 

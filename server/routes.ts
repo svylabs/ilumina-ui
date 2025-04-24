@@ -6,7 +6,7 @@ import {
   insertSubmissionSchema, insertContactSchema, 
   pricingPlans, planFeatures, teams, teamMembers, teamInvitations
 } from "@db/schema";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { analysisSteps } from "@db/schema";
@@ -24,6 +24,40 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
   
   // Fetch deployment instructions directly from external API
+  // Check if deployment step is completed for a submission
+  app.get("/api/deployment-status/:submission_id", async (req, res) => {
+    try {
+      const submissionId = req.params.submission_id;
+      
+      if (!submissionId) {
+        return res.status(400).json({ error: "Missing submission_id parameter" });
+      }
+      
+      // Check completed steps in the database
+      const completedSteps = await db
+        .select()
+        .from(analysisSteps)
+        .where(
+          and(
+            eq(analysisSteps.submissionId, submissionId),
+            or(
+              eq(analysisSteps.stepId, 'analyze_deployment'),
+              eq(analysisSteps.stepId, 'deployment')
+            ),
+            eq(analysisSteps.status, 'completed')
+          )
+        );
+      
+      return res.json({
+        isCompleted: completedSteps.length > 0,
+        steps: completedSteps
+      });
+    } catch (error) {
+      console.error("Error checking deployment status:", error);
+      return res.status(500).json({ error: "Failed to check deployment status" });
+    }
+  });
+  
   app.get("/api/fetch-deployment-instructions/:submission_id", async (req, res) => {
     try {
       const submissionId = req.params.submission_id;
