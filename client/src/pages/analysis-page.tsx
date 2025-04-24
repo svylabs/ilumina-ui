@@ -824,6 +824,8 @@ export default function AnalysisPage() {
   const [isDeploymentLoading, setIsDeploymentLoading] = useState<boolean>(false);
   const [isAnalysisInProgress, setIsAnalysisInProgress] = useState(false);
   const [refreshIntervalId, setRefreshIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [simRepo, setSimRepo] = useState<{owner: string, repo: string, branch: string} | null>(null);
+  const [simRepoError, setSimRepoError] = useState<string | null>(null);
   
   // No content ref needed
 
@@ -870,6 +872,45 @@ export default function AnalysisPage() {
   // and only sets the selected step if not manually selected by the user
   const userSelectedRef = useRef(false);
   
+  // Fetch simulation repository details when the user is viewing the test_setup step
+  useEffect(() => {
+    const fetchSimulationRepo = async () => {
+      if (id && selectedStep === 'test_setup') {
+        try {
+          setSimRepo(null);
+          setSimRepoError(null);
+          
+          const response = await fetch(`/api/simulation-repo/${id}`);
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Failed to fetch simulation repo:', errorData);
+            setSimRepoError(errorData.error || 'Failed to retrieve simulation repository information');
+            return;
+          }
+          
+          const data = await response.json();
+          console.log('Simulation repository data:', data);
+          
+          if (!data.owner || !data.repo) {
+            setSimRepoError('Invalid simulation repository data received');
+            return;
+          }
+          
+          setSimRepo({
+            owner: data.owner,
+            repo: data.repo,
+            branch: data.branch || 'main'
+          });
+        } catch (error) {
+          console.error('Error fetching simulation repository:', error);
+          setSimRepoError('An error occurred while retrieving the simulation repository');
+        }
+      }
+    };
+    
+    fetchSimulationRepo();
+  }, [id, selectedStep]);
+
   useEffect(() => {
     if (analysis && analysis.steps) {
       // Reset user selection on each analysis update for testing
@@ -1756,14 +1797,26 @@ The deployment should initialize the contracts with test values and set me as th
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
                                       <h4 className="text-lg font-medium text-blue-400 mb-3">Simulation Code</h4>
                                       <div className="w-full overflow-hidden">
-                                        {/* Dynamically get repository from submission */}
-                                        <GitHubCodeViewer 
-                                          owner="ethereum"
-                                          repo="solidity"
-                                          branch="develop"
-                                          path="docs/examples"
-                                          showBreadcrumb={true}
-                                        />
+                                        {/* Get simulation repository from API */}
+                                        {simRepo ? (
+                                          <GitHubCodeViewer 
+                                            owner={simRepo.owner}
+                                            repo={simRepo.repo}
+                                            branch={simRepo.branch}
+                                            path=""
+                                            showBreadcrumb={true}
+                                          />
+                                        ) : simRepoError ? (
+                                          <div className="bg-red-950 p-4 rounded border border-red-700">
+                                            <h4 className="text-red-400 font-medium mb-2">Error Loading Simulation Repository</h4>
+                                            <p className="text-gray-300">{simRepoError}</p>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center justify-center h-40">
+                                            <Loader2 className="h-6 w-6 text-blue-500 animate-spin mr-2" />
+                                            <span className="text-gray-400">Loading simulation repository...</span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
