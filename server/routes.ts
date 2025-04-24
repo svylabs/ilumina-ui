@@ -19,6 +19,106 @@ type AnalysisStepStatus = {
   jsonData?: any; // Add support for JSON data
 };
 
+// Helper function for calling external Ilumina APIs with standardized error handling
+async function callExternalIluminaAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<Response> {
+  const baseUrl = 'https://ilumina-451416.uc.r.appspot.com/api';
+  const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+  
+  console.log(`Calling external Ilumina API: ${method} ${url}`);
+  
+  const headers: HeadersInit = {
+    'Authorization': 'Bearer my_secure_password', 
+    'Content-Type': 'application/json'
+  };
+  
+  const options: RequestInit = {
+    method,
+    headers
+  };
+  
+  if (body && method === 'POST') {
+    options.body = JSON.stringify(body);
+  }
+  
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      console.error(`External API error: ${response.status} ${response.statusText}`);
+      // Try to get error details
+      try {
+        const errorText = await response.text();
+        console.error(`Error details: ${errorText}`);
+      } catch (e) {
+        console.error('Could not parse error details');
+      }
+    } else {
+      console.log(`External API call successful: ${response.status}`);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`Network error calling external API:`, error);
+    throw error;
+  }
+}
+
+// Helper function to get a valid submission ID for the external API
+// Will convert project IDs to submission IDs and validates format
+async function getValidSubmissionId(idParam: string): Promise<{ 
+  submissionId: string | null; 
+  error?: string; 
+  statusCode?: number; 
+  details?: string;
+}> {
+  if (!idParam) {
+    return { 
+      submissionId: null, 
+      error: "Missing submission ID parameter", 
+      statusCode: 400 
+    };
+  }
+  
+  // Check if this is a project ID (numeric) instead of a submission ID (UUID)
+  if (/^\d+$/.test(idParam)) {
+    console.log(`Received project ID ${idParam}, looking up corresponding submission ID`);
+    
+    try {
+      // Look up the submission ID for this project
+      const projectSubmissions = await db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.projectId, parseInt(idParam)))
+        .orderBy(desc(submissions.createdAt))
+        .limit(1);
+        
+      if (projectSubmissions.length > 0) {
+        const submissionId = projectSubmissions[0].id;
+        console.log(`Found submission ID ${submissionId} for project ID ${idParam}`);
+        return { submissionId };
+      } else {
+        return { 
+          submissionId: null,
+          error: "No submissions found for this project ID",
+          statusCode: 404,
+          details: `Project ID ${idParam} doesn't have any associated submissions in the database.`
+        };
+      }
+    } catch (error) {
+      console.error("Database error looking up submission ID:", error);
+      return {
+        submissionId: null,
+        error: "Database error looking up submission ID",
+        statusCode: 500,
+        details: error instanceof Error ? error.message : "Unknown database error"
+      };
+    }
+  }
+  
+  // If it's not a numeric ID, assume it's already a valid submission ID in UUID format
+  return { submissionId: idParam };
+}
+
 export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
@@ -119,21 +219,21 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/deployment-status/:submission_id", async (req, res) => {
     try {
-      const submissionId = req.params.submission_id;
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(req.params.submission_id);
       
-      if (!submissionId) {
-        return res.status(400).json({ error: "Missing submission_id parameter" });
+      // If there was an error getting a valid submission ID, return the error
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details,
+          isCompleted: false
+        });
       }
       
-      // Check if we can fetch deployment instructions directly from the external API
+      // Use our helper function to call the external API
       try {
-        const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer my_secure_password',
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await callExternalIluminaAPI(`/deployment_instructions/${result.submissionId}`);
         
         // If we can fetch instructions, then this step is completed
         return res.json({ 
@@ -158,45 +258,22 @@ export function registerRoutes(app: Express): Server {
   
   app.get("/api/fetch-deployment-instructions/:submission_id", async (req, res) => {
     try {
-      let submissionId = req.params.submission_id;
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(req.params.submission_id);
       
-      if (!submissionId) {
-        return res.status(400).json({ error: "Missing submission_id parameter" });
+      // If there was an error getting a valid submission ID, return the error
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details 
+        });
       }
       
-      // Check if this is a project ID (numeric) instead of a submission ID (UUID)
-      if (/^\d+$/.test(submissionId)) {
-        console.log(`Received project ID ${submissionId}, looking up corresponding submission ID`);
-        
-        // Look up the submission ID for this project
-        const projectSubmissions = await db
-          .select()
-          .from(submissions)
-          .where(eq(submissions.projectId, parseInt(submissionId)))
-          .orderBy(submissions.createdAt, "desc")
-          .limit(1);
-          
-        if (projectSubmissions.length > 0) {
-          submissionId = projectSubmissions[0].id;
-          console.log(`Found submission ID ${submissionId} for project ID ${req.params.submission_id}`);
-        } else {
-          return res.status(404).json({ error: "No submissions found for this project ID" });
-        }
-      }
-      
+      const submissionId = result.submissionId;
       console.log(`Fetching deployment instructions for submission ${submissionId} from external API`);
       
-      // Log more information to help with debugging
-      console.log(`Calling external API with submission ID: ${submissionId}`);
-      
-      // Call the external API to fetch deployment instructions
-      const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Bearer my_secure_password',
-          'Content-Type': 'application/json'
-        }
-      });
+      // Use our helper function to call the external API
+      const response = await callExternalIluminaAPI(`/deployment_instructions/${submissionId}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -319,18 +396,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Missing submission_id parameter" });
       }
       
-      // Call the external analyze API with the submission ID and user prompt
-      const response = await fetch('https://ilumina-451416.uc.r.appspot.com/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer my_secure_password'
-        },
-        body: JSON.stringify({
-          submission_id,
-          step: "analyze_deployment",
-          user_prompt
-        })
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(submission_id);
+      
+      // If there was an error getting a valid submission ID, return the error
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details 
+        });
+      }
+      
+      // Use our helper function to call the external API
+      const response = await callExternalIluminaAPI('/analyze', 'POST', {
+        submission_id: result.submissionId,
+        step: "analyze_deployment",
+        user_prompt
       });
       
       if (!response.ok) {
