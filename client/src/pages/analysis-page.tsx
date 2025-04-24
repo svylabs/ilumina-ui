@@ -1722,25 +1722,16 @@ The deployment should initialize the contracts with test values and set me as th
                                       // Log the entire response to debug
                                       console.log("Analysis response data:", data);
                                       
-                                      // Try to get the submission ID from the API response
-                                      // Some endpoints return it directly in submissionId field
-                                      let submissionId = data?.submissionId;
-                                      
-                                      // If it's not directly in submissionId, we need to handle that case
-                                      if (!submissionId) {
-                                        console.log("No direct submissionId found in response, checking in steps data...");
-                                        
-                                        // We know the server has this ID because it found the project
-                                        // As a workaround, let's get the actual ID from the URL
-                                        submissionId = id;
-                                        console.log("Using projectId as fallback:", submissionId);
-                                      } else {
-                                        console.log("Found submission ID:", submissionId);
+                                      // Directly use the submission ID from the analysis response
+                                      if (!data?.submissionId) {
+                                        throw new Error("No submissionId found in response");
                                       }
                                       
+                                      const submissionId = data.submissionId;
+                                      console.log("Using submission ID:", submissionId);
+                                      
                                       // Set up the data for the API call
-                                      const submissionData = { 
-                                        // Use our submissionId variable instead of data.submissionId directly
+                                      const submissionData = {
                                         submission_id: submissionId,
                                         user_prompt: deploymentInput
                                       };
