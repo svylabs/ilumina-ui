@@ -1713,6 +1713,7 @@ The deployment should initialize the contracts with test values and set me as th
                                   fetch(`/api/analysis/${id}`)
                                     .then(res => res.json())
                                     .then(data => {
+                                      // The API returns the submission ID in the 'submissionId' field
                                       if (!data?.submissionId) {
                                         throw new Error("Could not find submission ID for this project");
                                       }
