@@ -2610,7 +2610,8 @@ export function registerRoutes(app: Express): Server {
         res.json({ 
           status, 
           steps: stepsStatus,
-          completedSteps 
+          completedSteps,
+          submissionId: uuidSubmissionId 
         });
       } else {
         console.log("No database entries found, using sample data for submission:", uuidSubmissionId);
@@ -2645,7 +2646,8 @@ export function registerRoutes(app: Express): Server {
         res.json({ 
           status: "completed", 
           steps: stepsStatus,
-          completedSteps 
+          completedSteps,
+          submissionId: uuidSubmissionId 
         });
       }
     } catch (error) {
