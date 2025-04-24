@@ -96,27 +96,29 @@ export function registerRoutes(app: Express): Server {
       // Parse the deployment_instructions field which is a JSON string
       if (data && data.deployment_instructions) {
         try {
+          console.log("Parsing deployment_instructions JSON string");
           const parsedInstructions = JSON.parse(data.deployment_instructions);
           
           // Format the instructions in a structured way
           const formattedDeployment = {
             title: "Smart Contract Deployment Process for StableBase",
-            description: "Follow these steps to deploy the smart contracts for your project.",
+            description: "Follow these steps to deploy the smart contracts to your local development network.",
             deploymentSteps: []
           };
           
           // Process each step in the sequence
           if (parsedInstructions.sequence && Array.isArray(parsedInstructions.sequence)) {
-            formattedDeployment.deploymentSteps = parsedInstructions.sequence.map((step, index) => {
+            console.log(`Found ${parsedInstructions.sequence.length} deployment steps to format`);
+            formattedDeployment.deploymentSteps = parsedInstructions.sequence.map((step: any, index: number) => {
               const stepType = step.type || "unknown";
               const contract = step.contract || "Contract";
               const functionName = step.function || "execute";
               const refName = step.ref_name || `step_${index}`;
               
               // Format the parameters for display
-              const formattedParams = {};
+              const formattedParams: Record<string, string> = {};
               if (step.params && Array.isArray(step.params)) {
-                step.params.forEach(param => {
+                step.params.forEach((param: any) => {
                   if (param && param.name) {
                     formattedParams[param.name] = param.type === "ref" 
                       ? `[Reference: ${param.value || 'Unknown'}]` 
@@ -137,7 +139,7 @@ export function registerRoutes(app: Express): Server {
                 gas: stepType === "deploy" ? "~1.5M gas" : "~300K gas", // Estimated gas
                 tx: stepType === "deploy"
                   ? `const ${refName} = await deploy${contract}()`
-                  : `await ${refName}.${functionName}(${Object.values(formattedParams).join(", ")})`,
+                  : `await ${refName}.${functionName}(${Object.keys(formattedParams).length > 0 ? Object.values(formattedParams).join(", ") : ""})`,
                 result: stepType === "deploy"
                   ? `${contract} deployed at: [ADDRESS]`
                   : `Function call succeeded`
@@ -145,7 +147,7 @@ export function registerRoutes(app: Express): Server {
             });
           }
           
-          console.log("Sending formatted deployment instructions");
+          console.log("Sending formatted deployment instructions with", formattedDeployment.deploymentSteps.length, "steps");
           return res.json(formattedDeployment);
         } catch (parseError) {
           console.error("Error parsing deployment_instructions:", parseError);
@@ -154,6 +156,7 @@ export function registerRoutes(app: Express): Server {
         }
       } else {
         // If the expected field is not found, return the original data
+        console.log("No deployment_instructions field found in response, returning raw data");
         return res.json(data);
       }
     } catch (error) {
