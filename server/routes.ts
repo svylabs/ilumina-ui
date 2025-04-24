@@ -119,12 +119,15 @@ export function registerRoutes(app: Express): Server {
       
       try {
         const data = await response.json();
+        console.log("Raw data from deployment_instructions API:", JSON.stringify(data, null, 2));
         
         // Check if we have the deployment_instructions field
         if (data && data.deployment_instructions) {
           try {
             // Try to parse the JSON string in deployment_instructions
+            console.log("Trying to parse deployment_instructions:", data.deployment_instructions);
             const instructionsData = JSON.parse(data.deployment_instructions);
+            console.log("Successfully parsed deployment instructions:", JSON.stringify(instructionsData, null, 2));
             
             // Transform the data to match our frontend's expected format
             const transformedData = {
