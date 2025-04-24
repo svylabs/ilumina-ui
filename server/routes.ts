@@ -390,14 +390,20 @@ export function registerRoutes(app: Express): Server {
   // Trigger deployment analysis with external API
   app.post("/api/analyze-deployment", async (req, res) => {
     try {
+      console.log("Received deployment analysis request with body:", req.body);
+      
       const { submission_id, user_prompt } = req.body;
       
       if (!submission_id) {
+        console.log("Missing submission_id parameter in request");
         return res.status(400).json({ error: "Missing submission_id parameter" });
       }
       
+      console.log(`Processing submission_id: ${submission_id}, type: ${typeof submission_id}`);
+      
       // Get a valid submission ID using our helper function
       const result = await getValidSubmissionId(submission_id);
+      console.log("getValidSubmissionId result:", result);
       
       // If there was an error getting a valid submission ID, return the error
       if (!result.submissionId) {
@@ -3123,6 +3129,7 @@ export function registerRoutes(app: Express): Server {
         ];
         
         // Send the response with sample data
+        console.log(`Returning analysis data with submissionId: ${uuidSubmissionId}`);
         res.json({ 
           status: "completed", 
           steps: stepsStatus,

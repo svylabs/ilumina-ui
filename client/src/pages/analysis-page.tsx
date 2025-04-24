@@ -1710,11 +1710,21 @@ The deployment should initialize the contracts with test values and set me as th
                                   setIsGeneratingDeployment(true);
                                   
                                   // We need to get the actual submission ID from the analysis data
+                                  console.log("Fetching analysis data to get submission ID...");
                                   fetch(`/api/analysis/${id}`)
-                                    .then(res => res.json())
+                                    .then(res => {
+                                      if (!res.ok) {
+                                        throw new Error(`Failed to fetch analysis data: ${res.status}`);
+                                      }
+                                      return res.json();
+                                    })
                                     .then(data => {
+                                      // Log the entire response to debug
+                                      console.log("Analysis response data:", data);
+                                      
                                       // The API returns the submission ID in the 'submissionId' field
                                       if (!data?.submissionId) {
+                                        console.error("No submissionId found in response:", data);
                                         throw new Error("Could not find submission ID for this project");
                                       }
                                       
