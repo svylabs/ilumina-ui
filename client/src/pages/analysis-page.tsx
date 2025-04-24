@@ -1706,23 +1706,36 @@ The deployment should initialize the contracts with test values and set me as th
                                     clearInterval(refreshIntervalId);
                                   }
                                   
-                                  // First, trigger the deployment analysis via the API
-                                  // Use the project ID directly - the backend will handle conversion
-                                  const submissionData = { 
-                                    submission_id: id ? id.toString() : "", // Use project ID directly if available
-                                    user_prompt: deploymentInput  // Include user prompt if entered
-                                  };
+                                  // First, get the submission ID from the analysis data
+                                  setIsGeneratingDeployment(true);
                                   
-                                  console.log("Sending deployment analysis request with data:", submissionData);
-                                  
-                                  // Make the request to start deployment analysis
-                                  fetch('/api/analyze-deployment', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify(submissionData)
-                                  })
+                                  // We need to get the actual submission ID from the analysis data
+                                  fetch(`/api/analysis/${id}`)
+                                    .then(res => res.json())
+                                    .then(data => {
+                                      if (!data?.submissionId) {
+                                        throw new Error("Could not find submission ID for this project");
+                                      }
+                                      
+                                      console.log("Found submission ID:", data.submissionId);
+                                      
+                                      // Set up the data for the API call
+                                      const submissionData = { 
+                                        submission_id: data.submissionId,
+                                        user_prompt: deploymentInput
+                                      };
+                                      
+                                      console.log("Sending deployment analysis request with data:", submissionData);
+                                      
+                                      // Now that we have the submission ID, make the request to the API
+                                      return fetch('/api/analyze-deployment', {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify(submissionData)
+                                      });
+                                    })
                                     .then(res => {
                                       if (!res.ok) {
                                         throw new Error(`Failed to start analysis: ${res.status}`);
@@ -1732,61 +1745,60 @@ The deployment should initialize the contracts with test values and set me as th
                                     .then(async (data) => {
                                       console.log("Deployment analysis started:", data);
                                       
+                                      // Get the submission ID from the analysis data
+                                      const submissionId = data.submissionId;
+                                      
                                       // Check immediately if deployment is already completed
                                       // This happens when the API has cached results
-                                      if (submissionData?.submission_id) {
-                                        try {
-                                          const isCompleted = await checkDeploymentCompletion(submissionData.submission_id);
-                                          
-                                          if (isCompleted) {
-                                            console.log("Deployment already completed, fetching results directly");
-                                            const deploymentRes = await fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`);
-                                            if (deploymentRes.ok) {
-                                              const deploymentData = await deploymentRes.json();
-                                              setGeneratedDeployment(deploymentData);
-                                              setIsGeneratingDeployment(false);
-                                              setIsAnalysisInProgress(false);
-                                              // Refresh the analysis data to update UI
-                                              refetch();
-                                              return; // Exit early if we already have results
-                                            }
+                                      try {
+                                        const isCompleted = await checkDeploymentCompletion(submissionId);
+                                        
+                                        if (isCompleted) {
+                                          console.log("Deployment already completed, fetching results directly");
+                                          const deploymentRes = await fetch(`/api/fetch-deployment-instructions/${submissionId}`);
+                                          if (deploymentRes.ok) {
+                                            const deploymentData = await deploymentRes.json();
+                                            setGeneratedDeployment(deploymentData);
+                                            setIsGeneratingDeployment(false);
+                                            setIsAnalysisInProgress(false);
+                                            // Refresh the analysis data to update UI
+                                            refetch();
+                                            return; // Exit early if we already have results
                                           }
-                                        } catch (error) {
-                                          console.error("Error checking immediate deployment completion:", error);
                                         }
+                                      } catch (error) {
+                                        console.error("Error checking immediate deployment completion:", error);
                                       }
                                       
                                       // If not completed immediately, start polling
                                       const intervalId = setInterval(() => {
                                         // Check if the deployment is marked as completed in our database
-                                        if (submissionData?.submission_id) {
-                                          fetch(`/api/deployment-status/${submissionData.submission_id}`)
-                                            .then(res => res.ok ? res.json() : null)
-                                            .then(statusData => {
-                                              if (statusData?.isCompleted) {
-                                                console.log("Deployment step is completed:", statusData);
-                                                // Deployment is completed, now fetch the actual instructions
-                                                fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`)
-                                                  .then(res => res.ok ? res.json() : null)
-                                                  .then(instructionsData => {
-                                                    if (instructionsData) {
-                                                      console.log("Fetched deployment instructions successfully:", instructionsData);
-                                                      setGeneratedDeployment(instructionsData);
-                                                      clearInterval(intervalId);
-                                                      setRefreshIntervalId(null);
-                                                      setIsGeneratingDeployment(false);
-                                                      setIsAnalysisInProgress(false);
-                                                      
-                                                      // Also refresh main analysis data
-                                                      refetch();
-                                                      return;
-                                                    }
-                                                  })
-                                                  .catch(err => console.error("Error fetching instructions:", err));
-                                              }
-                                            })
-                                            .catch(err => console.error("Error checking deployment status:", err));
-                                        }
+                                        fetch(`/api/deployment-status/${submissionId}`)
+                                          .then(res => res.ok ? res.json() : null)
+                                          .then(statusData => {
+                                            if (statusData?.isCompleted) {
+                                              console.log("Deployment step is completed:", statusData);
+                                              // Deployment is completed, now fetch the actual instructions
+                                              fetch(`/api/fetch-deployment-instructions/${submissionId}`)
+                                                .then(res => res.ok ? res.json() : null)
+                                                .then(instructionsData => {
+                                                  if (instructionsData) {
+                                                    console.log("Fetched deployment instructions successfully:", instructionsData);
+                                                    setGeneratedDeployment(instructionsData);
+                                                    clearInterval(intervalId);
+                                                    setRefreshIntervalId(null);
+                                                    setIsGeneratingDeployment(false);
+                                                    setIsAnalysisInProgress(false);
+                                                    
+                                                    // Also refresh main analysis data
+                                                    refetch();
+                                                    return;
+                                                  }
+                                                })
+                                                .catch(err => console.error("Error fetching instructions:", err));
+                                            }
+                                          })
+                                          .catch(err => console.error("Error checking deployment status:", err));
                                         
                                         // Also check main analysis endpoint for completion status as fallback
                                         refetch().then((result) => {
@@ -1811,7 +1823,7 @@ The deployment should initialize the contracts with test values and set me as th
                                           }
                                           
                                           // If not in main data, try the dedicated deployment instructions endpoint
-                                          fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`)
+                                          fetch(`/api/fetch-deployment-instructions/${submissionId}`)
                                             .then(res => {
                                               if (!res.ok) {
                                                 if (res.status === 404) {
