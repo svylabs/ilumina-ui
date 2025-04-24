@@ -1313,7 +1313,6 @@ export default function AnalysisPage() {
                 <div className="rounded-md bg-black/90 p-4">
                   {/* Special case for test_setup - show it regardless of status if simRepo is available */}
                   {currentStep.id === "test_setup" && simRepo ? (
-                    /* We'll add the Test Environment section here in the next edit */
                     <div className="text-white font-mono">
                       <div className="space-y-6">
                         {/* Test Environment with file viewer */}
@@ -1339,7 +1338,7 @@ export default function AnalysisPage() {
                           </div>
                           
                           {/* Code Viewer */}
-                          <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                          <div className="bg-gray-900 rounded-lg border border-gray-800 p-4 mb-6">
                             <h4 className="text-lg font-medium text-blue-400 mb-3">Simulation Code</h4>
                             <div className="w-full overflow-hidden">
                               <GitHubCodeViewer 
@@ -1350,6 +1349,271 @@ export default function AnalysisPage() {
                                 showBreadcrumb={true}
                               />
                             </div>
+                          </div>
+                          
+                          {/* Implementation Steps Section */}
+                          <div className="space-y-4" id="implementation-steps">
+                            <h3 className="text-xl font-semibold text-blue-400">Actor Implementations</h3>
+                            
+                            {/* Get actors data from API */}
+                            {(() => {
+                              let actorsData = { actors: [] };
+                              try {
+                                const actorsStep = analysis?.steps?.actors;
+                                if (actorsStep?.jsonData) {
+                                  if (typeof actorsStep.jsonData.actors_summary === 'string') {
+                                    try {
+                                      actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+                                      console.log("Parsed actors data:", actorsData);
+                                    } catch (e) {
+                                      console.error("Failed to parse actors_summary:", e);
+                                    }
+                                  } else {
+                                    actorsData = actorsStep.jsonData;
+                                  }
+                                }
+                              } catch (e) {
+                                console.error("Failed to parse actors data:", e);
+                              }
+                              
+                              return (
+                                <div className="space-y-4">
+                                  {/* Actor Implementations Section */}
+                                  <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                                    <p className="text-gray-300 mb-4">Create actor implementations based on the identified roles</p>
+                                    
+                                    {/* Dynamic Actor List */}
+                                    <div className="space-y-4">
+                                      {actorsData.actors && actorsData.actors.length > 0 ? (
+                                        actorsData.actors.map((actor: any, index: number) => (
+                                          <Collapsible key={index} className="bg-gray-800 rounded-md">
+                                            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                                              <div>
+                                                <h4 className="text-white text-left font-medium">{actor.name}</h4>
+                                                <p className="text-gray-400 text-sm text-left">{actor.summary}</p>
+                                              </div>
+                                              <ChevronDown className="h-5 w-5 text-gray-500 shrink-0" />
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent className="px-4 pb-4">
+                                              <div className="space-y-4">
+                                                <div className="text-sm text-gray-300">
+                                                  <p className="mb-2">{actor.summary}</p>
+                                                </div>
+                                                
+                                                <div className="space-y-3">
+                                                  <h5 className="text-sm font-medium text-blue-300">Actions</h5>
+                                                  {actor.actions && actor.actions.map((action: any, i: number) => (
+                                                    <Collapsible key={i} className="bg-gray-700/50 rounded-md">
+                                                      <CollapsibleTrigger className="w-full p-3 flex items-center justify-between">
+                                                        <div>
+                                                          <h6 className="text-white text-left text-sm font-medium">{action.name}</h6>
+                                                          <p className="text-gray-400 text-xs text-left">{action.summary}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                          <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
+                                                            {action.contract_name}
+                                                          </span>
+                                                          <Button size="sm" variant="outline" className="h-7 text-xs">
+                                                            Modify
+                                                          </Button>
+                                                        </div>
+                                                      </CollapsibleTrigger>
+                                                      <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
+                                                        <div className="space-y-3">
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-blue-300 mb-2">Implementation</h5>
+                                                            
+                                                            <Tabs defaultValue="summary">
+                                                              <TabsList className="bg-gray-800/90 h-8">
+                                                                <TabsTrigger value="summary" className="h-7 text-xs px-3">
+                                                                  <FileText className="h-3.5 w-3.5 mr-1" />
+                                                                  Summary
+                                                                </TabsTrigger>
+                                                                <TabsTrigger value="code" className="h-7 text-xs px-3">
+                                                                  <Code2 className="h-3.5 w-3.5 mr-1" />
+                                                                  Code
+                                                                </TabsTrigger>
+                                                                <TabsTrigger value="preview" className="h-7 text-xs px-3">
+                                                                  <FileEdit className="h-3.5 w-3.5 mr-1" />
+                                                                  Preview Changes
+                                                                </TabsTrigger>
+                                                              </TabsList>
+                                                              
+                                                              <TabsContent value="summary" className="mt-0">
+                                                                <div className="bg-black/40 p-3 rounded text-xs">
+                                                                  <p className="text-green-400 mb-2">
+                                                                    This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
+                                                                  </p>
+                                                                  
+                                                                  <div className="text-white/80 space-y-2">
+                                                                    <p>Contract interaction: {action.contract_name}</p>
+                                                                    <p>Function: {action.function_name}</p>
+                                                                    <p>Actor: {actor.name}</p>
+                                                                    <p>Parameters will be passed according to the function specification</p>
+                                                                  </div>
+                                                                </div>
+                                                              </TabsContent>
+                                                              
+                                                              <TabsContent value="code" className="mt-0">
+                                                                <div className="bg-black/40 p-3 rounded text-xs">
+                                                                  <pre className="whitespace-pre-wrap text-green-300 font-mono text-xs">{`
+// Implementation for ${action.name}
+// Contract: ${action.contract_name}
+// Function: ${action.function_name}
+
+async function execute() {
+  // Setup required parameters
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
+  
+  // Execute the transaction
+  const tx = await ${action.contract_name.toLowerCase()}.${action.function_name.split('(')[0]}(
+    // Parameters will depend on the specific function
+  );
+  
+  // Wait for confirmation
+  await tx.wait();
+  
+  // Log the result
+  console.log("${action.name} executed successfully");
+}
+`}</pre>
+                                                                </div>
+                                                              </TabsContent>
+                                                              
+                                                              <TabsContent value="preview" className="mt-0">
+                                                                <div className="bg-black/40 p-3 rounded text-xs">
+                                                                  <div className="flex items-center justify-between mb-2">
+                                                                    <div className="text-gray-300 text-xs">Modified implementation code:</div>
+                                                                    <div className="flex gap-2">
+                                                                      <Button size="sm" variant="outline" className="h-6 text-xs">
+                                                                        Reject Changes
+                                                                      </Button>
+                                                                      <Button size="sm" variant="default" className="h-6 text-xs">
+                                                                        Accept Changes
+                                                                      </Button>
+                                                                    </div>
+                                                                  </div>
+                                                                  <div className="border border-gray-700 rounded-md overflow-hidden">
+                                                                    <div className="bg-red-950/30 p-2 text-red-300 font-mono text-xs line-through">{`async function execute() {
+  // Setup required parameters
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");`}</div>
+                                                                    <div className="bg-green-950/30 p-2 text-green-300 font-mono text-xs">{`async function execute() {
+  // Setup required parameters with provider and signer
+  const signer = await ethers.getSigner();
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address", signer);`}</div>
+                                                                  </div>
+                                                                </div>
+                                                              </TabsContent>
+                                                            </Tabs>
+                                                          </div>
+                                                          
+                                                          <div>
+                                                            <h5 className="text-sm font-medium text-yellow-300 mb-2">Validation Rules</h5>
+                                                            <Tabs defaultValue="summary">
+                                                              <TabsList className="bg-gray-800/90 h-8">
+                                                                <TabsTrigger value="summary" className="h-7 text-xs px-3">
+                                                                  <FileText className="h-3.5 w-3.5 mr-1" />
+                                                                  Rules
+                                                                </TabsTrigger>
+                                                                <TabsTrigger value="code" className="h-7 text-xs px-3">
+                                                                  <Code2 className="h-3.5 w-3.5 mr-1" />
+                                                                  Validation Code
+                                                                </TabsTrigger>
+                                                                <TabsTrigger value="preview" className="h-7 text-xs px-3">
+                                                                  <FileEdit className="h-3.5 w-3.5 mr-1" />
+                                                                  Preview Changes
+                                                                </TabsTrigger>
+                                                              </TabsList>
+                                                              
+                                                              <TabsContent value="summary" className="mt-0">
+                                                                <div className="bg-black/40 p-3 rounded text-xs">
+                                                                  <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+                                                                    <li>All required parameters must be provided and valid</li>
+                                                                    <li>Actor must have appropriate permissions/role</li>
+                                                                    <li>Actor must have sufficient balance if operations involve transfers</li>
+                                                                    <li>Contract state must allow this operation</li>
+                                                                    <li>Gas estimation must be within reasonable limits</li>
+                                                                  </ul>
+                                                                </div>
+                                                              </TabsContent>
+                                                              
+                                                              <TabsContent value="code" className="mt-0">
+                                                                <div className="bg-black/40 p-3 rounded text-xs">
+                                                                  <pre className="whitespace-pre-wrap text-yellow-300 font-mono text-xs">{`
+// Validation for ${action.name}
+// Contract: ${action.contract_name}
+// Function: ${action.function_name}
+
+async function validate(params) {
+  // Check actor permissions
+  const actor = await ethers.getSigner();
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
+  
+  // Verify actor has required permissions
+  const hasPermission = true; // Replace with actual permission check
+  
+  // Check parameters are valid
+  const parametersValid = true; // Replace with actual validation
+  
+  // Verify gas estimates
+  const gasEstimate = await ${action.contract_name.toLowerCase()}.estimateGas.${action.function_name.split('(')[0]}();
+  const gasWithinLimits = gasEstimate.lt(ethers.utils.parseUnits("5", "gwei"));
+  
+  return {
+    valid: hasPermission && parametersValid && gasWithinLimits,
+    errors: []
+  };
+}
+`}</pre>
+                                                                </div>
+                                                              </TabsContent>
+                                                              
+                                                              <TabsContent value="preview" className="mt-0">
+                                                                <div className="bg-black/40 p-3 rounded text-xs">
+                                                                  <div className="text-yellow-300 mb-2">Enhanced validation with additional safety checks:</div>
+                                                                  <pre className="whitespace-pre-wrap text-gray-300 font-mono text-xs">{`
+// Additional checks added:
+// 1. Verify contract state
+// 2. Check for reentrancy vulnerabilities
+// 3. Validate input bounds
+
+async function enhancedValidate(params) {
+  // Include existing validations...
+  
+  // Additional safety checks 
+  const contractState = await checkContractState();
+  const reentrancyProtected = await validateReentrancyProtection();
+  
+  return {
+    valid: hasPermission && parametersValid && gasWithinLimits && 
+           contractState.valid && reentrancyProtected,
+    errors: [...basicValidation.errors, ...contractState.errors]
+  };
+}
+`}</pre>
+                                                                </div>
+                                                              </TabsContent>
+                                                            </Tabs>
+                                                          </div>
+                                                        </div>
+                                                      </CollapsibleContent>
+                                                    </Collapsible>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            </CollapsibleContent>
+                                          </Collapsible>
+                                        ))
+                                      ) : (
+                                        <div className="text-center p-6 bg-gray-800/50 rounded-lg">
+                                          <p className="text-gray-400">No actors available. Please ensure the analysis has completed successfully.</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
