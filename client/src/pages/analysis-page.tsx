@@ -1099,12 +1099,36 @@ The deployment should initialize the contracts with test values and set me as th
                                       }
                                       return res.json();
                                     })
-                                    .then(data => {
+                                    .then(async (data) => {
                                       console.log("Deployment analysis started:", data);
                                       
-                                      // Start polling for deployment instructions
+                                      // Check immediately if deployment is already completed
+                                      // This happens when the API has cached results
+                                      if (submissionData?.submission_id) {
+                                        try {
+                                          const isCompleted = await checkDeploymentCompletion(submissionData.submission_id);
+                                          
+                                          if (isCompleted) {
+                                            console.log("Deployment already completed, fetching results directly");
+                                            const deploymentRes = await fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`);
+                                            if (deploymentRes.ok) {
+                                              const deploymentData = await deploymentRes.json();
+                                              setGeneratedDeployment(deploymentData);
+                                              setIsGeneratingDeployment(false);
+                                              setIsAnalysisInProgress(false);
+                                              // Refresh the analysis data to update UI
+                                              refetch();
+                                              return; // Exit early if we already have results
+                                            }
+                                          }
+                                        } catch (error) {
+                                          console.error("Error checking immediate deployment completion:", error);
+                                        }
+                                      }
+                                      
+                                      // If not completed immediately, start polling
                                       const intervalId = setInterval(() => {
-                                        // First check if the deployment is marked as completed in our database
+                                        // Check if the deployment is marked as completed in our database
                                         if (submissionData?.submission_id) {
                                           fetch(`/api/deployment-status/${submissionData.submission_id}`)
                                             .then(res => res.ok ? res.json() : null)
