@@ -1248,10 +1248,59 @@ export default function AnalysisPage() {
                 </CardTitle>
                 <CardDescription>
                   {(() => {
+                  // Get the latest completed step and its timestamp 
+                  const getLastCompletedStepInfo = () => {
+                    if (!analysis?.completedSteps || analysis.completedSteps.length === 0) return null;
+                    
+                    // Sort by updatedAt timestamp to find the most recent
+                    const sortedSteps = [...analysis.completedSteps].sort((a, b) => {
+                      const dateA = new Date(a.updatedAt);
+                      const dateB = new Date(b.updatedAt);
+                      return dateB.getTime() - dateA.getTime(); // Descending order (newest first)
+                    });
+                    
+                    const latestStep = sortedSteps[0];
+                    if (!latestStep) return null;
+                    
+                    // Convert API step name to UI step name
+                    const uiStepName = 
+                      latestStep.step === "project_summary" ? "files" :
+                      latestStep.step === "actors_summary" ? "actors" :
+                      latestStep.step === "analyze_deployment" || latestStep.step === "deployment_instructions" ? "deployment" :
+                      latestStep.step === "simulation_setup" ? "test_setup" :
+                      latestStep.step === "run_simulation" ? "simulations" : latestStep.step;
+                      
+                    // Find the matching step definition to get its display name
+                    const stepDefinition = analysisSteps.find(s => s.id === uiStepName);
+                    const stepDisplayName = stepDefinition?.title || uiStepName;
+                    
+                    return {
+                      stepName: stepDisplayName,
+                      timestamp: latestStep.updatedAt
+                    };
+                  };
+
                   // Determine the status text based on step status and data availability
                   const stepStatus = getStepStatus(currentStep.id);
                   
-                  if (stepStatus === "in_progress") {
+                  // Special case for test_setup when simRepo is available
+                  if (currentStep.id === "test_setup" && simRepo) {
+                    const lastStepInfo = getLastCompletedStepInfo();
+                    if (lastStepInfo) {
+                      try {
+                        const dateObj = new Date(lastStepInfo.timestamp);
+                        if (!isNaN(dateObj.getTime())) {
+                          return `Latest step: ${lastStepInfo.stepName} (${format(dateObj, 'MMM d, h:mm a')})`;
+                        } else {
+                          return `Latest step: ${lastStepInfo.stepName}`;
+                        }
+                      } catch (e) {
+                        console.error("Error formatting timestamp:", e);
+                        return `Latest step: ${lastStepInfo.stepName}`;
+                      }
+                    }
+                    return "Environment ready";
+                  } else if (stepStatus === "in_progress") {
                     // Special case for deployment instructions
                     if (currentStep.id === "deployment") {
                       if (isAnalysisInProgress) {
