@@ -33,28 +33,113 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Missing submission_id parameter" });
       }
       
-      // Check completed steps in the database
-      const completedSteps = await db
-        .select()
-        .from(analysisSteps)
-        .where(
-          and(
-            eq(analysisSteps.submissionId, submissionId),
-            or(
-              eq(analysisSteps.stepId, 'analyze_deployment'),
-              eq(analysisSteps.stepId, 'deployment')
-            ),
-            eq(analysisSteps.status, 'completed')
-          )
-        );
+      console.log(`Checking deployment status for submission: ${submissionId}`);
       
-      return res.json({
-        isCompleted: completedSteps.length > 0,
-        steps: completedSteps
+      let isCompletedInDatabase = false;
+      let dbTimestamp = null;
+      
+      // First check our own database
+      try {
+        // Check completed steps in the database
+        const completedSteps = await db
+          .select()
+          .from(analysisSteps)
+          .where(
+            and(
+              eq(analysisSteps.submissionId, submissionId),
+              or(
+                eq(analysisSteps.stepId, 'analyze_deployment'),
+                eq(analysisSteps.stepId, 'deployment')
+              ),
+              eq(analysisSteps.status, 'completed')
+            )
+          );
+        
+        isCompletedInDatabase = completedSteps.length > 0;
+        if (isCompletedInDatabase && completedSteps[0].updatedAt) {
+          dbTimestamp = completedSteps[0].updatedAt;
+        }
+      } catch (dbError) {
+        console.error("Error checking database for deployment status:", dbError);
+        // Continue to check external API even if database check fails
+      }
+      
+      // Then check external API for submission status
+      let isCompletedInExternalApi = false;
+      let externalApiTimestamp = null;
+      
+      try {
+        // Check the submission status from the external API
+        const submissionResponse = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/submission/${submissionId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer my_secure_password',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (submissionResponse.ok) {
+          const submissionData = await submissionResponse.json();
+          
+          // Check if deployment is in completed steps
+          isCompletedInExternalApi = submissionData.completed_steps?.some((step: { step: string, updatedAt: string }) => {
+            const isCompleted = step.step === "analyze_deployment" || step.step === "deployment_instructions";
+            if (isCompleted && step.updatedAt) {
+              externalApiTimestamp = step.updatedAt;
+            }
+            return isCompleted;
+          }) || false;
+        }
+      } catch (externalApiError) {
+        console.error("Error checking external API for deployment status:", externalApiError);
+        // Continue to check deployment instructions API even if submission check fails
+      }
+      
+      // Finally, check if we can directly fetch the deployment instructions
+      let hasDeploymentInstructions = false;
+      
+      try {
+        // Check if the deployment instructions endpoint returns data
+        const instructionsResponse = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer my_secure_password',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        hasDeploymentInstructions = instructionsResponse.ok;
+      } catch (instructionsError) {
+        console.error("Error checking deployment instructions API:", instructionsError);
+        // This is optional, continue without it
+      }
+      
+      // Final determination: deployment is complete if any check passes
+      const isCompleted = isCompletedInDatabase || isCompletedInExternalApi || hasDeploymentInstructions;
+      
+      // Use the earliest available timestamp
+      const timestamp = dbTimestamp || externalApiTimestamp;
+      
+      console.log(`Deployment status for ${submissionId}: 
+        Database: ${isCompletedInDatabase ? 'Completed' : 'Not completed'}
+        External API: ${isCompletedInExternalApi ? 'Completed' : 'Not completed'}
+        Instructions Available: ${hasDeploymentInstructions ? 'Yes' : 'No'}
+        Final result: ${isCompleted ? 'COMPLETED' : 'NOT COMPLETED'}
+      `);
+      
+      return res.json({ 
+        isCompleted,
+        timestamp,
+        dbStatus: { completed: isCompletedInDatabase, timestamp: dbTimestamp },
+        apiStatus: { completed: isCompletedInExternalApi, timestamp: externalApiTimestamp },
+        hasInstructions: hasDeploymentInstructions
       });
     } catch (error) {
       console.error("Error checking deployment status:", error);
-      return res.status(500).json({ error: "Failed to check deployment status" });
+      return res.status(500).json({ 
+        error: "Failed to check deployment status", 
+        isCompleted: false 
+      });
     }
   });
   

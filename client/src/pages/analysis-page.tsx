@@ -771,18 +771,25 @@ export default function AnalysisPage() {
     return analysis.completedSteps.some(step => step.step === apiStepName);
   };
   
-  // Function to explicitly check if a deployment step is completed
+  // Function to explicitly check if a deployment step is completed using our enhanced endpoint
   const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
     try {
       if (!submissionId) return false;
       
-      // Check the dedicated status endpoint that looks in both the 'analyze_deployment' and 'deployment' tables
+      console.log(`Checking deployment completion for submission ${submissionId}`);
+      // Check the dedicated status endpoint that checks multiple sources
       const response = await fetch(`/api/deployment-status/${submissionId}`);
       
-      if (!response.ok) return false;
+      if (!response.ok) {
+        console.error(`Error checking deployment status: ${response.status}`);
+        return false;
+      }
       
       const data = await response.json();
-      return data.isCompleted;
+      console.log(`Deployment status check result:`, data);
+      
+      // The improved endpoint considers it completed if any of the checks (DB or API) pass
+      return data.isCompleted === true;
     } catch (error) {
       console.error("Error checking deployment completion:", error);
       return false;
