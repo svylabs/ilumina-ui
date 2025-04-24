@@ -276,13 +276,23 @@ export function registerRoutes(app: Express): Server {
       const response = await callExternalIluminaAPI(`/deployment_instructions/${submissionId}`);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Error from external API: ${response.status}`);
-        console.error(`Error details: ${errorText}`);
+        console.error(`External API error: ${response.status} ${response.statusText}`);
+        let errorDetails = "";
+        
+        try {
+          // Clone the response before trying to read it
+          const errorResponse = response.clone();
+          const errorText = await errorResponse.text();
+          console.error(`Error details: ${errorText}`);
+          errorDetails = errorText;
+        } catch (err) {
+          console.error("Could not read error response body:", err);
+          errorDetails = "Could not read error details";
+        }
         
         return res.status(response.status).json({ 
           error: `Failed to fetch deployment instructions from external API: ${response.status}`,
-          details: errorText,
+          details: errorDetails,
           submissionId: submissionId
         });
       }
@@ -421,10 +431,23 @@ export function registerRoutes(app: Express): Server {
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Error analyzing deployment: ${errorText}`);
+        console.error(`Error analyzing deployment: ${response.status} ${response.statusText}`);
+        let errorDetails = "";
+        
+        try {
+          // Clone the response before trying to read it
+          const errorResponse = response.clone();
+          const errorText = await errorResponse.text();
+          console.error(`Error details: ${errorText}`);
+          errorDetails = errorText;
+        } catch (err) {
+          console.error("Could not read error response body:", err);
+          errorDetails = "Could not read error details";
+        }
+        
         return res.status(response.status).json({ 
-          error: `Failed to start deployment analysis: ${errorText}` 
+          error: `Failed to start deployment analysis: ${response.status}`,
+          details: errorDetails
         });
       }
       
