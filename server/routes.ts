@@ -869,6 +869,100 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Endpoint to get simulation repository information
+  app.get('/api/simulation-repo/:submission_id', async (req, res) => {
+    try {
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(req.params.submission_id);
+      
+      // If there was an error getting a valid submission ID, return the error
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details 
+        });
+      }
+      
+      const submissionId = result.submissionId;
+      
+      // First, get the project info to determine the project name
+      // Start with checking our database for submission data
+      const submissionData = await db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.id, submissionId))
+        .limit(1);
+        
+      if (submissionData.length === 0) {
+        return res.status(404).json({
+          error: "Submission not found",
+          details: "Could not find the specified submission in the database"
+        });
+      }
+      
+      // Get project details
+      const projectData = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, submissionData[0].projectId))
+        .limit(1);
+        
+      if (projectData.length === 0) {
+        return res.status(404).json({
+          error: "Project not found",
+          details: "Could not find the project associated with this submission"
+        });
+      }
+      
+      // Get the run ID from external API
+      try {
+        const apiResponse = await callExternalIluminaAPI(`/submission/${submissionId}`);
+        
+        if (!apiResponse.ok) {
+          return res.status(apiResponse.status).json({
+            error: "Failed to fetch simulation data from external API",
+            details: await apiResponse.text()
+          });
+        }
+        
+        const apiData = await apiResponse.json();
+        
+        // Extract run_id from API response
+        const runId = apiData.run_id;
+        
+        if (!runId) {
+          return res.status(404).json({
+            error: "Simulation not found",
+            details: "No run ID found for this submission"
+          });
+        }
+        
+        // Construct the simulation repository name
+        const projectName = projectData[0].name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        const repoName = `${projectName}-simulation-${runId}`;
+        const username = process.env.GITHUB_USERNAME || 'svylabs'; // Fallback to svylabs if not set
+        
+        // Return the simulation repository information
+        return res.json({
+          owner: username,
+          repo: repoName,
+          branch: "main",
+          hasToken: Boolean(process.env.GITHUB_TOKEN)
+        });
+        
+      } catch (error) {
+        console.error("Error fetching simulation data:", error);
+        return res.status(500).json({
+          error: "Failed to fetch simulation data",
+          details: error.message
+        });
+      }
+    } catch (error) {
+      console.error("Error in simulation-repo endpoint:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
   app.get('/api/github/content/:owner/:repo/:path(*)', async (req, res) => {
     try {
       const { owner, repo, path } = req.params;
