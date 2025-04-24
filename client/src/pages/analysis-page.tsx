@@ -1932,17 +1932,45 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         <div className="text-white font-mono">
                           {(() => {
                             try {
-                              // First try to use the jsonData field directly from the API
-                              const stepData = analysis?.steps[currentStep.id];
+                              // First try to use generatedDeployment if it's available 
+                              let deploymentData = generatedDeployment;
                               
-                              // Fall back to parsing the details field if jsonData is not available
-                              let deploymentData;
-                              if (stepData?.jsonData) {
-                                deploymentData = stepData.jsonData;
-                              } else {
-                                const details = getStepDetails(currentStep.id);
-                                if (!details) return <p>No details available</p>;
-                                deploymentData = JSON.parse(details);
+                              // Fall back to API data if generatedDeployment is not set
+                              if (!deploymentData) {
+                                // Try to use the jsonData field from the API
+                                const stepData = analysis?.steps[currentStep.id];
+                                
+                                if (stepData?.jsonData) {
+                                  deploymentData = stepData.jsonData;
+                                } else {
+                                  // Last resort: try parsing details field
+                                  const details = getStepDetails(currentStep.id);
+                                  if (!details) {
+                                    // If we get here, we should try fetching the data directly
+                                    if (submissionData && submissionData.submission_id) {
+                                      // Trigger a one-time fetch
+                                      fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`)
+                                        .then(res => res.ok ? res.json() : null)
+                                        .then(data => {
+                                          if (data) {
+                                            console.log("Fetched deployment instructions directly:", data);
+                                            setGeneratedDeployment(data);
+                                          }
+                                        })
+                                        .catch(err => console.error("Error fetching deployment instructions:", err));
+                                    }
+                                    return <p>Loading deployment instructions...</p>;
+                                  }
+                                  try {
+                                    deploymentData = JSON.parse(details);
+                                  } catch (parseError) {
+                                    return <p>Could not parse deployment details: {String(parseError)}</p>;
+                                  }
+                                }
+                              }
+                              
+                              if (!deploymentData) {
+                                return <p>No deployment data available. Please try refreshing or regenerating the instructions.</p>;
                               }
                               
                               return (
