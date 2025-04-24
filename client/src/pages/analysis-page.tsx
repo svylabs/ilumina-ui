@@ -2119,72 +2119,87 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                                 return <p>No deployment data available. Please try refreshing or regenerating the instructions.</p>;
                               }
                               
-                              // Display the deployment data in a pre-formatted way
-                              // Either display as JSON or as a formatted object, depending on what we got
-                              if (typeof deploymentData === 'string') {
-                                return (
-                                  <div className="space-y-6">
-                                    <div className="bg-gray-900 p-4 rounded-md">
-                                      <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                                      <p className="text-gray-400 mt-3 text-sm">Instructions for deploying the smart contracts to your local development network.</p>
-                                    </div>
-                                    <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
-                                      {deploymentData}
-                                    </pre>
-                                  </div>
-                                );
-                              } 
+                              // Nicely format and display the deployment steps
+                              // This assumes the backend has already parsed the JSON from the deployment_instructions field
+                              // and formatted it into a structure with title, description, and deploymentSteps
                               
-                              // If deployment_instructions field exists, try to parse it
-                              if (deploymentData.deployment_instructions) {
-                                let instructionsContent;
-                                if (typeof deploymentData.deployment_instructions === 'string') {
-                                  try {
-                                    // Try to parse as JSON
-                                    const parsedInstructions = JSON.parse(deploymentData.deployment_instructions);
-                                    instructionsContent = (
-                                      <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
-                                        {JSON.stringify(parsedInstructions, null, 2)}
-                                      </pre>
-                                    );
-                                  } catch (e) {
-                                    // Not valid JSON, display as string
-                                    instructionsContent = (
-                                      <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
-                                        {deploymentData.deployment_instructions}
-                                      </pre>
-                                    );
-                                  }
-                                } else {
-                                  // Already an object
-                                  instructionsContent = (
-                                    <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
-                                      {JSON.stringify(deploymentData.deployment_instructions, null, 2)}
-                                    </pre>
-                                  );
-                                }
-                                
-                                return (
-                                  <div className="space-y-6">
-                                    <div className="bg-gray-900 p-4 rounded-md">
-                                      <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                                      <p className="text-gray-400 mt-3 text-sm">Instructions for deploying the smart contracts to your local development network.</p>
-                                    </div>
-                                    {instructionsContent}
-                                  </div>
-                                );
-                              }
-                              
-                              // Default display for any other format
                               return (
                                 <div className="space-y-6">
                                   <div className="bg-gray-900 p-4 rounded-md">
-                                    <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                                    <p className="text-gray-400 mt-3 text-sm">Instructions for deploying the smart contracts to your local development network.</p>
+                                    <h3 className="text-xl font-semibold text-blue-400">{deploymentData.title || "Deployment Instructions"}</h3>
+                                    <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
                                   </div>
-                                  <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono whitespace-pre-wrap">
-                                    {JSON.stringify(deploymentData, null, 2)}
-                                  </pre>
+                                  
+                                  <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
+                                    <div className="space-y-3">
+                                      {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
+                                        <div key={index} className="border border-gray-700 p-4 rounded-md bg-black/30 relative">
+                                          <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                            Step {index + 1}
+                                          </div>
+                                          <h4 className="text-blue-300 font-medium mb-2">{step.name}</h4>
+                                          <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                                            <div className="col-span-3 text-gray-400">Contract:</div>
+                                            <div className="col-span-9 text-green-300 font-mono">{step.contract}</div>
+                                            
+                                            {step.function && (
+                                              <>
+                                                <div className="col-span-3 text-gray-400">Function:</div>
+                                                <div className="col-span-9 text-green-300 font-mono">{step.function}</div>
+                                              </>
+                                            )}
+                                            
+                                            <div className="col-span-3 text-gray-400">Reference:</div>
+                                            <div className="col-span-9 text-green-300 font-mono">{step.reference}</div>
+                                            
+                                            <div className="col-span-3 text-gray-400">Gas Estimate:</div>
+                                            <div className="col-span-9 text-yellow-300 font-mono">{step.gas}</div>
+                                          </div>
+                                          
+                                          {Object.keys(step.params || {}).length > 0 && (
+                                            <div className="mt-2">
+                                              <div className="text-xs text-gray-400">Parameters:</div>
+                                              <div className="grid grid-cols-1 gap-1 mt-1 bg-gray-800/50 p-2 rounded">
+                                                {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
+                                                  <div key={i} className="text-sm">
+                                                    <span className="text-gray-500">{key}: </span>
+                                                    <span className="text-green-300">{String(value)}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          
+                                          <div className="mt-3">
+                                            <div className="text-xs text-gray-400">Transaction Code:</div>
+                                            <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
+                                              {step.tx}
+                                            </div>
+                                          </div>
+                                          
+                                          <div className="mt-2">
+                                            <div className="text-xs text-gray-400">Expected Result:</div>
+                                            <div className="text-sm text-blue-300 mt-1">{step.result}</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Add a helpful note for the deployment sequence */}
+                                  <div className="bg-yellow-950/30 border border-yellow-900/50 rounded p-4 mt-6">
+                                    <h4 className="text-yellow-400 text-sm font-medium flex items-center">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                      </svg>
+                                      Important Note
+                                    </h4>
+                                    <p className="text-gray-300 mt-2 text-sm">
+                                      The deployment steps should be executed in sequence. Each step may reference contracts deployed in previous steps.
+                                      Make sure to save the deployment addresses after each contract deployment for use in subsequent steps.
+                                    </p>
+                                  </div>
                                 </div>
                               );
                             } catch (e) {

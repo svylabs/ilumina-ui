@@ -93,8 +93,69 @@ export function registerRoutes(app: Express): Server {
       const data = await response.json();
       console.log("Successfully received deployment instructions from external API");
       
-      // Simply pass through the data from the external API
-      return res.json(data);
+      // Parse the deployment_instructions field which is a JSON string
+      if (data && data.deployment_instructions) {
+        try {
+          const parsedInstructions = JSON.parse(data.deployment_instructions);
+          
+          // Format the instructions in a structured way
+          const formattedDeployment = {
+            title: "Smart Contract Deployment Process for StableBase",
+            description: "Follow these steps to deploy the smart contracts for your project.",
+            deploymentSteps: []
+          };
+          
+          // Process each step in the sequence
+          if (parsedInstructions.sequence && Array.isArray(parsedInstructions.sequence)) {
+            formattedDeployment.deploymentSteps = parsedInstructions.sequence.map((step, index) => {
+              const stepType = step.type || "unknown";
+              const contract = step.contract || "Contract";
+              const functionName = step.function || "execute";
+              const refName = step.ref_name || `step_${index}`;
+              
+              // Format the parameters for display
+              const formattedParams = {};
+              if (step.params && Array.isArray(step.params)) {
+                step.params.forEach(param => {
+                  if (param && param.name) {
+                    formattedParams[param.name] = param.type === "ref" 
+                      ? `[Reference: ${param.value || 'Unknown'}]` 
+                      : param.value || 'Unknown';
+                  }
+                });
+              }
+              
+              // Create a nicely formatted step
+              return {
+                name: stepType === "deploy" 
+                  ? `Deploy ${contract}` 
+                  : `Call ${contract}.${functionName}`,
+                contract: contract,
+                function: functionName,
+                reference: refName,
+                params: formattedParams,
+                gas: stepType === "deploy" ? "~1.5M gas" : "~300K gas", // Estimated gas
+                tx: stepType === "deploy"
+                  ? `const ${refName} = await deploy${contract}()`
+                  : `await ${refName}.${functionName}(${Object.values(formattedParams).join(", ")})`,
+                result: stepType === "deploy"
+                  ? `${contract} deployed at: [ADDRESS]`
+                  : `Function call succeeded`
+              };
+            });
+          }
+          
+          console.log("Sending formatted deployment instructions");
+          return res.json(formattedDeployment);
+        } catch (parseError) {
+          console.error("Error parsing deployment_instructions:", parseError);
+          // If parsing fails, return the original data
+          return res.json(data);
+        }
+      } else {
+        // If the expected field is not found, return the original data
+        return res.json(data);
+      }
     } catch (error) {
       console.error("Error in fetch-deployment-instructions endpoint:", error);
       return res.status(500).json({ error: "Internal server error" });
