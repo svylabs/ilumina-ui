@@ -1311,7 +1311,50 @@ export default function AnalysisPage() {
               </CardHeader>
               <CardContent>
                 <div className="rounded-md bg-black/90 p-4">
-                  {getStepStatus(currentStep.id) === "in_progress" ? (
+                  {/* Special case for test_setup - show it regardless of status if simRepo is available */}
+                  {currentStep.id === "test_setup" && simRepo ? (
+                    /* We'll add the Test Environment section here in the next edit */
+                    <div className="text-white font-mono">
+                      <div className="space-y-6">
+                        {/* Test Environment with file viewer */}
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-blue-400 mb-4">Test Environment</h3>
+                          
+                          {/* Network info panel */}
+                          <div className="bg-gray-900 p-4 rounded-md mb-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                <span className="text-gray-400">Runtime:</span>
+                                <p className="text-white">Hardhat</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Network:</span>
+                                <p className="text-cyan-300">Local Hardhat</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Chain ID:</span>
+                                <p className="text-white">31337</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Code Viewer */}
+                          <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                            <h4 className="text-lg font-medium text-blue-400 mb-3">Simulation Code</h4>
+                            <div className="w-full overflow-hidden">
+                              <GitHubCodeViewer 
+                                owner={simRepo.owner}
+                                repo={simRepo.repo}
+                                branch={simRepo.branch}
+                                path=""
+                                showBreadcrumb={true}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : getStepStatus(currentStep.id) === "in_progress" ? (
                     <div>
                       {currentStep.id === "deployment" ? (
                         <div className="space-y-6 text-white">
