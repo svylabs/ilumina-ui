@@ -215,6 +215,63 @@ export function registerRoutes(app: Express): Server {
       }
       
       const data = await response.json();
+      
+      // Update our database with the deployment step as both analyze_deployment and deployment
+      // This ensures compatibility between what the API uses and what the frontend expects
+      try {
+        // Get the submission record from our database
+        const submission = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.id, submission_id))
+          .limit(1);
+        
+        if (submission.length > 0) {
+          // Save the step with the name the API uses
+          await db
+            .insert(analysisSteps)
+            .values({
+              submissionId: submission_id,
+              stepId: 'analyze_deployment',
+              status: 'completed',
+              details: 'Deployment analysis initiated',
+              updatedAt: new Date()
+            })
+            .onConflictDoUpdate({
+              target: [analysisSteps.submissionId, analysisSteps.stepId],
+              set: {
+                status: 'completed',
+                details: 'Deployment analysis updated',
+                updatedAt: new Date()
+              }
+            });
+          
+          // Also save it with the name the frontend expects
+          await db
+            .insert(analysisSteps)
+            .values({
+              submissionId: submission_id,
+              stepId: 'deployment',
+              status: 'completed',
+              details: 'Deployment analysis completed',
+              updatedAt: new Date()
+            })
+            .onConflictDoUpdate({
+              target: [analysisSteps.submissionId, analysisSteps.stepId],
+              set: {
+                status: 'completed',
+                details: 'Deployment analysis updated',
+                updatedAt: new Date()
+              }
+            });
+            
+          console.log("Deployment step saved to database with both names for compatibility");
+        }
+      } catch (dbError) {
+        console.error("Error updating deployment step in database:", dbError);
+        // We continue even if DB update fails - it's not critical for the response
+      }
+      
       return res.json(data);
     } catch (error) {
       console.error("Error in analyze-deployment endpoint:", error);

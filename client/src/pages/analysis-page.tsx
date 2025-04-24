@@ -714,8 +714,17 @@ export default function AnalysisPage() {
     return stepId === "files" ? "analyze_project" :
       stepId === "actors" ? "analyze_actors" :
       stepId === "test_setup" ? "simulation_setup" :
-      stepId === "deployment" ? "deployment_instructions" :
+      stepId === "deployment" ? "analyze_deployment" : // API uses analyze_deployment instead of deployment_instructions
       stepId === "simulations" ? "run_simulation" : "";
+  };
+  
+  // Map API step names to UI step IDs (inverse of getApiStepName)
+  const getUiStepId = (apiStepName: string): string => {
+    return apiStepName === "analyze_project" ? "files" :
+      apiStepName === "analyze_actors" ? "actors" :
+      apiStepName === "simulation_setup" ? "test_setup" :
+      (apiStepName === "analyze_deployment" || apiStepName === "deployment_instructions") ? "deployment" :
+      apiStepName === "run_simulation" ? "simulations" : "";
   };
   
   // Get timestamp for completed step from API data
@@ -1947,17 +1956,31 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                                   const details = getStepDetails(currentStep.id);
                                   if (!details) {
                                     // If we get here, we should try fetching the data directly
-                                    if (submissionData && submissionData.submission_id) {
-                                      // Trigger a one-time fetch
-                                      fetch(`/api/fetch-deployment-instructions/${submissionData.submission_id}`)
-                                        .then(res => res.ok ? res.json() : null)
-                                        .then(data => {
-                                          if (data) {
-                                            console.log("Fetched deployment instructions directly:", data);
-                                            setGeneratedDeployment(data);
-                                          }
-                                        })
-                                        .catch(err => console.error("Error fetching deployment instructions:", err));
+                                    if (id) { // Use the project ID to fetch deployment instructions
+                                      // Find submission ID for this project from the analysis data
+                                      const projectId = id;
+                                      
+                                      // We need to display a loading state while we fetch
+                                      setTimeout(() => {
+                                        // First, try to get the analysis data to find the submission ID
+                                        fetch(`/api/analysis/${projectId}`)
+                                          .then(res => res.ok ? res.json() : null)
+                                          .then(analysisData => {
+                                            if (analysisData && analysisData.submissionId) {
+                                              // If we have a submission ID, try to get deployment instructions
+                                              fetch(`/api/fetch-deployment-instructions/${analysisData.submissionId}`)
+                                                .then(res => res.ok ? res.json() : null)
+                                                .then(data => {
+                                                  if (data) {
+                                                    console.log("Fetched deployment instructions directly:", data);
+                                                    setGeneratedDeployment(data);
+                                                  }
+                                                })
+                                                .catch(err => console.error("Error fetching deployment instructions:", err));
+                                            }
+                                          })
+                                          .catch(err => console.error("Error fetching analysis data:", err));
+                                      }, 100);
                                     }
                                     return <p>Loading deployment instructions...</p>;
                                   }
