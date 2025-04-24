@@ -918,8 +918,18 @@ export default function AnalysisPage() {
       
       // Only auto-select a step if the user hasn't manually selected one yet
       if (!userSelectedRef.current) {
-        // First check: find any step that should be "in_progress" according to our logic
-        // This includes both explicitly marked as in_progress and the next logical step
+        // Special case: If the first step (files/analyze_project) is completed, 
+        // automatically show the simulation environment (test_setup)
+        const isFirstStepCompleted = isStepActuallyCompleted("files");
+        
+        if (isFirstStepCompleted) {
+          console.log("First step is completed, showing simulation environment");
+          setSelectedStep("test_setup");
+          return;
+        }
+        
+        // Standard logic for other cases
+        // Find any step that should be "in_progress" according to our logic
         for (const step of analysisSteps) {
           const status = getStepStatus(step.id);
           if (status === "in_progress") {
@@ -1703,7 +1713,7 @@ The deployment should initialize the contracts with test values and set me as th
                             }
                           })()}
                         </div>
-                      ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
+                      ) : currentStep.id === "test_setup" ? (
                         <div className="text-white font-mono">
                           {(() => {
                             try {
@@ -1716,8 +1726,31 @@ The deployment should initialize the contracts with test values and set me as th
                                 testSetupData = stepData.jsonData;
                               } else {
                                 const details = getStepDetails(currentStep.id);
-                                if (!details) return <p>No details available</p>;
-                                testSetupData = JSON.parse(details);
+                                // Create default data if details aren't available
+                                if (!details) {
+                                  testSetupData = {
+                                    testEnvironment: "Hardhat",
+                                    networkSettings: {
+                                      name: "Local Hardhat",
+                                      chainId: "31337"
+                                    },
+                                    substeps: []
+                                  };
+                                } else {
+                                  try {
+                                    testSetupData = JSON.parse(details);
+                                  } catch (e) {
+                                    console.error("Failed to parse test setup data:", e);
+                                    testSetupData = {
+                                      testEnvironment: "Hardhat",
+                                      networkSettings: {
+                                        name: "Local Hardhat",
+                                        chainId: "31337"
+                                      },
+                                      substeps: []
+                                    };
+                                  }
+                                }
                               }
                               
                               // Get actors data from API
