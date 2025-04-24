@@ -2009,25 +2009,48 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                                       const projectId = id;
                                       
                                       // We need to display a loading state while we fetch
-                                      setTimeout(() => {
-                                        // First, try to get the analysis data to find the submission ID
-                                        fetch(`/api/analysis/${projectId}`)
-                                          .then(res => res.ok ? res.json() : null)
-                                          .then(analysisData => {
-                                            if (analysisData && analysisData.submissionId) {
-                                              // If we have a submission ID, try to get deployment instructions
-                                              fetch(`/api/fetch-deployment-instructions/${analysisData.submissionId}`)
-                                                .then(res => res.ok ? res.json() : null)
-                                                .then(data => {
-                                                  if (data) {
-                                                    console.log("Fetched deployment instructions directly:", data);
-                                                    setGeneratedDeployment(data);
-                                                  }
-                                                })
-                                                .catch(err => console.error("Error fetching deployment instructions:", err));
+                                      setTimeout(async () => {
+                                        try {
+                                          // First, try to get the analysis data to find the submission ID
+                                          const analysisRes = await fetch(`/api/analysis/${projectId}`);
+                                          if (!analysisRes.ok) {
+                                            console.error("Failed to fetch analysis data");
+                                            return;
+                                          }
+                                          
+                                          const analysisData = await analysisRes.json();
+                                          if (!analysisData || !analysisData.submissionId) {
+                                            console.error("No submission ID found in analysis data");
+                                            return;
+                                          }
+                                          
+                                          const submissionId = analysisData.submissionId;
+                                          
+                                          // Check if deployment is completed using our new status check endpoint
+                                          const isCompleted = await checkDeploymentCompletion(submissionId);
+                                          
+                                          if (isCompleted) {
+                                            console.log("Deployment step is completed, fetching instructions");
+                                            // Deployment is complete, fetch the instructions
+                                            const deploymentRes = await fetch(`/api/fetch-deployment-instructions/${submissionId}`);
+                                            if (!deploymentRes.ok) {
+                                              console.error("Failed to fetch deployment instructions");
+                                              return;
                                             }
-                                          })
-                                          .catch(err => console.error("Error fetching analysis data:", err));
+                                            
+                                            const data = await deploymentRes.json();
+                                            if (data) {
+                                              console.log("Fetched deployment instructions directly:", data);
+                                              setGeneratedDeployment(data);
+                                              // Also refresh the main analysis data to update status
+                                              refetch();
+                                            }
+                                          } else {
+                                            console.log("Deployment step is not completed yet");
+                                          }
+                                        } catch (error) {
+                                          console.error("Error in deployment check process:", error);
+                                        }
                                       }, 100);
                                     }
                                     return <p>Loading deployment instructions...</p>;
