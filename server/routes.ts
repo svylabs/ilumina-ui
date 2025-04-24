@@ -65,10 +65,30 @@ export function registerRoutes(app: Express): Server {
   
   app.get("/api/fetch-deployment-instructions/:submission_id", async (req, res) => {
     try {
-      const submissionId = req.params.submission_id;
+      let submissionId = req.params.submission_id;
       
       if (!submissionId) {
         return res.status(400).json({ error: "Missing submission_id parameter" });
+      }
+      
+      // Check if this is a project ID (numeric) instead of a submission ID (UUID)
+      if (/^\d+$/.test(submissionId)) {
+        console.log(`Received project ID ${submissionId}, looking up corresponding submission ID`);
+        
+        // Look up the submission ID for this project
+        const projectSubmissions = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.projectId, parseInt(submissionId)))
+          .orderBy(submissions.createdAt, "desc")
+          .limit(1);
+          
+        if (projectSubmissions.length > 0) {
+          submissionId = projectSubmissions[0].id;
+          console.log(`Found submission ID ${submissionId} for project ID ${req.params.submission_id}`);
+        } else {
+          return res.status(404).json({ error: "No submissions found for this project ID" });
+        }
       }
       
       console.log(`Fetching deployment instructions for submission ${submissionId} from external API`);

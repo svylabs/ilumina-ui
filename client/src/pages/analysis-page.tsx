@@ -2178,14 +2178,38 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         <div className="text-white font-mono">
                           {(() => {
                             try {
-                              // Use a simplified approach for loading deployment data
-                              const submissionId = analysis?.submissionId;
+                              // Log the current state to help debug
+                              console.log("Current analysis data:", analysis);
                               
-                              if (!submissionId) {
-                                return <p>No submission ID found. Please try refreshing the page.</p>;
+                              // Try multiple approaches to get the submission ID
+                              let submissionId = null;
+                              
+                              // First check if it's directly in the analysis object
+                              if (analysis?.submissionId) {
+                                submissionId = analysis.submissionId;
+                                console.log("Found submission ID in analysis object:", submissionId);
                               }
                               
-                              // Let's fetch the data directly from the API
+                              // If not found and we have a project ID, try to get it from the URL
+                              if (!submissionId && id) {
+                                // We'll use the project ID itself for now, the backend will look up the submission
+                                submissionId = id;
+                                console.log("Using project ID as fallback:", submissionId);
+                              }
+                              
+                              if (!submissionId) {
+                                return (
+                                  <div className="p-4 bg-yellow-900/30 border border-yellow-700 rounded-md">
+                                    <h3 className="text-yellow-400 font-medium">Submission ID Not Found</h3>
+                                    <p className="mt-2 text-gray-300">
+                                      Could not determine the submission ID for this project. 
+                                      Please try refreshing the page or contact support if the issue persists.
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              
+                              // Let's fetch the data directly from the API using the ID we found
                               return <DeploymentInstructionsSection submissionId={submissionId} />
                             } catch (error) {
                               console.error("Error rendering deployment section:", error);
