@@ -23,8 +23,7 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
-  // Fetch deployment instructions directly from external API
-  // Check if deployment step is completed for a submission
+  // Simple deployment status check - just check directly from external API
   app.get("/api/deployment-status/:submission_id", async (req, res) => {
     try {
       const submissionId = req.params.submission_id;
@@ -33,44 +32,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Missing submission_id parameter" });
       }
       
-      console.log(`Checking deployment status for submission: ${submissionId}`);
-      
-      let isCompletedInDatabase = false;
-      let dbTimestamp = null;
-      
-      // First check our own database
+      // Check if we can fetch deployment instructions directly from the external API
       try {
-        // Check completed steps in the database
-        const completedSteps = await db
-          .select()
-          .from(analysisSteps)
-          .where(
-            and(
-              eq(analysisSteps.submissionId, submissionId),
-              or(
-                eq(analysisSteps.stepId, 'analyze_deployment'),
-                eq(analysisSteps.stepId, 'deployment')
-              ),
-              eq(analysisSteps.status, 'completed')
-            )
-          );
-        
-        isCompletedInDatabase = completedSteps.length > 0;
-        if (isCompletedInDatabase && completedSteps[0].updatedAt) {
-          dbTimestamp = completedSteps[0].updatedAt;
-        }
-      } catch (dbError) {
-        console.error("Error checking database for deployment status:", dbError);
-        // Continue to check external API even if database check fails
-      }
-      
-      // Then check external API for submission status
-      let isCompletedInExternalApi = false;
-      let externalApiTimestamp = null;
-      
-      try {
-        // Check the submission status from the external API
-        const submissionResponse = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/submission/${submissionId}`, {
+        const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
           method: 'GET',
           headers: {
             'Authorization': 'Bearer my_secure_password',
@@ -78,67 +42,23 @@ export function registerRoutes(app: Express): Server {
           }
         });
         
-        if (submissionResponse.ok) {
-          const submissionData = await submissionResponse.json();
-          
-          // Check if deployment is in completed steps
-          isCompletedInExternalApi = submissionData.completed_steps?.some((step: { step: string, updatedAt: string }) => {
-            const isCompleted = step.step === "analyze_deployment" || step.step === "deployment_instructions";
-            if (isCompleted && step.updatedAt) {
-              externalApiTimestamp = step.updatedAt;
-            }
-            return isCompleted;
-          }) || false;
-        }
-      } catch (externalApiError) {
-        console.error("Error checking external API for deployment status:", externalApiError);
-        // Continue to check deployment instructions API even if submission check fails
-      }
-      
-      // Finally, check if we can directly fetch the deployment instructions
-      let hasDeploymentInstructions = false;
-      
-      try {
-        // Check if the deployment instructions endpoint returns data
-        const instructionsResponse = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer my_secure_password',
-            'Content-Type': 'application/json'
-          }
+        // If we can fetch instructions, then this step is completed
+        return res.json({ 
+          isCompleted: response.ok,
+          message: response.ok ? "Deployment instructions available" : "Deployment instructions not available"
         });
-        
-        hasDeploymentInstructions = instructionsResponse.ok;
-      } catch (instructionsError) {
-        console.error("Error checking deployment instructions API:", instructionsError);
-        // This is optional, continue without it
+      } catch (error) {
+        console.error("Error checking deployment instructions API:", error);
+        return res.status(500).json({ 
+          isCompleted: false,
+          error: "Failed to check deployment status"
+        });
       }
-      
-      // Final determination: deployment is complete if any check passes
-      const isCompleted = isCompletedInDatabase || isCompletedInExternalApi || hasDeploymentInstructions;
-      
-      // Use the earliest available timestamp
-      const timestamp = dbTimestamp || externalApiTimestamp;
-      
-      console.log(`Deployment status for ${submissionId}: 
-        Database: ${isCompletedInDatabase ? 'Completed' : 'Not completed'}
-        External API: ${isCompletedInExternalApi ? 'Completed' : 'Not completed'}
-        Instructions Available: ${hasDeploymentInstructions ? 'Yes' : 'No'}
-        Final result: ${isCompleted ? 'COMPLETED' : 'NOT COMPLETED'}
-      `);
-      
-      return res.json({ 
-        isCompleted,
-        timestamp,
-        dbStatus: { completed: isCompletedInDatabase, timestamp: dbTimestamp },
-        apiStatus: { completed: isCompletedInExternalApi, timestamp: externalApiTimestamp },
-        hasInstructions: hasDeploymentInstructions
-      });
     } catch (error) {
       console.error("Error checking deployment status:", error);
       return res.status(500).json({ 
-        error: "Failed to check deployment status", 
-        isCompleted: false 
+        isCompleted: false,
+        error: "Failed to check deployment status"
       });
     }
   });
@@ -151,6 +71,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Missing submission_id parameter" });
       }
       
+      console.log(`Fetching deployment instructions for submission ${submissionId} from external API`);
+      
       // Call the external API to fetch deployment instructions
       const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/deployment_instructions/${submissionId}`, {
         method: 'GET',
@@ -161,139 +83,18 @@ export function registerRoutes(app: Express): Server {
       });
       
       if (!response.ok) {
-        // If it's a 404, it might just mean the analysis isn't ready yet
-        if (response.status === 404) {
-          return res.status(404).json({ error: "Deployment instructions not ready yet" });
-        }
-        
-        try {
-          // Try to parse the error as JSON
-          const errorJson = await response.json();
-          console.error(`Error fetching deployment instructions:`, errorJson);
-          
-          // If using test-submission-id and we get an error, provide a fallback response
-          if (submissionId === "test-submission-id") {
-            console.log("Using fallback data for test-submission-id");
-            return res.json({
-              title: "Smart Contract Deployment Process",
-              description: "Follow these steps to deploy the smart contracts for your project.",
-              deploymentSteps: [
-                {
-                  name: "Deploy the main contract",
-                  params: { constructor: "initialValue" },
-                  gas: "~1.2M gas",
-                  tx: "npx hardhat run scripts/deploy.js --network local",
-                  result: "Contract deployed at: 0x..."
-                }
-              ]
-            });
-          }
-          
-          return res.status(response.status).json({ 
-            error: `API Error: ${errorJson.error || "Unknown error"}` 
-          });
-        } catch (parseError) {
-          // If response isn't JSON, just return the text
-          const errorText = await response.text();
-          console.error(`Error fetching deployment instructions: ${errorText}`);
-          return res.status(response.status).json({ 
-            error: `Failed to fetch deployment instructions: ${errorText}` 
-          });
-        }
+        console.error(`Error from external API: ${response.status}`);
+        return res.status(response.status).json({ 
+          error: `Failed to fetch deployment instructions from external API: ${response.status}` 
+        });
       }
       
-      try {
-        const data = await response.json();
-        console.log("Raw data from deployment_instructions API:", JSON.stringify(data, null, 2));
-        
-        // Check if we have the deployment_instructions field
-        if (data && data.deployment_instructions) {
-          try {
-            // Try to parse the JSON string in deployment_instructions
-            console.log("Trying to parse deployment_instructions:", typeof data.deployment_instructions === 'string' 
-              ? data.deployment_instructions.substring(0, 200) + "..." 
-              : "Not a string");
-            
-            // Handle both string and already-parsed JSON object formats
-            const instructionsData = typeof data.deployment_instructions === 'string'
-              ? JSON.parse(data.deployment_instructions)
-              : data.deployment_instructions;
-              
-            console.log("Successfully parsed deployment instructions:", JSON.stringify(instructionsData, null, 2).substring(0, 200) + "...");
-            
-            // Transform the data to match our frontend's expected format
-            const transformedData = {
-              title: "Smart Contract Deployment Process",
-              description: "Follow these steps to deploy the smart contracts for your project.",
-              deploymentSteps: []
-            };
-            
-            // Process each deployment or call step
-            if (instructionsData.sequence && Array.isArray(instructionsData.sequence)) {
-              transformedData.deploymentSteps = instructionsData.sequence.map((step, index) => {
-                // Get safe values from the step to handle potential undefined fields
-                const stepType = step.type || "unknown";
-                const contract = step.contract || "Contract";
-                const functionName = step.function || "execute";
-                const refName = step.ref_name || `step_${index}`;
-                
-                // Format the step for our frontend
-                const formattedStep = {
-                  name: stepType === "deploy" 
-                    ? `Deploy ${contract}` 
-                    : `Call ${contract}.${functionName}`,
-                  params: {},
-                  gas: "~300K gas", // Default estimate
-                  tx: stepType === "deploy"
-                    ? `const ${refName} = await deploy${contract}()`
-                    : `await ${refName}.${functionName}(${formatParams(step.params || [])})`,
-                  result: stepType === "deploy"
-                    ? `${contract} deployed at: ${refName}`
-                    : `Function call succeeded`
-                };
-                
-                // Add parameters if they exist
-                if (step.params && Array.isArray(step.params) && step.params.length > 0) {
-                  step.params.forEach(param => {
-                    if (param && param.name) { // Check that param and param.name exist
-                      formattedStep.params[param.name] = param.type === "ref" 
-                        ? `[Reference: ${param.value || 'Unknown'}]` 
-                        : param.value || 'Unknown';
-                    }
-                  });
-                }
-                
-                return formattedStep;
-              });
-            }
-            
-            console.log("Transformed deployment instructions for frontend:", transformedData);
-            return res.json(transformedData);
-          } catch (parseErr) {
-            console.error("Error parsing deployment instructions JSON:", parseErr);
-            // Return the raw data if parsing fails
-            return res.json({
-              title: "Smart Contract Deployment Process",
-              description: "Follow these steps to deploy the smart contracts for your project.",
-              deploymentSteps: [
-                {
-                  name: "Deployment Data",
-                  params: {},
-                  gas: "Variable",
-                  tx: "See raw data below",
-                  result: data.deployment_instructions
-                }
-              ]
-            });
-          }
-        } else {
-          // If no deployment_instructions field, just return the raw data
-          return res.json(data);
-        }
-      } catch (dataError) {
-        console.error("Error processing deployment instructions:", dataError);
-        return res.status(500).json({ error: "Failed to process deployment instructions" });
-      }
+      // Get the raw data from the external API
+      const data = await response.json();
+      console.log("Successfully received deployment instructions from external API");
+      
+      // Simply pass through the data from the external API
+      return res.json(data);
     } catch (error) {
       console.error("Error in fetch-deployment-instructions endpoint:", error);
       return res.status(500).json({ error: "Internal server error" });

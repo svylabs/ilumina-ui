@@ -2119,52 +2119,72 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                                 return <p>No deployment data available. Please try refreshing or regenerating the instructions.</p>;
                               }
                               
+                              // Display the deployment data in a pre-formatted way
+                              // Either display as JSON or as a formatted object, depending on what we got
+                              if (typeof deploymentData === 'string') {
+                                return (
+                                  <div className="space-y-6">
+                                    <div className="bg-gray-900 p-4 rounded-md">
+                                      <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
+                                      <p className="text-gray-400 mt-3 text-sm">Instructions for deploying the smart contracts to your local development network.</p>
+                                    </div>
+                                    <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
+                                      {deploymentData}
+                                    </pre>
+                                  </div>
+                                );
+                              } 
+                              
+                              // If deployment_instructions field exists, try to parse it
+                              if (deploymentData.deployment_instructions) {
+                                let instructionsContent;
+                                if (typeof deploymentData.deployment_instructions === 'string') {
+                                  try {
+                                    // Try to parse as JSON
+                                    const parsedInstructions = JSON.parse(deploymentData.deployment_instructions);
+                                    instructionsContent = (
+                                      <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
+                                        {JSON.stringify(parsedInstructions, null, 2)}
+                                      </pre>
+                                    );
+                                  } catch (e) {
+                                    // Not valid JSON, display as string
+                                    instructionsContent = (
+                                      <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
+                                        {deploymentData.deployment_instructions}
+                                      </pre>
+                                    );
+                                  }
+                                } else {
+                                  // Already an object
+                                  instructionsContent = (
+                                    <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono">
+                                      {JSON.stringify(deploymentData.deployment_instructions, null, 2)}
+                                    </pre>
+                                  );
+                                }
+                                
+                                return (
+                                  <div className="space-y-6">
+                                    <div className="bg-gray-900 p-4 rounded-md">
+                                      <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
+                                      <p className="text-gray-400 mt-3 text-sm">Instructions for deploying the smart contracts to your local development network.</p>
+                                    </div>
+                                    {instructionsContent}
+                                  </div>
+                                );
+                              }
+                              
+                              // Default display for any other format
                               return (
                                 <div className="space-y-6">
                                   <div className="bg-gray-900 p-4 rounded-md">
                                     <h3 className="text-xl font-semibold text-blue-400">Deployment Instructions</h3>
-                                    <p className="text-gray-300 mt-1">{deploymentData.title || "Smart Contract Deployment Process"}</p>
-                                    <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
+                                    <p className="text-gray-400 mt-3 text-sm">Instructions for deploying the smart contracts to your local development network.</p>
                                   </div>
-                                  
-
-
-                                  <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
-                                    <div className="space-y-3">
-                                      {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
-                                        <div key={index} className="bg-gray-900 p-3 rounded-md">
-                                          <div className="flex justify-between items-start">
-                                            <h4 className="font-medium text-yellow-300">{step.name}</h4>
-                                            <div className="bg-gray-800 px-2 py-1 rounded text-xs text-gray-400">Gas: {step.gas}</div>
-                                          </div>
-                                          <div className="mt-2">
-                                            <div className="text-xs text-gray-400">Transaction:</div>
-                                            <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
-                                              {step.tx}
-                                            </div>
-                                          </div>
-                                          {Object.keys(step.params || {}).length > 0 && (
-                                            <div className="mt-2">
-                                              <div className="text-xs text-gray-400">Parameters:</div>
-                                              <div className="grid grid-cols-1 gap-1 mt-1">
-                                                {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
-                                                  <div key={i} className="text-sm">
-                                                    <span className="text-gray-500">{key}: </span>
-                                                    <span className="text-green-300">{String(value)}</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          <div className="mt-2">
-                                            <div className="text-xs text-gray-400">Result:</div>
-                                            <div className="text-sm text-blue-300 mt-1">{step.result}</div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
+                                  <pre className="bg-gray-900 p-4 rounded-md overflow-auto text-sm text-white font-mono whitespace-pre-wrap">
+                                    {JSON.stringify(deploymentData, null, 2)}
+                                  </pre>
                                 </div>
                               );
                             } catch (e) {
