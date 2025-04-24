@@ -1707,30 +1707,22 @@ The deployment should initialize the contracts with test values and set me as th
                                   }
                                   
                                   // First, trigger the deployment analysis via the API
+                                  // Use the project ID directly - the backend will handle conversion
                                   const submissionData = { 
-                                    submission_id: "", 
-                                    user_prompt: deploymentInput 
+                                    submission_id: id ? id.toString() : "", // Use project ID directly if available
+                                    user_prompt: deploymentInput  // Include user prompt if entered
                                   };
                                   
-                                  // Attempt to find submission ID from the project data
-                                  fetch(`/api/analysis/${id}`)
-                                    .then(res => res.json())
-                                    .then(data => {
-                                      if (data?.submissionId) {
-                                        submissionData.submission_id = data.submissionId;
-                                        
-                                        // Once we have the submission ID, trigger the deployment analysis
-                                        return fetch('/api/analyze-deployment', {
-                                          method: 'POST',
-                                          headers: {
-                                            'Content-Type': 'application/json'
-                                          },
-                                          body: JSON.stringify(submissionData)
-                                        });
-                                      } else {
-                                        throw new Error("Could not find submission ID for this project");
-                                      }
-                                    })
+                                  console.log("Sending deployment analysis request with data:", submissionData);
+                                  
+                                  // Make the request to start deployment analysis
+                                  fetch('/api/analyze-deployment', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(submissionData)
+                                  })
                                     .then(res => {
                                       if (!res.ok) {
                                         throw new Error(`Failed to start analysis: ${res.status}`);
@@ -1855,9 +1847,20 @@ The deployment should initialize the contracts with test values and set me as th
                                     })
                                     .catch(error => {
                                       console.error("Error starting deployment analysis:", error);
+                                      
+                                      // Provide a more helpful error message based on the issue
+                                      let errorMessage = error.message;
+                                      
+                                      // If the error contains specific keywords about submission IDs
+                                      if (errorMessage.includes("submission_id") || 
+                                          errorMessage.includes("submission ID") ||
+                                          errorMessage.includes("No submissions found")) {
+                                        errorMessage = "No submission found for this project. Make sure you've run the initial project analysis first.";
+                                      }
+                                      
                                       toast({
                                         title: "Analysis Error",
-                                        description: error.message,
+                                        description: errorMessage,
                                         variant: "destructive"
                                       });
                                       setIsGeneratingDeployment(false);
