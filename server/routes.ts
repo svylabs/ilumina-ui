@@ -217,6 +217,40 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Check if deployment step is complete based on database step status
+  app.get("/api/check-deployment-complete/:submission_id", async (req, res) => {
+    try {
+      const submissionId = req.params.submission_id;
+      
+      // Check if this submission has a completed deployment step
+      const [deploymentStep] = await db
+        .select()
+        .from(analysisSteps)
+        .where(eq(analysisSteps.submissionId, submissionId))
+        .where(
+          or(
+            eq(analysisSteps.stepId, "deployment"),
+            eq(analysisSteps.stepId, "analyze_deployment")
+          )
+        )
+        .where(eq(analysisSteps.status, "completed"))
+        .limit(1);
+      
+      console.log("Check deployment complete result:", deploymentStep ? "COMPLETED" : "NOT COMPLETED");
+      
+      return res.json({ 
+        isCompleted: !!deploymentStep,
+        step: deploymentStep || null
+      });
+    } catch (error) {
+      console.error("Error checking deployment completion:", error);
+      return res.status(500).json({ 
+        error: "Failed to check deployment completion",
+        isCompleted: false
+      });
+    }
+  });
+
   app.get("/api/deployment-status/:submission_id", async (req, res) => {
     try {
       // Get a valid submission ID using our helper function
