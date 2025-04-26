@@ -3031,7 +3031,8 @@ export function registerRoutes(app: Express): Server {
           return res.json({ 
             status, 
             steps: stepsStatus,
-            completedSteps
+            completedSteps,
+            submissionId: uuidSubmissionId  // Include the submission ID in the response
           });
           
         } catch (error) {

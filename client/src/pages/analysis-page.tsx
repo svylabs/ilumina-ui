@@ -874,11 +874,21 @@ export default function AnalysisPage() {
   
   // Store the submission ID whenever analysis data is updated
   useEffect(() => {
-    if (analysis?.submissionId && analysis.submissionId !== submissionId) {
-      console.log(`Setting submission ID from analysis data: ${analysis.submissionId}`);
-      setSubmissionId(analysis.submissionId);
+    console.log("Analysis data received:", analysis);
+    
+    if (analysis?.submissionId) {
+      console.log(`Found submission ID in analysis data: ${analysis.submissionId}`);
+      
+      if (analysis.submissionId !== submissionId) {
+        console.log(`Setting submission ID from analysis data: ${analysis.submissionId}`);
+        setSubmissionId(analysis.submissionId);
+      } else {
+        console.log(`Submission ID already set to: ${submissionId}`);
+      }
+    } else {
+      console.log("No submission ID found in analysis data");
     }
-  }, [analysis]);
+  }, [analysis, submissionId]);
   
   // Fetch simulation repository details when the user is viewing the test_setup step
   useEffect(() => {
