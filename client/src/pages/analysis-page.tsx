@@ -112,6 +112,21 @@ function SimulationsComponent() {
     fetchData();
   }, [user, submissionId, toast]);
   
+  // Helper function to check if deployment is completed
+  const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/check-deployment-complete/${submissionId}`);
+      if (!response.ok) {
+        return false;
+      }
+      const data = await response.json();
+      return data?.isCompleted || false;
+    } catch (error) {
+      console.error("Error checking deployment completion:", error);
+      return false;
+    }
+  };
+  
   // Generate a new simulation ID
   const generateSimId = () => {
     return `sim-${String(Math.floor(Math.random() * 900) + 100)}`;
@@ -1724,41 +1739,26 @@ The deployment should initialize the contracts with test values and set me as th
                                     clearInterval(refreshIntervalId);
                                   }
                                   
-                                  // Use the stored submission ID
-                                  setIsGeneratingDeployment(true);
-                                  
-                                  // Check if we already have the submission ID
-                                  if (!submissionId) {
-                                    console.error("No submission ID available");
-                                    toast({
-                                      title: "Error",
-                                      description: "Could not find submission ID. Please refresh the page and try again.",
-                                      variant: "destructive"
-                                    });
-                                    setIsGeneratingDeployment(false);
-                                    setIsAnalysisInProgress(false);
-                                    return;
-                                  }
-                                  
-                                  console.log("Using stored submission ID:", submissionId);
-                                  
-                                  // Set up the data for the API call
-                                  const submissionData = {
-                                    submission_id: submissionId,
-                                    user_prompt: deploymentInput
-                                  };
-                                  
-                                  console.log("Sending deployment analysis request with data:", submissionData);
-                                  
-                                  // Now that we have the submission ID, make the request to the API
-                                  fetch('/api/analyze-deployment', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify(submissionData)
-                                  })
-                                  .then(res => {
+                                  // Function to handle the deployment analysis request
+                                  const handleDeploymentRequest = (sid: string) => {
+                                    console.log("Handling deployment with submission ID:", sid);
+                                    
+                                    const submissionData = {
+                                      submission_id: sid,
+                                      user_prompt: deploymentInput
+                                    };
+                                    
+                                    console.log("Sending deployment analysis request with data:", submissionData);
+                                    
+                                    // Make the request to the API
+                                    fetch('/api/analyze-deployment', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json'
+                                      },
+                                      body: JSON.stringify(submissionData)
+                                    })
+                                    .then(res => {
                                       if (!res.ok) {
                                         throw new Error(`Failed to start analysis: ${res.status}`);
                                       }
@@ -1768,16 +1768,15 @@ The deployment should initialize the contracts with test values and set me as th
                                       console.log("Deployment analysis started:", data);
                                       
                                       // Get the submission ID from the analysis data
-                                      const submissionId = data.submissionId;
+                                      const subId = data.submissionId;
                                       
                                       // Check immediately if deployment is already completed
-                                      // This happens when the API has cached results
                                       try {
-                                        const isCompleted = await checkDeploymentCompletion(submissionId);
+                                        const isCompleted = await checkDeploymentCompletion(subId);
                                         
                                         if (isCompleted) {
                                           console.log("Deployment already completed, fetching results directly");
-                                          const deploymentRes = await fetch(`/api/fetch-deployment-instructions/${submissionId}`);
+                                          const deploymentRes = await fetch(`/api/fetch-deployment-instructions/${subId}`);
                                           if (deploymentRes.ok) {
                                             const deploymentData = await deploymentRes.json();
                                             setGeneratedDeployment(deploymentData);
@@ -1795,13 +1794,13 @@ The deployment should initialize the contracts with test values and set me as th
                                       // If not completed immediately, start polling
                                       const intervalId = setInterval(() => {
                                         // Check if the deployment is marked as completed in our database
-                                        fetch(`/api/deployment-status/${submissionId}`)
+                                        fetch(`/api/deployment-status/${subId}`)
                                           .then(res => res.ok ? res.json() : null)
                                           .then(statusData => {
                                             if (statusData?.isCompleted) {
                                               console.log("Deployment step is completed:", statusData);
                                               // Deployment is completed, now fetch the actual instructions
-                                              fetch(`/api/fetch-deployment-instructions/${submissionId}`)
+                                              fetch(`/api/fetch-deployment-instructions/${subId}`)
                                                 .then(res => res.ok ? res.json() : null)
                                                 .then(instructionsData => {
                                                   if (instructionsData) {
@@ -1845,7 +1844,7 @@ The deployment should initialize the contracts with test values and set me as th
                                           }
                                           
                                           // If not in main data, try the dedicated deployment instructions endpoint
-                                          fetch(`/api/fetch-deployment-instructions/${submissionId}`)
+                                          fetch(`/api/fetch-deployment-instructions/${subId}`)
                                             .then(res => {
                                               if (!res.ok) {
                                                 if (res.status === 404) {
@@ -1900,6 +1899,53 @@ The deployment should initialize the contracts with test values and set me as th
                                       setIsGeneratingDeployment(false);
                                       setIsAnalysisInProgress(false);
                                     });
+                                  };
+                                  
+                                  // Check if we have a submission ID
+                                  if (submissionId) {
+                                    console.log("Using existing submission ID:", submissionId);
+                                    handleDeploymentRequest(submissionId);
+                                  } else if (id) {
+                                    // Try to get submission ID from project ID
+                                    console.log("No submission ID, trying to look it up from project ID:", id);
+                                    fetch(`/api/project-submission/${id}`)
+                                      .then(res => res.ok ? res.json() : null)
+                                      .then(data => {
+                                        if (data?.submissionId) {
+                                          console.log("Found submission ID from project:", data.submissionId);
+                                          setSubmissionId(data.submissionId);
+                                          handleDeploymentRequest(data.submissionId);
+                                        } else {
+                                          console.error("Could not find submission ID from project");
+                                          toast({
+                                            title: "Error",
+                                            description: "Could not find submission ID. Please refresh and try again.",
+                                            variant: "destructive"
+                                          });
+                                          setIsGeneratingDeployment(false);
+                                          setIsAnalysisInProgress(false);
+                                        }
+                                      })
+                                      .catch(error => {
+                                        console.error("Error getting submission ID:", error);
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to get submission ID. Please refresh and try again.",
+                                          variant: "destructive"
+                                        });
+                                        setIsGeneratingDeployment(false);
+                                        setIsAnalysisInProgress(false);
+                                      });
+                                  } else {
+                                    console.error("No project ID available to look up submission");
+                                    toast({
+                                      title: "Error",
+                                      description: "Cannot find project ID. Please refresh the page.",
+                                      variant: "destructive"
+                                    });
+                                    setIsGeneratingDeployment(false);
+                                    setIsAnalysisInProgress(false);
+                                  }
                                 }}
                                 disabled={isGeneratingDeployment}
                               >

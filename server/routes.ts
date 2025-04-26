@@ -3332,6 +3332,38 @@ export function registerRoutes(app: Express): Server {
 
   // Team Management Endpoints
   
+  // Get submission ID from project ID
+  app.get("/api/project-submission/:id", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ error: "Invalid project ID" });
+      }
+      
+      // Find the latest submission for this project
+      const [submission] = await db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.projectId, projectId))
+        .orderBy(desc(submissions.createdAt))
+        .limit(1);
+      
+      if (!submission) {
+        return res.status(404).json({ error: "No submission found for this project" });
+      }
+      
+      return res.json({ 
+        submissionId: submission.id,
+        projectId: submission.projectId,
+        status: submission.status,
+        createdAt: submission.createdAt
+      });
+    } catch (error) {
+      console.error("Error finding submission for project:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Check if user can create a team (Teams plan only)
   app.get("/api/can-create-team", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ 
