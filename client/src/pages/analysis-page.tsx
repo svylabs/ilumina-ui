@@ -872,6 +872,14 @@ export default function AnalysisPage() {
   // and only sets the selected step if not manually selected by the user
   const userSelectedRef = useRef(false);
   
+  // Store the submission ID whenever analysis data is updated
+  useEffect(() => {
+    if (analysis?.submissionId && analysis.submissionId !== submissionId) {
+      console.log(`Setting submission ID from analysis data: ${analysis.submissionId}`);
+      setSubmissionId(analysis.submissionId);
+    }
+  }, [analysis]);
+  
   // Fetch simulation repository details when the user is viewing the test_setup step
   useEffect(() => {
     const fetchSimulationRepo = async () => {
@@ -1706,48 +1714,41 @@ The deployment should initialize the contracts with test values and set me as th
                                     clearInterval(refreshIntervalId);
                                   }
                                   
-                                  // First, get the submission ID from the analysis data
+                                  // Use the stored submission ID
                                   setIsGeneratingDeployment(true);
                                   
-                                  // We need to get the actual submission ID from the analysis data
-                                  console.log("Fetching analysis data to get submission ID...");
-                                  fetch(`/api/analysis/${id}`)
-                                    .then(res => {
-                                      if (!res.ok) {
-                                        throw new Error(`Failed to fetch analysis data: ${res.status}`);
-                                      }
-                                      return res.json();
-                                    })
-                                    .then(data => {
-                                      // Log the entire response to debug
-                                      console.log("Analysis response data:", data);
-                                      
-                                      // Directly use the submission ID from the analysis response
-                                      if (!data?.submissionId) {
-                                        throw new Error("No submissionId found in response");
-                                      }
-                                      
-                                      const submissionId = data.submissionId;
-                                      console.log("Using submission ID:", submissionId);
-                                      
-                                      // Set up the data for the API call
-                                      const submissionData = {
-                                        submission_id: submissionId,
-                                        user_prompt: deploymentInput
-                                      };
-                                      
-                                      console.log("Sending deployment analysis request with data:", submissionData);
-                                      
-                                      // Now that we have the submission ID, make the request to the API
-                                      return fetch('/api/analyze-deployment', {
-                                        method: 'POST',
-                                        headers: {
-                                          'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify(submissionData)
-                                      });
-                                    })
-                                    .then(res => {
+                                  // Check if we already have the submission ID
+                                  if (!submissionId) {
+                                    console.error("No submission ID available");
+                                    toast({
+                                      title: "Error",
+                                      description: "Could not find submission ID. Please refresh the page and try again.",
+                                      variant: "destructive"
+                                    });
+                                    setIsGeneratingDeployment(false);
+                                    setIsAnalysisInProgress(false);
+                                    return;
+                                  }
+                                  
+                                  console.log("Using stored submission ID:", submissionId);
+                                  
+                                  // Set up the data for the API call
+                                  const submissionData = {
+                                    submission_id: submissionId,
+                                    user_prompt: deploymentInput
+                                  };
+                                  
+                                  console.log("Sending deployment analysis request with data:", submissionData);
+                                  
+                                  // Now that we have the submission ID, make the request to the API
+                                  fetch('/api/analyze-deployment', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(submissionData)
+                                  })
+                                  .then(res => {
                                       if (!res.ok) {
                                         throw new Error(`Failed to start analysis: ${res.status}`);
                                       }
