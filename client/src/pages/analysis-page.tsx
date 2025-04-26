@@ -826,8 +826,8 @@ export default function AnalysisPage() {
   const [refreshIntervalId, setRefreshIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [simRepo, setSimRepo] = useState<{owner: string, repo: string, branch: string} | null>(null);
   const [simRepoError, setSimRepoError] = useState<string | null>(null);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   
-  // No content ref needed
 
   const { data: project } = useQuery<{
     id: number;
