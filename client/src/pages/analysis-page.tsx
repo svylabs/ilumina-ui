@@ -701,7 +701,8 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
 
   // Function to fetch verification data
   const fetchVerificationData = async () => {
-    if (verificationData) return; // Don't fetch again if we already have it
+    // Allow re-fetching verification data even if we already have it
+    // This ensures we get the latest data and proper timestamps
     
     setIsLoadingVerification(true);
     setVerificationError(null);
@@ -750,6 +751,12 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
       }
       
       console.log("Successfully received verification data:", data);
+      // Use getStepTimestamp to get the actual timestamp from completedSteps
+      const verificationTimestamp = getStepTimestamp('verify_deployment');
+      if (verificationTimestamp) {
+        // If we have a real timestamp from the completedSteps, use it
+        data.timestamp = verificationTimestamp;
+      }
       setVerificationData(data);
     } catch (err) {
       console.error("Error fetching verification data:", err);
@@ -962,9 +969,8 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
           className={`border p-3 rounded cursor-pointer ${activeTab === "verification" ? "border-blue-500 bg-blue-900/20" : "border-gray-700 bg-gray-900/30 hover:bg-gray-800/30"}`}
           onClick={() => {
             setActiveTab("verification");
-            if (!verificationData && !verificationError) {
-              fetchVerificationData();
-            }
+            // Always fetch the latest verification data and update timestamps
+            fetchVerificationData();
           }}
         >
           <div className="flex items-center">
@@ -977,7 +983,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                 {verificationData ? 
                   `Verified at ${format(new Date(verificationData.timestamp || getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
                   getStepTimestamp('verify_deployment') ?
-                    `Verified at ${format(new Date(getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
+                    `Verified at ${format(new Date(getStepTimestamp('verify_deployment')), "MMM dd, h:mm a")}` :
                     "Click to load results"}
               </p>
             </div>
