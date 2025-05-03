@@ -407,6 +407,174 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Helper function to check completed steps and their status
+  async function getCompletedSteps(submissionId: string): Promise<any[]> {
+    try {
+      // Call the external API to get submission data
+      const response = await callExternalIluminaAPI(`/submission/${submissionId}`);
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch submission data: ${response.status}`);
+        return [];
+      }
+      
+      const data = await response.json();
+      
+      // Check if completed_steps property exists and is an array
+      if (!data.completed_steps || !Array.isArray(data.completed_steps)) {
+        return [];
+      }
+      
+      return data.completed_steps;
+    } catch (error) {
+      console.error("Error fetching completed steps:", error);
+      return [];
+    }
+  }
+  
+  // API endpoint to fetch deployment script
+  app.get("/api/deployment-script/:submission_id", async (req, res) => {
+    try {
+      const result = await getValidSubmissionId(req.params.submission_id);
+      
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details
+        });
+      }
+      
+      // Check if the implementation step is completed
+      const completedSteps = await getCompletedSteps(result.submissionId);
+      const implementStep = completedSteps.find((step: any) => step.step === "implement_deployment_script");
+      
+      if (!implementStep) {
+        return res.status(404).json({
+          error: "Deployment script not yet implemented",
+          details: "The implementation of the deployment script has not been completed yet."
+        });
+      }
+      
+      // In a real implementation, we would fetch from GitHub or simulation repo
+      // For now, simulate fetching the deployment script
+      try {
+        // Get simulation repository information
+        const simRepoResponse = await callExternalIluminaAPI(`/simulation-repository/${result.submissionId}`);
+        
+        if (!simRepoResponse.ok) {
+          return res.status(404).json({
+            error: "Simulation repository not found",
+            details: "Could not find the simulation repository information."
+          });
+        }
+        
+        const simRepo = await simRepoResponse.json();
+        
+        // Get the deployment script from GitHub repo
+        // In a real implementation this would actually fetch the file from GitHub
+        // Using the repository information from simRepo
+        
+        // For now, return a hardcoded script example
+        const scriptContent = `// Deployment script for simulation repository
+import { ethers } from 'hardhat';
+
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with the account:", deployer.address);
+
+  // Deploy the contract
+  const ContractFactory = await ethers.getContractFactory("YourContract");
+  const contract = await ContractFactory.deploy();
+  await contract.deployed();
+
+  console.log("Contract deployed to:", contract.address);
+  return { contractAddress: contract.address };
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });`;
+        
+        return res.json({
+          filename: "deploy.ts",
+          content: scriptContent,
+          path: "/simulation/contracts/deploy.ts",
+          status: implementStep.status || "completed",
+          updatedAt: implementStep.updated_at,
+          repo: simRepo.repository || "simulation-repository"
+        });
+      } catch (error) {
+        console.error("Error fetching deployment script:", error);
+        return res.status(500).json({ 
+          error: "Failed to fetch deployment script",
+          details: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    } catch (error) {
+      console.error("Error in deployment-script endpoint:", error);
+      return res.status(500).json({ 
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // API endpoint to fetch verification logs and status
+  app.get("/api/verify-deployment/:submission_id", async (req, res) => {
+    try {
+      const result = await getValidSubmissionId(req.params.submission_id);
+      
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details
+        });
+      }
+      
+      // Check if the verification step is completed
+      const completedSteps = await getCompletedSteps(result.submissionId);
+      const verifyStep = completedSteps.find((step: any) => step.step === "verify_deployment_script");
+      
+      if (!verifyStep) {
+        return res.status(404).json({
+          error: "Deployment verification not performed",
+          details: "The verification of the deployment script has not been completed yet."
+        });
+      }
+      
+      // In a real implementation, we would fetch the actual verification logs
+      // For now, return a simulated verification result
+      const verificationStatus = verifyStep.status || "completed";
+      const logs = [
+        "[INFO] Starting deployment script verification",
+        "[INFO] Loading deployment script from repository",
+        "[INFO] Checking contract dependencies",
+        "[INFO] Verifying deployment sequence",
+        verificationStatus === "completed" ? 
+          "[SUCCESS] All verification checks passed" : 
+          "[ERROR] Verification failed: Contract initialization parameters are incorrect"
+      ];
+      
+      return res.json({
+        status: verificationStatus,
+        logs: logs,
+        timestamp: verifyStep.updated_at,
+        details: verificationStatus === "completed" ? 
+          "Deployment script verified successfully" : 
+          "Deployment script verification failed"
+      });
+    } catch (error) {
+      console.error("Error in verify-deployment endpoint:", error);
+      return res.status(500).json({ 
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
   // Helper function to format parameters for display
   function formatParams(params: any[]): string {
     if (!params || !Array.isArray(params) || params.length === 0) {

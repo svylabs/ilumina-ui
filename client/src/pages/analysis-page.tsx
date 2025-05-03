@@ -609,9 +609,16 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
 function DeploymentInstructionsSection({ submissionId }: { submissionId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [deploymentData, setDeploymentData] = useState<any>(null);
+  const [deploymentScript, setDeploymentScript] = useState<any>(null);
+  const [verificationData, setVerificationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [submissionDetails, setSubmissionDetails] = useState<any>(null);
   const [isShowingDetails, setIsShowingDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState<"steps" | "script" | "verification">("steps");
+  const [isLoadingScript, setIsLoadingScript] = useState(false);
+  const [isLoadingVerification, setIsLoadingVerification] = useState(false);
+  const [scriptError, setScriptError] = useState<string | null>(null);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   // Function to fetch submission details for troubleshooting
   const fetchSubmissionDetails = async () => {
@@ -630,6 +637,61 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
     }
   };
 
+  // Function to fetch deployment script
+  const fetchDeploymentScript = async () => {
+    if (deploymentScript) return; // Don't fetch again if we already have it
+    
+    setIsLoadingScript(true);
+    setScriptError(null);
+    
+    try {
+      console.log(`Fetching deployment script for submission ${submissionId}`);
+      const response = await fetch(`/api/deployment-script/${submissionId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch deployment script: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Successfully received deployment script:", data);
+      setDeploymentScript(data);
+    } catch (err) {
+      console.error("Error fetching deployment script:", err);
+      setScriptError(err instanceof Error ? err.message : "Failed to fetch deployment script");
+    } finally {
+      setIsLoadingScript(false);
+    }
+  };
+
+  // Function to fetch verification data
+  const fetchVerificationData = async () => {
+    if (verificationData) return; // Don't fetch again if we already have it
+    
+    setIsLoadingVerification(true);
+    setVerificationError(null);
+    
+    try {
+      console.log(`Fetching verification data for submission ${submissionId}`);
+      const response = await fetch(`/api/verify-deployment/${submissionId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch verification data: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Successfully received verification data:", data);
+      setVerificationData(data);
+    } catch (err) {
+      console.error("Error fetching verification data:", err);
+      setVerificationError(err instanceof Error ? err.message : "Failed to fetch verification data");
+    } finally {
+      setIsLoadingVerification(false);
+    }
+  };
+
+  // Combine all data fetching in a single effect
   useEffect(() => {
     const fetchDeploymentInstructions = async () => {
       try {
@@ -670,6 +732,7 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
     };
 
     fetchDeploymentInstructions();
+    // We'll lazily load script and verification data when the user switches tabs
   }, [submissionId]);
 
   if (isLoading) {
@@ -732,75 +795,367 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
         <p className="text-gray-400 mt-3 text-sm">{deploymentData.description || "Follow these steps to deploy the smart contracts to your local development network."}</p>
       </div>
       
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
-        <div className="space-y-3">
-          {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
-            <div key={index} className="border border-gray-700 p-4 rounded-md bg-black/30 relative">
-              <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
-                Step {index + 1}
-              </div>
-              <h4 className="text-blue-300 font-medium mb-2">{step.name}</h4>
-              <div className="grid grid-cols-12 gap-2 text-xs mb-2">
-                <div className="col-span-3 text-gray-400">Contract:</div>
-                <div className="col-span-9 text-green-300 font-mono">{step.contract}</div>
-                
-                {step.function && (
-                  <>
-                    <div className="col-span-3 text-gray-400">Function:</div>
-                    <div className="col-span-9 text-green-300 font-mono">{step.function}</div>
-                  </>
-                )}
-                
-                <div className="col-span-3 text-gray-400">Reference:</div>
-                <div className="col-span-9 text-green-300 font-mono">{step.reference}</div>
-                
-                <div className="col-span-3 text-gray-400">Gas Estimate:</div>
-                <div className="col-span-9 text-yellow-300 font-mono">{step.gas}</div>
-              </div>
-              
-              {Object.keys(step.params || {}).length > 0 && (
-                <div className="mt-2">
-                  <div className="text-xs text-gray-400">Parameters:</div>
-                  <div className="grid grid-cols-1 gap-1 mt-1 bg-gray-800/50 p-2 rounded">
-                    {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
-                      <div key={i} className="text-sm">
-                        <span className="text-gray-500">{key}: </span>
-                        <span className="text-green-300">{String(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <div className="mt-3">
-                <div className="text-xs text-gray-400">Transaction Code:</div>
-                <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
-                  {step.tx}
-                </div>
-              </div>
-              
-              <div className="mt-2">
-                <div className="text-xs text-gray-400">Expected Result:</div>
-                <div className="text-sm text-blue-300 mt-1">{step.result}</div>
-              </div>
+      {/* Deployment process status boxes */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Deployment instructions box */}
+        <div 
+          className={`border p-3 rounded cursor-pointer ${activeTab === "steps" ? "border-blue-500 bg-blue-900/20" : "border-gray-700 bg-gray-900/30 hover:bg-gray-800/30"}`}
+          onClick={() => setActiveTab("steps")}
+        >
+          <div className="flex items-center">
+            <div className="rounded-full w-8 h-8 flex items-center justify-center mr-3 bg-blue-900/50 text-blue-300">
+              <FileText className="h-4 w-4" />
             </div>
-          ))}
+            <div>
+              <h4 className="font-medium text-blue-300">Deployment Instructions</h4>
+              <p className="text-xs text-gray-400">Generated at {format(new Date(deploymentData.createdAt || new Date()), "MMM dd, h:mm a")}</p>
+            </div>
+            <div className="ml-auto">
+              <Badge variant="outline" className="bg-green-900/30 text-green-300 border-green-700">
+                Complete
+              </Badge>
+            </div>
+          </div>
+        </div>
+        
+        {/* Deployment implementation script box */}
+        <div 
+          className={`border p-3 rounded cursor-pointer ${activeTab === "script" ? "border-blue-500 bg-blue-900/20" : "border-gray-700 bg-gray-900/30 hover:bg-gray-800/30"}`}
+          onClick={() => {
+            setActiveTab("script");
+            if (!deploymentScript && !scriptError) {
+              fetchDeploymentScript();
+            }
+          }}
+        >
+          <div className="flex items-center">
+            <div className="rounded-full w-8 h-8 flex items-center justify-center mr-3 bg-blue-900/50 text-blue-300">
+              <Code className="h-4 w-4" />
+            </div>
+            <div>
+              <h4 className="font-medium text-blue-300">Implemented Script</h4>
+              <p className="text-xs text-gray-400">
+                {deploymentScript ? 
+                  `Updated at ${format(new Date(deploymentScript.updatedAt || new Date()), "MMM dd, h:mm a")}` :
+                  "Click to load script"}
+              </p>
+            </div>
+            <div className="ml-auto">
+              {isLoadingScript ? (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+              ) : deploymentScript ? (
+                <Badge variant={deploymentScript.status === "failed" ? "destructive" : "outline"} 
+                  className={deploymentScript.status === "failed" ? 
+                    "bg-red-900/30 text-red-300 border-red-700" : 
+                    "bg-green-900/30 text-green-300 border-green-700"}
+                >
+                  {deploymentScript.status === "failed" ? "Failed" : "Success"}
+                </Badge>
+              ) : null}
+            </div>
+          </div>
+        </div>
+        
+        {/* Verification results box */}
+        <div 
+          className={`border p-3 rounded cursor-pointer ${activeTab === "verification" ? "border-blue-500 bg-blue-900/20" : "border-gray-700 bg-gray-900/30 hover:bg-gray-800/30"}`}
+          onClick={() => {
+            setActiveTab("verification");
+            if (!verificationData && !verificationError) {
+              fetchVerificationData();
+            }
+          }}
+        >
+          <div className="flex items-center">
+            <div className="rounded-full w-8 h-8 flex items-center justify-center mr-3 bg-blue-900/50 text-blue-300">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+            <div>
+              <h4 className="font-medium text-blue-300">Verification Results</h4>
+              <p className="text-xs text-gray-400">
+                {verificationData ? 
+                  `Verified at ${format(new Date(verificationData.timestamp || new Date()), "MMM dd, h:mm a")}` :
+                  "Click to load results"}
+              </p>
+            </div>
+            <div className="ml-auto">
+              {isLoadingVerification ? (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+              ) : verificationData ? (
+                <Badge variant={verificationData.status === "failed" ? "destructive" : "outline"} 
+                  className={verificationData.status === "failed" ? 
+                    "bg-red-900/30 text-red-300 border-red-700" : 
+                    "bg-green-900/30 text-green-300 border-green-700"}
+                >
+                  {verificationData.status === "failed" ? "Failed" : "Success"}
+                </Badge>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
       
-      {/* Add a helpful note for the deployment sequence */}
-      <div className="bg-yellow-950/30 border border-yellow-900/50 rounded p-4 mt-6">
-        <h4 className="text-yellow-400 text-sm font-medium flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          Important Note
-        </h4>
-        <p className="text-gray-300 mt-2 text-sm">
-          The deployment steps should be executed in sequence. Each step may reference contracts deployed in previous steps.
-          Make sure to save the deployment addresses after each contract deployment for use in subsequent steps.
-        </p>
+      {/* Tab content */}
+      <div className="mt-6">
+        {/* Deployment steps tab */}
+        {activeTab === "steps" && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-green-400">Deployment Steps</h3>
+            <div className="space-y-3">
+              {(deploymentData.deploymentSteps || []).map((step: any, index: number) => (
+                <div key={index} className="border border-gray-700 p-4 rounded-md bg-black/30 relative">
+                  <div className="absolute -top-3 -left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    Step {index + 1}
+                  </div>
+                  <h4 className="text-blue-300 font-medium mb-2">{step.name}</h4>
+                  <div className="grid grid-cols-12 gap-2 text-xs mb-2">
+                    <div className="col-span-3 text-gray-400">Contract:</div>
+                    <div className="col-span-9 text-green-300 font-mono">{step.contract}</div>
+                    
+                    {step.function && (
+                      <>
+                        <div className="col-span-3 text-gray-400">Function:</div>
+                        <div className="col-span-9 text-green-300 font-mono">{step.function}</div>
+                      </>
+                    )}
+                    
+                    <div className="col-span-3 text-gray-400">Reference:</div>
+                    <div className="col-span-9 text-green-300 font-mono">{step.reference}</div>
+                    
+                    <div className="col-span-3 text-gray-400">Gas Estimate:</div>
+                    <div className="col-span-9 text-yellow-300 font-mono">{step.gas}</div>
+                  </div>
+                  
+                  {Object.keys(step.params || {}).length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs text-gray-400">Parameters:</div>
+                      <div className="grid grid-cols-1 gap-1 mt-1 bg-gray-800/50 p-2 rounded">
+                        {Object.entries(step.params).map(([key, value]: [string, any], i: number) => (
+                          <div key={i} className="text-sm">
+                            <span className="text-gray-500">{key}: </span>
+                            <span className="text-green-300">{String(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="mt-3">
+                    <div className="text-xs text-gray-400">Transaction Code:</div>
+                    <div className="text-sm font-mono text-cyan-300 bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
+                      {step.tx}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2">
+                    <div className="text-xs text-gray-400">Expected Result:</div>
+                    <div className="text-sm text-blue-300 mt-1">{step.result}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Add a helpful note for the deployment sequence */}
+            <div className="bg-yellow-950/30 border border-yellow-900/50 rounded p-4 mt-6">
+              <h4 className="text-yellow-400 text-sm font-medium flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Important Note
+              </h4>
+              <p className="text-gray-300 mt-2 text-sm">
+                The deployment steps should be executed in sequence. Each step may reference contracts deployed in previous steps.
+                Make sure to save the deployment addresses after each contract deployment for use in subsequent steps.
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {/* Deployment script tab */}
+        {activeTab === "script" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-green-400">Deployment Script</h3>
+              {deploymentScript && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => {
+                    // Copy script to clipboard
+                    navigator.clipboard.writeText(deploymentScript.content);
+                    // Show toast
+                    toast({
+                      title: "Copied to clipboard",
+                      description: "The deployment script has been copied to your clipboard.",
+                      duration: 3000,
+                    });
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  Copy Code
+                </Button>
+              )}
+            </div>
+            
+            {isLoadingScript ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <span className="ml-2 text-blue-500">Loading deployment script...</span>
+              </div>
+            ) : scriptError ? (
+              <div className="bg-red-900/30 border border-red-900 p-4 rounded-md">
+                <h3 className="text-red-400 font-medium">Error Loading Deployment Script</h3>
+                <p className="text-gray-300 mt-2">{scriptError}</p>
+                <button 
+                  onClick={fetchDeploymentScript}
+                  className="mt-3 px-3 py-1 text-sm bg-blue-900/50 hover:bg-blue-900/80 border border-blue-700 rounded text-blue-200"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : deploymentScript ? (
+              <div className="rounded-md border border-gray-700 overflow-hidden">
+                <div className="bg-gray-800 px-4 py-2 text-xs font-medium text-gray-400 border-b border-gray-700 flex justify-between items-center">
+                  <div className="flex items-center">
+                    <FileCode className="h-4 w-4 mr-2" />
+                    <span>{deploymentScript.filename}</span>
+                  </div>
+                  <span className="text-xs">
+                    {deploymentScript.repo}/{deploymentScript.path}
+                  </span>
+                </div>
+                <pre className="p-4 text-sm font-mono bg-gray-900 text-green-300 overflow-x-auto">
+                  {deploymentScript.content}
+                </pre>
+              </div>
+            ) : (
+              <div className="bg-gray-900/50 border border-gray-700 p-6 rounded-md text-center">
+                <p className="text-gray-400 mb-4">Deployment script not loaded yet</p>
+                <Button 
+                  variant="outline" 
+                  onClick={fetchDeploymentScript}
+                  className="bg-blue-900/20 border-blue-700 text-blue-300 hover:bg-blue-900/40"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Load Script
+                </Button>
+              </div>
+            )}
+            
+            {deploymentScript && (
+              <div className="bg-gray-950 border border-gray-800 rounded p-4 mt-4">
+                <h4 className="text-blue-400 text-sm font-medium">How to Use This Script</h4>
+                <ul className="mt-2 text-sm text-gray-300 space-y-2 list-disc pl-5">
+                  <li>This script is generated automatically based on the deployment instructions</li>
+                  <li>It's compatible with Hardhat deployment environments</li>
+                  <li>The script handles deployment of all contracts in the correct sequence</li>
+                  <li>Copy this to your project's deployment scripts directory</li>
+                  <li>Run with <code className="text-green-300 bg-black/30 px-1 rounded">npx hardhat run scripts/deploy.ts --network [network]</code></li>
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Verification results tab */}
+        {activeTab === "verification" && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-green-400">Deployment Verification</h3>
+            
+            {isLoadingVerification ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <span className="ml-2 text-blue-500">Loading verification results...</span>
+              </div>
+            ) : verificationError ? (
+              <div className="bg-red-900/30 border border-red-900 p-4 rounded-md">
+                <h3 className="text-red-400 font-medium">Error Loading Verification Results</h3>
+                <p className="text-gray-300 mt-2">{verificationError}</p>
+                <button 
+                  onClick={fetchVerificationData}
+                  className="mt-3 px-3 py-1 text-sm bg-blue-900/50 hover:bg-blue-900/80 border border-blue-700 rounded text-blue-200"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : verificationData ? (
+              <div className="space-y-4">
+                <div className="bg-gray-900 border border-gray-700 rounded-md overflow-hidden">
+                  <div className="bg-gray-800 p-3 border-b border-gray-700 flex justify-between items-center">
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-gray-300">Verification Status</span>
+                    </div>
+                    <Badge variant={verificationData.status === "completed" ? "outline" : "destructive"} 
+                      className={verificationData.status === "completed" ? 
+                        "bg-green-900/30 text-green-300 border-green-700" : 
+                        "bg-red-900/30 text-red-300 border-red-700"}
+                    >
+                      {verificationData.status === "completed" ? "Success" : "Failed"}
+                    </Badge>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm text-gray-300">{verificationData.details}</p>
+                    
+                    <div className="mt-4">
+                      <h4 className="text-xs text-gray-400 mb-2">Verification Logs:</h4>
+                      <div className="bg-black/40 border border-gray-800 rounded p-3 font-mono text-xs">
+                        {verificationData.logs.map((log: string, index: number) => {
+                          // Style different log levels differently
+                          let textColor = "text-gray-300";
+                          if (log.includes("[SUCCESS]")) textColor = "text-green-400";
+                          if (log.includes("[ERROR]")) textColor = "text-red-400";
+                          if (log.includes("[INFO]")) textColor = "text-blue-400";
+                          
+                          return (
+                            <div key={index} className={`${textColor} py-0.5`}>{log}</div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {verificationData.status === "completed" ? (
+                  <div className="bg-green-900/20 border border-green-900/50 rounded p-4">
+                    <h4 className="text-green-400 text-sm font-medium flex items-center">
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      Verification Passed
+                    </h4>
+                    <p className="text-gray-300 mt-2 text-sm">
+                      The deployment script has been verified and is ready for use. You can proceed to the next step.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-red-900/20 border border-red-900/50 rounded p-4">
+                    <h4 className="text-red-400 text-sm font-medium flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2" />
+                      Verification Failed
+                    </h4>
+                    <p className="text-gray-300 mt-2 text-sm">
+                      The deployment script verification has failed. Please review the logs above for details on what needs to be corrected.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-gray-900/50 border border-gray-700 p-6 rounded-md text-center">
+                <p className="text-gray-400 mb-4">Verification results not loaded yet</p>
+                <Button 
+                  variant="outline" 
+                  onClick={fetchVerificationData}
+                  className="bg-blue-900/20 border-blue-700 text-blue-300 hover:bg-blue-900/40"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Load Results
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
