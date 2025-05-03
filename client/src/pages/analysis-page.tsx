@@ -812,8 +812,7 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
         console.log("Successfully received deployment instructions:", data);
         setDeploymentData(data);
         
-        // Also fetch the completed steps to get timestamps
-        await fetchCompletedSteps();
+        // No need to fetch completed steps separately - they're already in the analysis response
       } catch (err) {
         console.error("Error fetching deployment instructions:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch deployment instructions");
