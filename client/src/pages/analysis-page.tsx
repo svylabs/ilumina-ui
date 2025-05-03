@@ -792,7 +792,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
 
   // Combine all data fetching in a single effect
   useEffect(() => {
-    const fetchDeploymentInstructions = async () => {
+    const fetchAllDeploymentData = async () => {
       try {
         console.log(`Fetching deployment instructions for submission ${submissionId}`);
         const response = await fetch(`/api/fetch-deployment-instructions/${submissionId}`);
@@ -821,6 +821,14 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
         setDeploymentData(data);
         
         // No need to fetch completed steps separately - they're already in the analysis response
+        
+        // Preload deployment script and verification data
+        console.log("Preloading script and verification data...");
+        // Fetch deployment script in parallel
+        fetchDeploymentScript();
+        
+        // Fetch verification data in parallel
+        fetchVerificationData();
       } catch (err) {
         console.error("Error fetching deployment instructions:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch deployment instructions");
@@ -832,8 +840,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
       }
     };
 
-    fetchDeploymentInstructions();
-    // We'll lazily load script and verification data when the user switches tabs
+    fetchAllDeploymentData();
   }, [submissionId, analysis]);
 
   if (isLoading) {
@@ -941,11 +948,13 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
             <div>
               <h4 className="font-medium text-blue-300">Implemented Script</h4>
               <p className="text-xs text-gray-400">
-                {deploymentScript ? 
-                  `Updated at ${format(new Date(deploymentScript.updatedAt || getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
-                  getStepTimestamp('deployment_implementation') ?
-                    `Updated at ${format(new Date(getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
-                    "Click to load script"}
+                {isLoadingScript ? 
+                  "Loading script..." :
+                  deploymentScript ? 
+                    `Updated at ${format(new Date(deploymentScript.updatedAt || getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
+                    getStepTimestamp('deployment_implementation') ?
+                      `Updated at ${format(new Date(getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
+                      "Loading script..."}
               </p>
             </div>
             <div className="ml-auto">
@@ -980,11 +989,13 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
             <div>
               <h4 className="font-medium text-blue-300">Verification Results</h4>
               <p className="text-xs text-gray-400">
-                {verificationData ? 
-                  `Verified at ${format(new Date(verificationData.timestamp || getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
-                  getStepTimestamp('verify_deployment') ?
-                    `Verified at ${format(new Date(getStepTimestamp('verify_deployment')), "MMM dd, h:mm a")}` :
-                    "Click to load results"}
+                {isLoadingVerification ? 
+                  "Loading verification..." :
+                  verificationData ? 
+                    `Verified at ${format(new Date(verificationData.timestamp || getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
+                    getStepTimestamp('verify_deployment') ?
+                      `Verified at ${format(new Date(getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
+                      "Loading verification..."}
               </p>
             </div>
             <div className="ml-auto">
