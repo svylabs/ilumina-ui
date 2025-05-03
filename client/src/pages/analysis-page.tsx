@@ -630,13 +630,40 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
       const detailsResponse = await fetch(`/api/submission-details/${submissionId}`);
       if (detailsResponse.ok) {
         const details = await detailsResponse.json();
-        setSubmissionDetails(details);
-        setIsShowingDetails(true);
+        console.log("Submission details received:", details);
+        
+        // The API returns the data in the 'data' field
+        if (details && details.data) {
+          setSubmissionDetails(details.data);
+          setIsShowingDetails(true);
+          toast({
+            title: "Error logs loaded",
+            description: "Detailed error information is now available",
+            variant: "default"
+          });
+        } else {
+          console.error("Submission details data format unexpected:", details);
+          toast({
+            title: "Error loading logs",
+            description: "Could not retrieve error details from the server",
+            variant: "destructive"
+          });
+        }
       } else {
         console.error("Failed to fetch submission details");
+        toast({
+          title: "Error loading logs",
+          description: "Server returned an error when fetching error logs",
+          variant: "destructive"
+        });
       }
     } catch (detailsErr) {
       console.error("Error fetching submission details:", detailsErr);
+      toast({
+        title: "Error loading logs",
+        description: "An error occurred while retrieving error details",
+        variant: "destructive"
+      });
     }
   };
 
@@ -856,7 +883,11 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
         setError(err instanceof Error ? err.message : "Failed to fetch deployment instructions");
         
         // Automatically fetch submission details for troubleshooting when there's an error
-        fetchSubmissionDetails();
+        try {
+          fetchSubmissionDetails();
+        } catch (submissionErr) {
+          console.error("Could not fetch submission details:", submissionErr);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -895,42 +926,74 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
             
             {isShowingDetails && (
               <div className="mt-2">
-                {/* Show deployment_instructions error logs if available */}
-                {submissionDetails.deployment_instructions?.log && (
-                  <div className="mb-3">
-                    <h5 className="text-yellow-400 text-xs font-medium mb-1">Deployment Instructions Logs:</h5>
-                    <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
-                      {submissionDetails.deployment_instructions.log}
-                    </pre>
-                  </div>
+                {/* Show step_metadata logs if available */}
+                {submissionDetails.step_metadata && (
+                  <>
+                    {/* Show deployment_instructions (analyze_deployment) logs if available */}
+                    {submissionDetails.step_metadata.analyze_deployment?.message && (
+                      <div className="mb-3">
+                        <h5 className="text-yellow-400 text-xs font-medium mb-1">Deployment Instructions Logs:</h5>
+                        <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
+                          {submissionDetails.step_metadata.analyze_deployment.message}
+                        </pre>
+                      </div>
+                    )}
+                    
+                    {/* Show deployment_implementation (implement_deployment_script) logs if available */}
+                    {submissionDetails.step_metadata.implement_deployment_script?.message && (
+                      <div className="mb-3">
+                        <h5 className="text-yellow-400 text-xs font-medium mb-1">Deployment Script Implementation Logs:</h5>
+                        <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
+                          {submissionDetails.step_metadata.implement_deployment_script.message}
+                        </pre>
+                        {submissionDetails.step_metadata.implement_deployment_script.error && (
+                          <div className="mt-2 p-2 rounded bg-red-900/30 border border-red-800">
+                            <h6 className="text-red-400 text-xs font-medium mb-1">Error:</h6>
+                            <pre className="text-red-300 text-xs overflow-auto max-h-24">
+                              {submissionDetails.step_metadata.implement_deployment_script.error}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Show verify_deployment (verify_deployment_script) logs if available */}
+                    {submissionDetails.step_metadata.verify_deployment_script?.message && (
+                      <div className="mb-3">
+                        <h5 className="text-yellow-400 text-xs font-medium mb-1">Verification Logs:</h5>
+                        <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
+                          {submissionDetails.step_metadata.verify_deployment_script.message}
+                        </pre>
+                      </div>
+                    )}
+                  </>
                 )}
                 
-                {/* Show deployment_implementation error logs if available */}
-                {submissionDetails.deployment_implementation?.log && (
+                {/* Show completed steps data to help troubleshoot */}
+                {submissionDetails.completed_steps && submissionDetails.completed_steps.length > 0 && (
                   <div className="mb-3">
-                    <h5 className="text-yellow-400 text-xs font-medium mb-1">Deployment Implementation Logs:</h5>
+                    <h5 className="text-yellow-400 text-xs font-medium mb-1">Completed Steps Status:</h5>
                     <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
-                      {submissionDetails.deployment_implementation.log}
-                    </pre>
-                  </div>
-                )}
-                
-                {/* Show verify_deployment error logs if available */}
-                {submissionDetails.verify_deployment?.log && (
-                  <div className="mb-3">
-                    <h5 className="text-yellow-400 text-xs font-medium mb-1">Verification Logs:</h5>
-                    <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
-                      {submissionDetails.verify_deployment.log}
+                      {JSON.stringify(submissionDetails.completed_steps, null, 2)}
                     </pre>
                   </div>
                 )}
                 
                 {/* Show general error message if no specific logs are available */}
-                {!submissionDetails.deployment_instructions?.log && 
-                 !submissionDetails.deployment_implementation?.log &&
-                 !submissionDetails.verify_deployment?.log && (
+                {(!submissionDetails.step_metadata || (
+                  !submissionDetails.step_metadata.analyze_deployment?.message &&
+                  !submissionDetails.step_metadata.implement_deployment_script?.message &&
+                  !submissionDetails.step_metadata.verify_deployment_script?.message &&
+                  (!submissionDetails.completed_steps || submissionDetails.completed_steps.length === 0)
+                )) && (
                   <p className="text-gray-400 text-xs">
                     No detailed error logs available. This could be a network error or the analysis service may be unavailable.
+                    <button 
+                      className="block mt-2 text-blue-400 hover:text-blue-300 text-xs underline"
+                      onClick={() => console.log('Full submission details:', submissionDetails)}
+                    >
+                      Show full submission data in console
+                    </button>
                   </p>
                 )}
               </div>
