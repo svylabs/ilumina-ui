@@ -116,7 +116,7 @@ export default function ChatAssistant({
         {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `Hello! I'm your blockchain analysis assistant. I can help you understand your project, explain smart contract code, and answer questions about the analysis results. What can I help you with today?`,
+          content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
           timestamp: new Date(),
         },
       ]);
