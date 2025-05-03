@@ -606,7 +606,7 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
 }
 
 // DeploymentInstructionsSection component for displaying deployment instructions
-function DeploymentInstructionsSection({ submissionId }: { submissionId: string }) {
+function DeploymentInstructionsSection({ submissionId, analysis }: { submissionId: string; analysis: AnalysisResponse }) {
   const [isLoading, setIsLoading] = useState(true);
   const [deploymentData, setDeploymentData] = useState<any>(null);
   const [deploymentScript, setDeploymentScript] = useState<any>(null);
@@ -619,7 +619,7 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
   const [isLoadingVerification, setIsLoadingVerification] = useState(false);
   const [scriptError, setScriptError] = useState<string | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [completedSteps, setCompletedSteps] = useState<any[]>([]);
+  // completedSteps are accessed directly from analysis response, no need for a separate state
   const { toast } = useToast();
 
   // Function to fetch submission details for troubleshooting
@@ -759,12 +759,13 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
     }
   };
 
-  // Get a specific step timestamp from completedSteps
+  // Get a specific step timestamp from analysis.completedSteps
   const getStepTimestamp = (stepType: string) => {
-    if (!completedSteps || completedSteps.length === 0) return null;
+    // Get completedSteps directly from the analysis response
+    if (!analysis?.completedSteps || analysis.completedSteps.length === 0) return null;
     
     // Find the matching step
-    const matchingStep = completedSteps.find(step => {
+    const matchingStep = analysis.completedSteps.find(step => {
       // For deployment-related steps, we have different step names to check
       if (stepType === 'deployment_instructions') {
         return step.step === 'deployment_instructions' || step.step === 'analyze_deployment';
