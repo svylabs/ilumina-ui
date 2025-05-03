@@ -700,9 +700,10 @@ export function registerRoutes(app: Express): Server {
               let responseCode = 0;
               
               // The data structure in step_metadata.verify_deployment_script should have a 'log' array
+              console.log("Full verifyData content:", JSON.stringify(verifyData, null, 2));
               if (verifyData && verifyData.log && Array.isArray(verifyData.log)) {
                 try {
-                  console.log("Parsing verification log array:", verifyData.log);
+                  console.log("Parsing verification log array:", JSON.stringify(verifyData.log, null, 2));
                   
                   // Extract data from the 'log' array
                   // log[0] = response code (0=success, 1=failure)
