@@ -1392,7 +1392,13 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                   </span>
                 </div>
                 <pre className="p-4 text-sm font-mono bg-gray-900 text-green-300 overflow-x-auto">
-                  {deploymentScript.content}
+                  {/* Split content by newlines and add line numbers */}
+                  {deploymentScript.content.split('\n').map((line, index) => (
+                    <div key={index} className="flex">
+                      <span className="text-gray-500 w-10 inline-block text-right pr-2 select-none">{index + 1}</span>
+                      <span className="flex-1">{line}</span>
+                    </div>
+                  ))}
                 </pre>
               </div>
             ) : (
@@ -1419,7 +1425,12 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                   </Badge>
                 </div>
                 <pre className="p-3 text-xs font-mono bg-black/50 text-red-300 overflow-x-auto rounded border border-red-900/30 mt-2">
-                  {submissionDetails.message}
+                  {submissionDetails.message.split('\n').map((line, index) => (
+                    <div key={index} className="flex">
+                      <span className="text-gray-500 w-10 inline-block text-right pr-2 select-none">{index + 1}</span>
+                      <span className="flex-1">{line}</span>
+                    </div>
+                  ))}
                 </pre>
               </div>
             )}
@@ -1436,7 +1447,12 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                   <div className="mb-3">
                     <h5 className="text-gray-300 text-xs font-medium mb-1">Log:</h5>
                     <pre className="p-3 text-xs font-mono bg-black/50 text-gray-300 overflow-x-auto rounded border border-gray-800 mt-1">
-                      {submissionDetails.step_metadata.implement_deployment_script.message}
+                      {submissionDetails.step_metadata.implement_deployment_script.message.split('\n').map((line, index) => (
+                        <div key={index} className="flex">
+                          <span className="text-gray-500 w-10 inline-block text-right pr-2 select-none">{index + 1}</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
                     </pre>
                   </div>
                 )}
@@ -1445,7 +1461,12 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                   <div>
                     <h5 className="text-red-400 text-xs font-medium mb-1">Error:</h5>
                     <pre className="p-3 text-xs font-mono bg-black/50 text-red-300 overflow-x-auto rounded border border-red-900/30 mt-1">
-                      {submissionDetails.step_metadata.implement_deployment_script.error}
+                      {submissionDetails.step_metadata.implement_deployment_script.error.split('\n').map((line, index) => (
+                        <div key={index} className="flex">
+                          <span className="text-gray-500 w-10 inline-block text-right pr-2 select-none">{index + 1}</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
                     </pre>
                   </div>
                 )}
@@ -1517,7 +1538,10 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                           if (log.includes("[INFO]")) textColor = "text-blue-400";
                           
                           return (
-                            <div key={index} className={`${textColor} py-0.5`}>{log}</div>
+                            <div key={index} className="flex py-0.5">
+                              <span className="text-gray-500 w-10 inline-block text-right pr-2 select-none">{index + 1}</span>
+                              <span className={`flex-1 ${textColor}`}>{log}</span>
+                            </div>
                           );
                         })}
                       </div>
