@@ -42,9 +42,24 @@ app.use((req, res, next) => {
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    
+    // Log the error but don't crash the server
+    console.error(`Error in request:`, err);
+    
+    // Check if it's a NeonDB error
+    const isNeonDBError = err.message && err.message.includes('Control plane request failed');
+    
+    if (isNeonDBError) {
+      res.status(503).json({ 
+        message: "Database temporarily unavailable",
+        details: "The database service is currently experiencing issues. Please try again later."
+      });
+    } else {
+      res.status(status).json({ message });
+    }
+    
+    // Don't rethrow the error as it would crash the server
+    // throw err;
   });
 
   // importantly only setup vite in development and after
