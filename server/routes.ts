@@ -673,8 +673,25 @@ export function registerRoutes(app: Express): Server {
           const submissionData = await submissionResponse.json();
           console.log(`Got submission data with steps: ${Object.keys(submissionData).join(', ')}`);
           
-          // Check if the submission data contains verify_deployment_script step with JSON data
-          if (submissionData.verify_deployment_script) {
+          // Log more details to help debug
+          if (submissionData.step_metadata) {
+            console.log(`Step metadata keys: ${Object.keys(submissionData.step_metadata).join(', ')}`);
+            if (submissionData.step_metadata.verify_deployment_script) {
+              console.log('Found verify_deployment_script in step_metadata');
+            }
+          }
+          
+          if (submissionData.completed_steps) {
+            console.log(`Completed steps: ${JSON.stringify(submissionData.completed_steps)}`);
+          }
+          
+          // Check if the submission data contains verify_deployment_script data in any of these locations
+          if (submissionData.verify_deployment_script || 
+              (submissionData.step_metadata && submissionData.step_metadata.verify_deployment_script)) {
+            
+            // Get the verification data from the appropriate location
+            const verifyData = submissionData.verify_deployment_script || 
+                             (submissionData.step_metadata && submissionData.step_metadata.verify_deployment_script);
             console.log("Found verify_deployment_script data in submission");
             
             try {
@@ -684,9 +701,9 @@ export function registerRoutes(app: Express): Server {
               let responseCode = 0;
               
               // The data structure is typically: { 0: responseCode, 1: contractAddresses, 2: stdout, 3: stderr }
-              if (typeof submissionData.verify_deployment_script === 'string') {
+              if (typeof verifyData === 'string') {
                 try {
-                  const verificationData = JSON.parse(submissionData.verify_deployment_script);
+                  const verificationData = JSON.parse(verifyData);
                   console.log("Parsed verification data:", verificationData);
                   
                   // Get response code (0 means success)
