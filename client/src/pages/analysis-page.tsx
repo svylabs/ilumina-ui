@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState, useCallback, useRef } from "react";
 import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
+import ChatAssistant from "@/components/chat-assistant";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -1712,42 +1713,9 @@ export default function AnalysisPage() {
                         Refresh
                       </Button>
                       
-                      {(currentStep.id === "files" || currentStep.id === "actors" || currentStep.id === "deployment") && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={getStepStatus(currentStep.id) === "in_progress"}
-                          onClick={() => setOpenChats(prev => ({ 
-                            ...prev, 
-                            [`refine-${currentStep.id}`]: true 
-                          }))}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          Refine
-                        </Button>
-                      )}
+                      {/* Refine button removed */}
                       
-                      {/* Chat interface for refining project/actor summary or deployment instructions */}
-                      {openChats[`refine-${currentStep.id}`] && (
-                        <SectionChat
-                          sectionType={
-                            currentStep.id === "files" ? "project_summary" : 
-                            currentStep.id === "actors" ? "actor_summary" : 
-                            "deployment_instructions"
-                          }
-                          sectionName={
-                            currentStep.id === "files" ? "Project Summary" : 
-                            currentStep.id === "actors" ? "Actor Summary" : 
-                            "Deployment Instructions"
-                          }
-                          projectId={id || ""}
-                          onClose={() => setOpenChats(prev => ({ 
-                            ...prev, 
-                            [`refine-${currentStep.id}`]: false 
-                          }))}
-                          isOpen={true}
-                        />
-                      )}
+                      {/* Chat interface for refining removed */}
                     </div>
                   </div>
                   {currentStep.link && getStepStatus(currentStep.id) === "completed" && (
