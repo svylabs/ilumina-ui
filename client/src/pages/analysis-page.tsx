@@ -659,11 +659,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
             console.log("Found general message:", details.data.message);
           }
           
-          toast({
-            title: "Error logs loaded",
-            description: "Detailed error information is now available",
-            variant: "default"
-          });
+          // Don't show toast for successful log loading since the UI displays the error automatically
         } else {
           console.error("Submission details data format unexpected:", details);
           toast({
