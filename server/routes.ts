@@ -431,37 +431,6 @@ export function registerRoutes(app: Express): Server {
       return [];
     }
   }
-
-  // API endpoint to fetch completed steps
-  app.get("/api/completed-steps/:submission_id", async (req, res) => {
-    try {
-      console.log(`Fetching completed steps for ${req.params.submission_id}`);
-      const result = await getValidSubmissionId(req.params.submission_id);
-      
-      if (!result.submissionId) {
-        console.log(`Invalid submission ID: ${req.params.submission_id}`);
-        return res.status(result.statusCode || 400).json({
-          error: result.error,
-          details: result.details
-        });
-      }
-      
-      // Get completed steps from the external API
-      const completedSteps = await getCompletedSteps(result.submissionId);
-      console.log(`Found ${completedSteps.length} completed steps for submission ${result.submissionId}`);
-      
-      // Format the steps to ensure they have step and updatedAt properties
-      const formattedSteps = completedSteps.map((step: any) => ({
-        step: step.step || step.step_id,
-        updatedAt: step.updated_at || step.updatedAt || step.timestamp || new Date().toISOString()
-      }));
-      
-      return res.json(formattedSteps);
-    } catch (error) {
-      console.error("Error in completed-steps endpoint:", error);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  });
   
   // API endpoint to fetch deployment script
   app.get("/api/deployment-script/:submission_id", async (req, res) => {
