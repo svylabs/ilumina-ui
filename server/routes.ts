@@ -685,13 +685,12 @@ export function registerRoutes(app: Express): Server {
             console.log(`Completed steps: ${JSON.stringify(submissionData.completed_steps)}`);
           }
           
-          // Check if the submission data contains verify_deployment_script data in any of these locations
-          if (submissionData.verify_deployment_script || 
-              (submissionData.step_metadata && submissionData.step_metadata.verify_deployment_script)) {
+          // Check if the submission data contains verify_deployment_script data in the step_metadata
+          if (submissionData.step_metadata && submissionData.step_metadata.verify_deployment_script) {
+            console.log("Found verify_deployment_script data in step_metadata");
             
-            // Get the verification data from the appropriate location
-            const verifyData = submissionData.verify_deployment_script || 
-                             (submissionData.step_metadata && submissionData.step_metadata.verify_deployment_script);
+            // Get the verification data from step_metadata
+            const verifyData = submissionData.step_metadata.verify_deployment_script;
             console.log("Found verify_deployment_script data in submission");
             
             try {
@@ -700,43 +699,68 @@ export function registerRoutes(app: Express): Server {
               let contractAddresses: Record<string, string> = {};
               let responseCode = 0;
               
-              // The data structure is typically: { 0: responseCode, 1: contractAddresses, 2: stdout, 3: stderr }
-              if (typeof verifyData === 'string') {
+              // The data structure in step_metadata.verify_deployment_script should have a 'log' array
+              if (verifyData && verifyData.log && Array.isArray(verifyData.log)) {
                 try {
-                  const verificationData = JSON.parse(verifyData);
-                  console.log("Parsed verification data:", verificationData);
+                  console.log("Parsing verification log array:", verifyData.log);
                   
-                  // Get response code (0 means success)
-                  responseCode = parseInt(verificationData['0'] || '0');
+                  // Extract data from the 'log' array
+                  // log[0] = response code (0=success, 1=failure)
+                  // log[1] = contract addresses (could be empty)
+                  // log[2] = stdout from deployment script
+                  // log[3] = stderr from deployment script
                   
-                  // Get contract addresses map
-                  if (verificationData['1'] && typeof verificationData['1'] === 'string') {
-                    try {
-                      contractAddresses = JSON.parse(verificationData['1']);
-                      console.log("Parsed contract addresses:", contractAddresses);
-                    } catch (addrErr) {
-                      console.error("Error parsing contract addresses JSON:", addrErr);
-                    }
-                  }
+                  // Extract data from the 'log' array
+                  // index 0 = response code (0=success, 1=failure)
+                  // index 1 = contract addresses (could be empty)
+                  // index 2 = stdout from deployment script
+                  // index 3 = stderr from deployment script
                   
-                  // Get stdout logs
-                  if (verificationData['2'] && typeof verificationData['2'] === 'string') {
-                    const stdout = verificationData['2'];
-                    verificationLogs = stdout.split('\n').filter(line => line.trim().length > 0);
-                    console.log(`Extracted ${verificationLogs.length} log lines from stdout`);
-                  }
-                  
-                  // Get stderr logs if any and append them
-                  if (verificationData['3'] && typeof verificationData['3'] === 'string') {
-                    const stderr = verificationData['3'];
-                    const stderrLogs = stderr.split('\n')
-                      .filter(line => line.trim().length > 0)
-                      .map(line => `[ERROR] ${line}`);
+                  if (verifyData.log && Array.isArray(verifyData.log) && verifyData.log.length >= 4) {
+                    const [responseCodeValue, contractAddressesObj, stdoutText, stderrText] = verifyData.log;
                     
-                    if (stderrLogs.length > 0) {
-                      verificationLogs = [...verificationLogs, ...stderrLogs];
-                      console.log(`Added ${stderrLogs.length} error log lines from stderr`);
+                    // Get response code (0 means success, 1 means failure)
+                    if (typeof responseCodeValue === 'number') {
+                      responseCode = responseCodeValue;
+                      console.log(`Response code: ${responseCode}`);
                     }
+                    
+                    // Get contract addresses map from the second element of the array
+                    if (contractAddressesObj && typeof contractAddressesObj === 'object') {
+                      try {
+                        // It might already be an object, not a string that needs parsing
+                        contractAddresses = contractAddressesObj;
+                        console.log("Contract addresses object:", contractAddresses);
+                      } catch (addrErr) {
+                        console.error("Error processing contract addresses:", addrErr);
+                      }
+                    }
+                    
+                    // Get stdout logs from the third element of the array
+                    if (stdoutText && typeof stdoutText === 'string') {
+                      const stdoutLogs = stdoutText.split('\n')
+                        .filter((line: string) => line.trim().length > 0)
+                        .map((line: string) => `[INFO] ${line.trim()}`);
+                        
+                      if (stdoutLogs.length > 0) {
+                        verificationLogs = [...verificationLogs, ...stdoutLogs];
+                        console.log(`Added ${stdoutLogs.length} log lines from stdout`);
+                      }
+                    }
+                    
+                    // Get stderr logs from the fourth element of the array
+                    if (stderrText && typeof stderrText === 'string') {
+                      const stderrLogs = stderrText.split('\n')
+                        .filter((line: string) => line.trim().length > 0)
+                        .map((line: string) => `[ERROR] ${line.trim()}`);
+                      
+                      if (stderrLogs.length > 0) {
+                        verificationLogs = [...verificationLogs, ...stderrLogs];
+                        console.log(`Added ${stderrLogs.length} error log lines from stderr`);
+                      }
+                    }
+                  } else {
+                    console.log("Verification log array is not in the expected format:", verifyData);
                   }
                 } catch (parseErr) {
                   console.error("Error parsing verification data JSON string:", parseErr);
@@ -764,18 +788,25 @@ export function registerRoutes(app: Express): Server {
               
               // If we have logs, return them with appropriate status
               if (verificationLogs.length > 0) {
+                // Set the status based on response code (0=success, anything else=failure)
                 const verificationStatus = responseCode === 0 ? "completed" : "failed";
+                
+                // Add header info to logs to explain data source
+                const logsWithHeader = [
+                  "[INFO] Processing real verification logs from metadata",
+                  ...verificationLogs
+                ];
                 
                 const responseData = {
                   status: verificationStatus,
-                  logs: verificationLogs,
+                  logs: logsWithHeader,
                   timestamp: new Date().toISOString(),
                   details: verificationStatus === "completed" ? 
                     "Deployment script verified successfully" : 
                     "Deployment script verification failed"
                 };
                 
-                console.log("Returning verification data from submission");
+                console.log(`Returning verification data from submission with ${logsWithHeader.length} logs`);
                 return res.status(200).json(responseData);
               }
             } catch (parsingError) {
