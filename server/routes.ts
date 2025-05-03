@@ -540,13 +540,16 @@ export function registerRoutes(app: Express): Server {
         
         // Define multiple possible paths for the deployment script
         const possibleScriptPaths = [
+          "simulation/contracts/deploy.ts",  // As specified by the user
           "contracts/deploy.ts",
           "deploy.ts",
           "scripts/deploy.ts",
           "script/deploy.ts",
           "src/deploy.ts",
           "src/scripts/deploy.ts",
-          "contracts/scripts/deploy.ts"
+          "contracts/scripts/deploy.ts",
+          "simulation/deploy.ts",
+          "simulation/src/deploy.ts"
         ];
         
         console.log(`Trying multiple paths to find deployment script in ${username}/${repoName}`);
