@@ -11,7 +11,7 @@ const genAI = new GoogleGenerativeAI(apiKey || '');
 
 // Create a model instance for Gemini
 const model = genAI.getGenerativeModel({
-  model: 'gemini-pro', // Using the Gemini Pro model which is optimized for chat applications
+  model: 'gemini-2.0-flash', // Using the Gemini 2.0 Flash model which is optimized for chat applications
   safetySettings: [
     {
       category: HarmCategory.HARM_CATEGORY_HARASSMENT,
