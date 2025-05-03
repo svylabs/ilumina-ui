@@ -461,28 +461,89 @@ export function registerRoutes(app: Express): Server {
       console.log(`Deployment script implementation status: ${stepStatus}`);
       
       try {
-        // Get simulation repository information
-        console.log("Fetching simulation repository information from API");
-        const simRepoResponse = await callExternalIluminaAPI(`/simulation-repository/${result.submissionId}`);
+        // First, get the project info to determine the project name
+        // Start with checking our database for submission data
+        console.log(`Getting repository information for submission: ${result.submissionId}`);
         
-        if (!simRepoResponse.ok) {
-          console.error(`Failed to get simulation repository: ${simRepoResponse.status} ${simRepoResponse.statusText}`);
-          throw new Error(`Failed to get simulation repository information: ${simRepoResponse.status}`);
+        const submissionData = await db
+          .select()
+          .from(submissions)
+          .where(eq(submissions.id, result.submissionId))
+          .limit(1);
+          
+        if (submissionData.length === 0) {
+          throw new Error("Submission not found in the database");
         }
         
-        const repoInfo = await simRepoResponse.json();
-        console.log(`Found simulation repository: ${JSON.stringify(repoInfo)}`);
-        
-        if (!repoInfo.owner || !repoInfo.repo) {
-          throw new Error("Incomplete repository information received from API");
+        // Get project details
+        const projectData = await db
+          .select()
+          .from(projects)
+          .where(eq(projects.id, submissionData[0].projectId))
+          .limit(1);
+          
+        if (projectData.length === 0) {
+          throw new Error("Project not found for this submission");
         }
         
-        // First try to get the deployment script from the GitHub repository
+        console.log(`Found project: ${projectData[0].name} (ID: ${projectData[0].id})`);
+        
+        // Try to get run ID from external API or from our completed steps
+        let runId: string = '';
+        
+        try {
+          const apiResponse = await callExternalIluminaAPI(`/submission/${result.submissionId}`);
+          
+          if (apiResponse.ok) {
+            const apiData = await apiResponse.json();
+            runId = apiData.run_id || '';
+            console.log(`Got run ID from external API: ${runId}`);
+          } else {
+            console.warn(`External API returned error: ${apiResponse.status}, trying to determine run ID locally`);
+          }
+        } catch (apiError) {
+          console.warn(`Error calling external API: ${apiError}, trying to determine run ID locally`);
+        }
+        
+        // If we couldn't get run ID from API, try to extract from completed steps
+        if (!runId) {
+          try {
+            const simulationStep = completedSteps.find((step: any) => 
+              step.step === "run_simulation" || step.step === "test_simulation" || step.step === "test_setup");
+            
+            if (simulationStep?.details) {
+              // Try to extract run ID from details field which might contain it
+              const runIdMatch = simulationStep.details.match(/simulation[- _]run[- _]id:?\s*([0-9]+)/i);
+              if (runIdMatch && runIdMatch[1]) {
+                runId = runIdMatch[1];
+                console.log(`Extracted run ID from step details: ${runId}`);
+              }
+            }
+          } catch (stepError) {
+            console.warn(`Failed to extract run ID from steps: ${stepError}`);
+          }
+        }
+        
+        // If still no run ID, use the current timestamp as fallback
+        if (!runId) {
+          runId = Math.floor(Date.now() / 1000).toString();
+          console.log(`Using current timestamp as run ID fallback: ${runId}`);
+        }
+        
+        // Construct the simulation repository name
+        const projectName = projectData[0].name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        const repoName = `${projectName}-simulation-${runId}`;
+        const username = process.env.GITHUB_USERNAME || 'svylabs'; // Fallback to svylabs if not set
+        const branch = "main";
+        
+        console.log(`Constructed repository name: ${username}/${repoName}`);
+        
+        // Try to get the deployment script from the GitHub repository
         const scriptPath = "contracts/deploy.ts";
-        console.log(`Fetching deploy script from GitHub: ${repoInfo.owner}/${repoInfo.repo}/${scriptPath}`);
+        console.log(`Fetching deploy script from GitHub: ${username}/${repoName}/${scriptPath}`);
         
         // Use our GitHub proxy endpoint to fetch the file
-        const githubResponse = await fetch(`${req.protocol}://${req.get('host')}/api/github/contents/${repoInfo.owner}/${repoInfo.repo}/${scriptPath}?ref=${repoInfo.branch || 'main'}`, {
+        const githubResponse = await fetch(`${req.protocol}://${req.get('host')}/api/github/contents/${username}/${repoName}/${scriptPath}?ref=${branch}`, {
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'Ilumina-App'
@@ -512,7 +573,7 @@ export function registerRoutes(app: Express): Server {
           path: fileData.path || scriptPath,
           status: stepStatus,
           updatedAt: stepTime,
-          repo: repoInfo.repo
+          repo: repoName
         };
         
         console.log("Returning deployment script data from GitHub repository");
