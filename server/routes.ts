@@ -461,97 +461,61 @@ export function registerRoutes(app: Express): Server {
       console.log(`Deployment script implementation status: ${stepStatus}`);
       
       try {
-        // Get simulation repository information if available
-        let repoInfo = { repository: "simulation-repository" };
-        try {
-          const simRepoResponse = await callExternalIluminaAPI(`/simulation-repository/${result.submissionId}`);
-          if (simRepoResponse.ok) {
-            repoInfo = await simRepoResponse.json();
-            console.log(`Found simulation repository: ${JSON.stringify(repoInfo)}`);
-          }
-        } catch (repoError) {
-          console.log(`Could not fetch simulation repository info: ${repoError}`);
-          // Continue anyway
+        // Get simulation repository information
+        console.log("Fetching simulation repository information from API");
+        const simRepoResponse = await callExternalIluminaAPI(`/simulation-repository/${result.submissionId}`);
+        
+        if (!simRepoResponse.ok) {
+          console.error(`Failed to get simulation repository: ${simRepoResponse.status} ${simRepoResponse.statusText}`);
+          throw new Error(`Failed to get simulation repository information: ${simRepoResponse.status}`);
         }
         
-        // Generate a deployment script based on the submission/project
-        const scriptContent = `// Deployment script for simulation repository
-import { ethers } from 'hardhat';
-
-async function main() {
-  const [deployer] = await ethers.getSigners();
-  console.log("Deploying contracts with the account:", deployer.address);
-
-  // Deploy the DFIDToken contract first
-  console.log("Deploying DFIDToken...");
-  const DFIDToken = await ethers.getContractFactory("DFIDToken");
-  const dfidToken = await DFIDToken.deploy("D.FI Dollar", "DFID");
-  await dfidToken.deployed();
-  console.log("DFIDToken deployed to:", dfidToken.address);
-
-  // Deploy the DFIREToken contract
-  console.log("Deploying DFIREToken...");
-  const DFIREToken = await ethers.getContractFactory("DFIREToken");
-  const dfireToken = await DFIREToken.deploy();
-  await dfireToken.deployed();
-  console.log("DFIREToken deployed to:", dfireToken.address);
-
-  // Deploy the DFIREStaking contract
-  console.log("Deploying DFIREStaking...");
-  const DFIREStaking = await ethers.getContractFactory("DFIREStaking");
-  const dfireStaking = await DFIREStaking.deploy(true);
-  await dfireStaking.deployed();
-  console.log("DFIREStaking deployed to:", dfireStaking.address);
-
-  // Deploy the StabilityPool contract
-  console.log("Deploying StabilityPool...");
-  const StabilityPool = await ethers.getContractFactory("StabilityPool");
-  const stabilityPool = await StabilityPool.deploy(dfidToken.address, dfireToken.address);
-  await stabilityPool.deployed();
-  console.log("StabilityPool deployed to:", stabilityPool.address);
-
-  // Deploy the PriceFeed contract
-  console.log("Deploying PriceFeed...");
-  const PriceFeed = await ethers.getContractFactory("PriceFeed");
-  const priceFeed = await PriceFeed.deploy();
-  await priceFeed.deployed();
-  console.log("PriceFeed deployed to:", priceFeed.address);
-
-  // Configure initial system parameters
-  console.log("All contracts deployed successfully!");
-  console.log("System configuration complete.");
-  
-  return {
-    dfidToken: dfidToken.address,
-    dfireToken: dfireToken.address,
-    dfireStaking: dfireStaking.address,
-    stabilityPool: stabilityPool.address,
-    priceFeed: priceFeed.address
-  };
-}
-
-main()
-  .then((addresses) => {
-    console.log("Deployment complete!");
-    console.log("Contract addresses:", addresses);
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error("Deployment failed:", error);
-    process.exit(1);
-  });`;
+        const repoInfo = await simRepoResponse.json();
+        console.log(`Found simulation repository: ${JSON.stringify(repoInfo)}`);
+        
+        if (!repoInfo.owner || !repoInfo.repo) {
+          throw new Error("Incomplete repository information received from API");
+        }
+        
+        // First try to get the deployment script from the GitHub repository
+        const scriptPath = "contracts/deploy.ts";
+        console.log(`Fetching deploy script from GitHub: ${repoInfo.owner}/${repoInfo.repo}/${scriptPath}`);
+        
+        // Use our GitHub proxy endpoint to fetch the file
+        const githubResponse = await fetch(`${req.protocol}://${req.get('host')}/api/github/contents/${repoInfo.owner}/${repoInfo.repo}/${scriptPath}?ref=${repoInfo.branch || 'main'}`, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Ilumina-App'
+          }
+        });
+        
+        if (!githubResponse.ok) {
+          console.error(`Error fetching script from GitHub: ${githubResponse.status} ${githubResponse.statusText}`);
+          throw new Error(`Failed to fetch deployment script from repository: ${githubResponse.status}`);
+        }
+        
+        const fileData = await githubResponse.json();
+        let scriptContent = "";
+        
+        if (fileData.content) {
+          // GitHub content is base64 encoded
+          scriptContent = Buffer.from(fileData.content, 'base64').toString('utf-8');
+          console.log("Successfully retrieved deployment script from GitHub repository");
+        } else {
+          throw new Error("Invalid file data received from GitHub API");
+        }
         
         // Return the script data
         const responseData = {
-          filename: "deploy.ts",
+          filename: fileData.name || "deploy.ts",
           content: scriptContent,
-          path: "/simulation/contracts/deploy.ts",
+          path: fileData.path || scriptPath,
           status: stepStatus,
           updatedAt: stepTime,
-          repo: repoInfo.repository || "simulation-repository"
+          repo: repoInfo.repo
         };
         
-        console.log("Returning deployment script data");
+        console.log("Returning deployment script data from GitHub repository");
         return res.status(200).json(responseData);
       } catch (error) {
         console.error("Error generating deployment script:", error);
@@ -590,13 +554,47 @@ main()
       const completedSteps = await getCompletedSteps(result.submissionId);
       console.log(`Found ${completedSteps.length} completed steps for submission ${result.submissionId}`);
       
-      // For development purposes, we'll always return verification data
+      // First check if the verification step exists in completed steps
       const verifyStep = completedSteps.find((step: any) => step.step === "verify_deployment_script");
       const verificationStatus = verifyStep ? (verifyStep.status || "completed") : "pending";
       const timestamp = verifyStep ? verifyStep.updated_at : new Date().toISOString();
       
       console.log(`Verification status: ${verificationStatus}`);
       
+      // Try to get the deployment verification data from the external API
+      try {
+        // Call the external API to get verification data
+        const response = await callExternalIluminaAPI(`/verify_deployment/${result.submissionId}`);
+        
+        if (response.ok) {
+          try {
+            const verificationData = await response.json();
+            console.log("Successfully received verification data from external API:", verificationData);
+            
+            // Return the data from the external API
+            return res.json(verificationData);
+          } catch (jsonError) {
+            console.error("Error parsing verification data JSON:", jsonError);
+            // Fall back to generated data if parsing fails
+          }
+        } else {
+          console.error(`Failed to get verification data from external API: ${response.status} ${response.statusText}`);
+          // Fall back to generated data if API call fails
+          
+          try {
+            // Try to parse error response for more details
+            const errorText = await response.text();
+            console.error(`Error details: ${errorText}`);
+          } catch (e) {
+            console.error("Could not read error response text");
+          }
+        }
+      } catch (apiError) {
+        console.error("Error calling external API for verification data:", apiError);
+        // Fall back to generated data if API call throws an exception
+      }
+      
+      // If external API fails or doesn't return data, generate fallback verification data
       // Generate appropriate logs based on the status
       const logs = [
         "[INFO] Starting deployment script verification",
@@ -620,7 +618,7 @@ main()
         logs.push("[INFO] Verification in progress...");
       }
       
-      // Prepare response data
+      // Prepare fallback response data
       const responseData = {
         status: verificationStatus,
         logs: logs,
