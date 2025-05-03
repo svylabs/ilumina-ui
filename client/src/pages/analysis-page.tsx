@@ -619,6 +619,7 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
   const [isLoadingVerification, setIsLoadingVerification] = useState(false);
   const [scriptError, setScriptError] = useState<string | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [completedSteps, setCompletedSteps] = useState<any[]>([]);
   const { toast } = useToast();
 
   // Function to fetch submission details for troubleshooting
@@ -758,6 +759,43 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
     }
   };
 
+  // Get a specific step timestamp from completedSteps
+  const getStepTimestamp = (stepType: string) => {
+    if (!completedSteps || completedSteps.length === 0) return null;
+    
+    // Find the matching step
+    const matchingStep = completedSteps.find(step => {
+      // For deployment-related steps, we have different step names to check
+      if (stepType === 'deployment_instructions') {
+        return step.step === 'deployment_instructions' || step.step === 'analyze_deployment';
+      } else if (stepType === 'deployment_implementation') {
+        return step.step === 'deployment_implementation';
+      } else if (stepType === 'verify_deployment') {
+        return step.step === 'verify_deployment' || step.step === 'verify_deployment_script';
+      }
+      return step.step === stepType;
+    });
+
+    return matchingStep ? matchingStep.updatedAt : null;
+  };
+
+  // Fetch completed steps from the API
+  const fetchCompletedSteps = async () => {
+    try {
+      console.log(`Fetching completed steps for submission ${submissionId}`);
+      const response = await fetch(`/api/completed-steps/${submissionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Completed steps data:", data);
+        if (Array.isArray(data)) {
+          setCompletedSteps(data);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching completed steps:", err);
+    }
+  };
+
   // Combine all data fetching in a single effect
   useEffect(() => {
     const fetchDeploymentInstructions = async () => {
@@ -787,6 +825,9 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
         const data = await response.json();
         console.log("Successfully received deployment instructions:", data);
         setDeploymentData(data);
+        
+        // Also fetch the completed steps to get timestamps
+        await fetchCompletedSteps();
       } catch (err) {
         console.error("Error fetching deployment instructions:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch deployment instructions");
@@ -875,7 +916,12 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
             </div>
             <div>
               <h4 className="font-medium text-blue-300">Deployment Instructions</h4>
-              <p className="text-xs text-gray-400">Generated at {format(new Date(deploymentData.createdAt || new Date()), "MMM dd, h:mm a")}</p>
+              <p className="text-xs text-gray-400">
+                {getStepTimestamp('deployment_instructions') ? 
+                  `Generated at ${format(new Date(getStepTimestamp('deployment_instructions')), "MMM dd, h:mm a")}` : 
+                  `Generated at ${format(new Date(deploymentData.createdAt || new Date()), "MMM dd, h:mm a")}`
+                }
+              </p>
             </div>
             <div className="ml-auto">
               <Badge variant="outline" className="bg-green-900/30 text-green-300 border-green-700">
@@ -903,8 +949,10 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
               <h4 className="font-medium text-blue-300">Implemented Script</h4>
               <p className="text-xs text-gray-400">
                 {deploymentScript ? 
-                  `Updated at ${format(new Date(deploymentScript.updatedAt || new Date()), "MMM dd, h:mm a")}` :
-                  "Click to load script"}
+                  `Updated at ${format(new Date(deploymentScript.updatedAt || getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
+                  getStepTimestamp('deployment_implementation') ?
+                    `Updated at ${format(new Date(getStepTimestamp('deployment_implementation')), "MMM dd, h:mm a")}` :
+                    "Click to load script"}
               </p>
             </div>
             <div className="ml-auto">
@@ -941,8 +989,10 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
               <h4 className="font-medium text-blue-300">Verification Results</h4>
               <p className="text-xs text-gray-400">
                 {verificationData ? 
-                  `Verified at ${format(new Date(verificationData.timestamp || new Date()), "MMM dd, h:mm a")}` :
-                  "Click to load results"}
+                  `Verified at ${format(new Date(verificationData.timestamp || getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
+                  getStepTimestamp('verify_deployment') ?
+                    `Verified at ${format(new Date(getStepTimestamp('verify_deployment')), "MMM dd, h:mm a")}` :
+                    "Click to load results"}
               </p>
             </div>
             <div className="ml-auto">
