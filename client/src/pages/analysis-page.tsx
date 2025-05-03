@@ -635,7 +635,30 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
         // The API returns the data in the 'data' field
         if (details && details.data) {
           setSubmissionDetails(details.data);
+          // Always set showing details to true
           setIsShowingDetails(true);
+          
+          // Debug log to help track down step_metadata structure
+          if (details.data.step_metadata) {
+            console.log("Step metadata available:", Object.keys(details.data.step_metadata));
+            
+            // Specifically log implement_deployment_script details
+            if (details.data.step_metadata.implement_deployment_script) {
+              console.log("Implementation error details:", details.data.step_metadata.implement_deployment_script);
+            }
+          }
+          
+          // Check for older format with submissionData.<step>.log
+          if (details.data.deployment_implementation?.log) {
+            console.log("Found legacy format deployment_implementation.log:", 
+                       details.data.deployment_implementation.log);
+          }
+          
+          // Check for general message
+          if (details.data.message) {
+            console.log("Found general message:", details.data.message);
+          }
+          
           toast({
             title: "Error logs loaded",
             description: "Detailed error information is now available",
@@ -878,13 +901,16 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
         
         // Fetch verification data in parallel
         fetchVerificationData();
+        
+        // Automatically fetch submission details to show any available error logs
+        await fetchSubmissionDetails();
       } catch (err) {
         console.error("Error fetching deployment instructions:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch deployment instructions");
         
         // Automatically fetch submission details for troubleshooting when there's an error
         try {
-          fetchSubmissionDetails();
+          await fetchSubmissionDetails();
         } catch (submissionErr) {
           console.error("Could not fetch submission details:", submissionErr);
         }
@@ -1371,6 +1397,49 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Load Script
                 </Button>
+              </div>
+            )}
+            
+            {/* Display error logs if available */}
+            {submissionDetails && submissionDetails.message && getStepStatus('deployment_implementation') === 'error' && (
+              <div className="bg-red-900/20 border border-red-900/50 rounded-md p-4 mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-red-400 text-sm font-medium">Deployment Script Implementation Error</h4>
+                  <Badge variant="destructive" className="bg-red-900/30 text-red-300 border-red-800">
+                    Failed
+                  </Badge>
+                </div>
+                <pre className="p-3 text-xs font-mono bg-black/50 text-red-300 overflow-x-auto rounded border border-red-900/30 mt-2">
+                  {submissionDetails.message}
+                </pre>
+              </div>
+            )}
+            
+            {/* Display step metadata if available */}
+            {submissionDetails && submissionDetails.step_metadata && submissionDetails.step_metadata.implement_deployment_script && 
+             (submissionDetails.step_metadata.implement_deployment_script.message || submissionDetails.step_metadata.implement_deployment_script.error) && (
+              <div className="bg-red-900/20 border border-red-900/50 rounded-md p-4 mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-red-400 text-sm font-medium">Deployment Script Implementation Error Details</h4>
+                </div>
+                
+                {submissionDetails.step_metadata.implement_deployment_script.message && (
+                  <div className="mb-3">
+                    <h5 className="text-gray-300 text-xs font-medium mb-1">Log:</h5>
+                    <pre className="p-3 text-xs font-mono bg-black/50 text-gray-300 overflow-x-auto rounded border border-gray-800 mt-1">
+                      {submissionDetails.step_metadata.implement_deployment_script.message}
+                    </pre>
+                  </div>
+                )}
+                
+                {submissionDetails.step_metadata.implement_deployment_script.error && (
+                  <div>
+                    <h5 className="text-red-400 text-xs font-medium mb-1">Error:</h5>
+                    <pre className="p-3 text-xs font-mono bg-black/50 text-red-300 overflow-x-auto rounded border border-red-900/30 mt-1">
+                      {submissionDetails.step_metadata.implement_deployment_script.error}
+                    </pre>
+                  </div>
+                )}
               </div>
             )}
             
