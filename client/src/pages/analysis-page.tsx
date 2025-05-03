@@ -827,7 +827,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
 
     fetchDeploymentInstructions();
     // We'll lazily load script and verification data when the user switches tabs
-  }, [submissionId]);
+  }, [submissionId, analysis]);
 
   if (isLoading) {
     return (
@@ -904,7 +904,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
               <h4 className="font-medium text-blue-300">Deployment Instructions</h4>
               <p className="text-xs text-gray-400">
                 {getStepTimestamp('deployment_instructions') ? 
-                  `Generated at ${format(new Date(getStepTimestamp('deployment_instructions')), "MMM dd, h:mm a")}` : 
+                  `Generated at ${format(new Date(getStepTimestamp('deployment_instructions') || new Date()), "MMM dd, h:mm a")}` : 
                   `Generated at ${format(new Date(deploymentData.createdAt || new Date()), "MMM dd, h:mm a")}`
                 }
               </p>
@@ -937,7 +937,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                 {deploymentScript ? 
                   `Updated at ${format(new Date(deploymentScript.updatedAt || getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
                   getStepTimestamp('deployment_implementation') ?
-                    `Updated at ${format(new Date(getStepTimestamp('deployment_implementation')), "MMM dd, h:mm a")}` :
+                    `Updated at ${format(new Date(getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
                     "Click to load script"}
               </p>
             </div>
@@ -977,7 +977,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                 {verificationData ? 
                   `Verified at ${format(new Date(verificationData.timestamp || getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
                   getStepTimestamp('verify_deployment') ?
-                    `Verified at ${format(new Date(getStepTimestamp('verify_deployment')), "MMM dd, h:mm a")}` :
+                    `Verified at ${format(new Date(getStepTimestamp('verify_deployment') || new Date()), "MMM dd, h:mm a")}` :
                     "Click to load results"}
               </p>
             </div>
@@ -3259,7 +3259,7 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                               }
                               
                               // Let's fetch the data directly from the API using the ID we found
-                              return <DeploymentInstructionsSection submissionId={submissionId} />
+                              return <DeploymentInstructionsSection submissionId={submissionId} analysis={analysis} />
                             } catch (error) {
                               console.error("Error rendering deployment section:", error);
                               return (
