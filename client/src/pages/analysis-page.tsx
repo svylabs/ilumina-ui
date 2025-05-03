@@ -779,22 +779,8 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
     return matchingStep ? matchingStep.updatedAt : null;
   };
 
-  // Fetch completed steps from the API
-  const fetchCompletedSteps = async () => {
-    try {
-      console.log(`Fetching completed steps for submission ${submissionId}`);
-      const response = await fetch(`/api/completed-steps/${submissionId}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Completed steps data:", data);
-        if (Array.isArray(data)) {
-          setCompletedSteps(data);
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching completed steps:", err);
-    }
-  };
+  // Use completedSteps directly from the analysis response
+  // No need for a separate API call since it's already included in the analysis response
 
   // Combine all data fetching in a single effect
   useEffect(() => {
