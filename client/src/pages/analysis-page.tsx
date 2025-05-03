@@ -619,6 +619,7 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
   const [isLoadingVerification, setIsLoadingVerification] = useState(false);
   const [scriptError, setScriptError] = useState<string | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Function to fetch submission details for troubleshooting
   const fetchSubmissionDetails = async () => {
@@ -649,11 +650,44 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
       const response = await fetch(`/api/deployment-script/${submissionId}`);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch deployment script: ${response.status}`);
+        let errorMessage = `Failed to fetch deployment script: ${response.status}`;
+        try {
+          const errorText = await response.text();
+          try {
+            // Try to parse it as JSON first
+            const errorData = JSON.parse(errorText);
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (jsonErr) {
+            // If it's not valid JSON, show the raw error message but limit its length
+            if (errorText.length > 100) {
+              errorMessage = `${errorText.substring(0, 100)}... (truncated)`;
+            } else {
+              errorMessage = errorText;
+            }
+          }
+        } catch (textErr) {
+          // If we can't get the response text
+          console.error("Could not read error response:", textErr);
+        }
+        throw new Error(errorMessage);
       }
       
-      const data = await response.json();
+      let data;
+      try {
+        const responseText = await response.text();
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonErr) {
+          console.error("Invalid JSON in response:", responseText.substring(0, 500));
+          throw new Error(`Invalid JSON response: ${jsonErr.message}`);
+        }
+      } catch (textErr) {
+        console.error("Could not read response text:", textErr);
+        throw new Error(`Failed to read response: ${textErr.message}`);
+      }
+      
       console.log("Successfully received deployment script:", data);
       setDeploymentScript(data);
     } catch (err) {
@@ -676,11 +710,44 @@ function DeploymentInstructionsSection({ submissionId }: { submissionId: string 
       const response = await fetch(`/api/verify-deployment/${submissionId}`);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch verification data: ${response.status}`);
+        let errorMessage = `Failed to fetch verification data: ${response.status}`;
+        try {
+          const errorText = await response.text();
+          try {
+            // Try to parse it as JSON first
+            const errorData = JSON.parse(errorText);
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (jsonErr) {
+            // If it's not valid JSON, show the raw error message but limit its length
+            if (errorText.length > 100) {
+              errorMessage = `${errorText.substring(0, 100)}... (truncated)`;
+            } else {
+              errorMessage = errorText;
+            }
+          }
+        } catch (textErr) {
+          // If we can't get the response text
+          console.error("Could not read error response:", textErr);
+        }
+        throw new Error(errorMessage);
       }
       
-      const data = await response.json();
+      let data;
+      try {
+        const responseText = await response.text();
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonErr) {
+          console.error("Invalid JSON in response:", responseText.substring(0, 500));
+          throw new Error(`Invalid JSON response: ${jsonErr.message}`);
+        }
+      } catch (textErr) {
+        console.error("Could not read response text:", textErr);
+        throw new Error(`Failed to read response: ${textErr.message}`);
+      }
+      
       console.log("Successfully received verification data:", data);
       setVerificationData(data);
     } catch (err) {
