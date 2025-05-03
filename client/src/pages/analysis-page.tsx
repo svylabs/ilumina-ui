@@ -968,7 +968,11 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                 >
                   {deploymentScript.status === "failed" ? "Failed" : "Success"}
                 </Badge>
-              ) : null}
+              ) : (
+                <Badge variant="outline" className="bg-yellow-900/30 text-yellow-300 border-yellow-700">
+                  Pending
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -1009,7 +1013,11 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                 >
                   {verificationData.status === "failed" ? "Failed" : "Success"}
                 </Badge>
-              ) : null}
+              ) : (
+                <Badge variant="outline" className="bg-yellow-900/30 text-yellow-300 border-yellow-700">
+                  Pending
+                </Badge>
+              )}
             </div>
           </div>
         </div>
