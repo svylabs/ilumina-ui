@@ -2440,11 +2440,15 @@ The deployment should initialize the contracts with test values and set me as th
                                 // Check if this is the new format with project_summary as a string
                                 if (projectData.project_summary && typeof projectData.project_summary === 'string') {
                                   try {
+                                    console.log("Raw project_summary:", projectData.project_summary);
                                     projectSummaryObj = JSON.parse(projectData.project_summary);
                                     console.log("Parsed project summary:", projectSummaryObj);
                                   } catch (e) {
                                     console.error("Failed to parse project_summary:", e);
                                   }
+                                } else if (projectData.projectSummary) {
+                                  // Direct access for some formats
+                                  projectSummaryObj = projectData;
                                 }
                               } else {
                                 const details = getStepDetails(currentStep.id);
@@ -3277,10 +3281,12 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                                 // Handle the new API format where actors_summary is a string
                                 if (stepData.jsonData.actors_summary && typeof stepData.jsonData.actors_summary === 'string') {
                                   try {
-                                    console.log("Raw actors_summary data:", stepData.jsonData.actors_summary);
+                                        console.log("Raw actors_summary data:", stepData.jsonData.actors_summary);
                                     const parsedData = JSON.parse(stepData.jsonData.actors_summary);
                                     console.log("Parsed actors data:", parsedData);
-                                    actorsData = parsedData;
+                                    if (parsedData && parsedData.actors) {
+                                      actorsData = parsedData;
+                                    }
                                   } catch (e) {
                                     console.error("Failed to parse actors_summary:", e);
                                   }
