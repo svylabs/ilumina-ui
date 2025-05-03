@@ -10,6 +10,7 @@ import { eq, sql, desc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { analysisSteps } from "@db/schema";
+import { generateChatResponse } from "./gemini";
 
 // Define the type for analysis step status
 type AnalysisStepStatus = {
@@ -122,6 +123,56 @@ async function getValidSubmissionId(idParam: string): Promise<{
 export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
+  
+  // AI Assistant chat endpoint
+  app.post("/api/assistant/chat", async (req, res) => {
+    try {
+      const { messages, projectId, section, analysisStep } = req.body;
+      
+      if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ error: "Messages are required and must be an array" });
+      }
+      
+      // Get project details if projectId is provided
+      let projectDetails: any = {};
+      if (projectId) {
+        try {
+          const projectData = await db
+            .select()
+            .from(projects)
+            .where(eq(projects.id, parseInt(projectId)))
+            .limit(1);
+            
+          if (projectData.length > 0) {
+            projectDetails = {
+              projectName: projectData[0].name,
+              githubUrl: projectData[0].github_url
+            };
+          }
+        } catch (error) {
+          console.error("Error fetching project details:", error);
+        }
+      }
+      
+      // Call Gemini to generate a response
+      const response = await generateChatResponse(messages, {
+        projectName: projectDetails.projectName,
+        section,
+        analysisStep,
+        projectMetadata: {
+          githubUrl: projectDetails.githubUrl
+        }
+      });
+      
+      return res.json({ response });
+    } catch (error) {
+      console.error("Error in assistant chat endpoint:", error);
+      return res.status(500).json({ 
+        error: "Failed to generate chat response",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
   
   // Simple deployment status check - just check directly from external API
   // Endpoint for debugging submission details - helps developers troubleshoot issues
