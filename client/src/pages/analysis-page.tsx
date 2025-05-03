@@ -3277,6 +3277,7 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                                 // Handle the new API format where actors_summary is a string
                                 if (stepData.jsonData.actors_summary && typeof stepData.jsonData.actors_summary === 'string') {
                                   try {
+                                    console.log("Raw actors_summary data:", stepData.jsonData.actors_summary);
                                     const parsedData = JSON.parse(stepData.jsonData.actors_summary);
                                     console.log("Parsed actors data:", parsedData);
                                     actorsData = parsedData;
