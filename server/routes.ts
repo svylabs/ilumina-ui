@@ -175,8 +175,55 @@ export function registerRoutes(app: Express): Server {
   });
   
   // Simple deployment status check - just check directly from external API
-  // Endpoint for debugging submission details - helps developers troubleshoot issues
+  // Endpoint for new API to fetch submission details including error logs
   app.get("/api/submission-details/:submission_id", async (req, res) => {
+    try {
+      console.log(`Fetching submission details for ${req.params.submission_id}`);
+      const result = await getValidSubmissionId(req.params.submission_id);
+      
+      if (!result.submissionId) {
+        console.log(`Invalid submission ID: ${req.params.submission_id}`);
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details
+        });
+      }
+      
+      // Fetch submission data from the external API
+      try {
+        const submissionResponse = await callExternalIluminaAPI(`/submission/${result.submissionId}`);
+        
+        if (submissionResponse.ok) {
+          const submissionData = await submissionResponse.json();
+          return res.json({
+            submissionId: result.submissionId,
+            data: submissionData
+          });
+        } else {
+          return res.status(500).json({
+            error: `Failed to fetch submission details: ${submissionResponse.status}`,
+            submissionId: result.submissionId
+          });
+        }
+      } catch (apiError) {
+        console.error(`Error fetching submission details from API:`, apiError);
+        return res.status(500).json({
+          error: "Error fetching submission details from external API",
+          details: apiError instanceof Error ? apiError.message : "Unknown error",
+          submissionId: result.submissionId
+        });
+      }
+    } catch (error) {
+      console.error("Error in submission-details endpoint:", error);
+      return res.status(500).json({ 
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  // Endpoint for debugging submission details - helps developers troubleshoot issues
+  app.get("/api/debug-submission/:submission_id", async (req, res) => {
     try {
       const submissionId = req.params.submission_id;
       

@@ -811,7 +811,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
 
   // Use completedSteps directly from the analysis response
   // No need for a separate API call since it's already included in the analysis response
-
+  
   // Combine all data fetching in a single effect
   useEffect(() => {
     const fetchAllDeploymentData = async () => {
@@ -880,6 +880,64 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
         <h3 className="text-red-400 font-medium">Error Loading Deployment Instructions</h3>
         <p className="text-gray-300 mt-2">{error}</p>
         
+        {/* Show detailed error logs from submission details API if available */}
+        {submissionDetails && (
+          <div className="mt-4 p-3 bg-black/40 border border-gray-800 rounded-md">
+            <div className="flex items-center justify-between">
+              <h4 className="text-red-400 text-sm font-medium">Error Logs</h4>
+              <button 
+                onClick={() => setIsShowingDetails(!isShowingDetails)}
+                className="text-xs text-blue-400 hover:text-blue-300"
+              >
+                {isShowingDetails ? 'Hide Details' : 'Show Details'}
+              </button>
+            </div>
+            
+            {isShowingDetails && (
+              <div className="mt-2">
+                {/* Show deployment_instructions error logs if available */}
+                {submissionDetails.deployment_instructions?.log && (
+                  <div className="mb-3">
+                    <h5 className="text-yellow-400 text-xs font-medium mb-1">Deployment Instructions Logs:</h5>
+                    <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
+                      {submissionDetails.deployment_instructions.log}
+                    </pre>
+                  </div>
+                )}
+                
+                {/* Show deployment_implementation error logs if available */}
+                {submissionDetails.deployment_implementation?.log && (
+                  <div className="mb-3">
+                    <h5 className="text-yellow-400 text-xs font-medium mb-1">Deployment Implementation Logs:</h5>
+                    <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
+                      {submissionDetails.deployment_implementation.log}
+                    </pre>
+                  </div>
+                )}
+                
+                {/* Show verify_deployment error logs if available */}
+                {submissionDetails.verify_deployment?.log && (
+                  <div className="mb-3">
+                    <h5 className="text-yellow-400 text-xs font-medium mb-1">Verification Logs:</h5>
+                    <pre className="bg-black/50 p-2 rounded text-gray-400 text-xs overflow-auto max-h-32">
+                      {submissionDetails.verify_deployment.log}
+                    </pre>
+                  </div>
+                )}
+                
+                {/* Show general error message if no specific logs are available */}
+                {!submissionDetails.deployment_instructions?.log && 
+                 !submissionDetails.deployment_implementation?.log &&
+                 !submissionDetails.verify_deployment?.log && (
+                  <p className="text-gray-400 text-xs">
+                    No detailed error logs available. This could be a network error or the analysis service may be unavailable.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
         <div className="mt-4 p-3 bg-black/40 border border-gray-700 rounded-md">
           <h4 className="text-yellow-400 text-sm font-medium">Troubleshooting Help</h4>
           <ul className="text-gray-400 mt-2 text-sm list-disc pl-5 space-y-1">
@@ -898,6 +956,15 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
             className="px-3 py-1 text-sm bg-blue-900/50 hover:bg-blue-900/80 border border-blue-700 rounded text-blue-200"
           >
             Refresh Page
+          </button>
+          <button 
+            onClick={() => {
+              // Fetch submission details with error logs
+              fetchSubmissionDetails();
+            }}
+            className="px-3 py-1 text-sm bg-yellow-900/50 hover:bg-yellow-900/80 border border-yellow-700 rounded text-yellow-200"
+          >
+            Check Error Logs
           </button>
           <button 
             onClick={() => {
@@ -1049,19 +1116,45 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
             <div className="ml-auto">
               {isLoadingVerification ? (
                 <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-              ) : verificationData ? (
-                <Badge variant={verificationData.status === "failed" ? "destructive" : "outline"} 
-                  className={verificationData.status === "failed" ? 
-                    "bg-red-900/30 text-red-300 border-red-700" : 
-                    "bg-green-900/30 text-green-300 border-green-700"}
-                >
-                  {verificationData.status === "failed" ? "Failed" : "Success"}
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-yellow-900/30 text-yellow-300 border-yellow-700">
-                  Pending
-                </Badge>
-              )}
+              ) : (() => {
+                // First check if we have status directly from the verificationData object
+                if (verificationData && verificationData.status) {
+                  return (
+                    <Badge variant={verificationData.status === "failed" || verificationData.status === "error" ? "destructive" : 
+                           verificationData.status === "pending" ? "outline" : "outline"} 
+                      className={verificationData.status === "failed" || verificationData.status === "error" ? 
+                        "bg-red-900/30 text-red-300 border-red-700" : 
+                        verificationData.status === "pending" ?
+                        "bg-yellow-900/30 text-yellow-300 border-yellow-700" :
+                        "bg-green-900/30 text-green-300 border-green-700"}
+                    >
+                      {verificationData.status === "failed" || verificationData.status === "error" ? "Failed" : 
+                       verificationData.status === "pending" ? "Pending" : "Success"}
+                    </Badge>
+                  );
+                }
+                
+                // Next check if we have status from the completedSteps in analysis
+                const stepStatus = getStepStatus('verify_deployment');
+                if (stepStatus) {
+                  return (
+                    <Badge variant={stepStatus === "error" || stepStatus === "failed" ? "destructive" : "outline"} 
+                      className={stepStatus === "error" || stepStatus === "failed" ? 
+                        "bg-red-900/30 text-red-300 border-red-700" : 
+                        "bg-green-900/30 text-green-300 border-green-700"}
+                    >
+                      {stepStatus === "error" || stepStatus === "failed" ? "Failed" : "Success"}
+                    </Badge>
+                  );
+                }
+                
+                // Default to pending
+                return (
+                  <Badge variant="outline" className="bg-yellow-900/30 text-yellow-300 border-yellow-700">
+                    Pending
+                  </Badge>
+                );
+              })()}
             </div>
           </div>
         </div>
