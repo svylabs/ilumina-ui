@@ -538,21 +538,70 @@ export function registerRoutes(app: Express): Server {
         
         console.log(`Constructed repository name: ${username}/${repoName}`);
         
-        // Try to get the deployment script from the GitHub repository
-        const scriptPath = "contracts/deploy.ts";
-        console.log(`Fetching deploy script from GitHub: ${username}/${repoName}/${scriptPath}`);
+        // Define multiple possible paths for the deployment script
+        const possibleScriptPaths = [
+          "contracts/deploy.ts",
+          "deploy.ts",
+          "scripts/deploy.ts",
+          "script/deploy.ts",
+          "src/deploy.ts",
+          "src/scripts/deploy.ts",
+          "contracts/scripts/deploy.ts"
+        ];
         
-        // Use our GitHub proxy endpoint to fetch the file
-        const githubResponse = await fetch(`${req.protocol}://${req.get('host')}/api/github/contents/${username}/${repoName}/${scriptPath}?ref=${branch}`, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'Ilumina-App'
+        console.log(`Trying multiple paths to find deployment script in ${username}/${repoName}`);
+        
+        let githubResponse;
+        let successfulPath;
+        
+        // Try each path until we find a successful one
+        for (const scriptPath of possibleScriptPaths) {
+          console.log(`Trying path: ${scriptPath}`);
+          
+          try {
+            // Use our GitHub proxy endpoint to fetch the file
+            const response = await fetch(`${req.protocol}://${req.get('host')}/api/github/contents/${username}/${repoName}/${scriptPath}?ref=${branch}`, {
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Ilumina-App'
+              }
+            });
+            
+            if (response.ok) {
+              console.log(`Successfully found deployment script at ${scriptPath}`);
+              githubResponse = response;
+              successfulPath = scriptPath;
+              break;
+            } else {
+              console.log(`Path ${scriptPath} returned ${response.status} ${response.statusText}`);
+            }
+          } catch (pathError) {
+            console.error(`Error trying path ${scriptPath}:`, pathError);
+            // Continue trying other paths
           }
-        });
+        }
         
-        if (!githubResponse.ok) {
-          console.error(`Error fetching script from GitHub: ${githubResponse.status} ${githubResponse.statusText}`);
-          throw new Error(`Failed to fetch deployment script from repository: ${githubResponse.status}`);
+        if (!githubResponse || !successfulPath) {
+          // If we couldn't find the file in any location, try to list the root directory to see what's there
+          try {
+            console.log(`Listing root directory of ${username}/${repoName} to find deployment script`);
+            const rootResponse = await fetch(`${req.protocol}://${req.get('host')}/api/github/contents/${username}/${repoName}?ref=${branch}`, {
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Ilumina-App'
+              }
+            });
+            
+            if (rootResponse.ok) {
+              const rootFiles = await rootResponse.json();
+              console.log(`Found ${rootFiles.length} files/directories in root:`, 
+                rootFiles.map((f: any) => `${f.name} (${f.type})`).join(', '));
+            }
+          } catch (listError) {
+            console.error(`Error listing root directory:`, listError);
+          }
+          
+          throw new Error(`Could not find deployment script in repository ${repoName}`);
         }
         
         const fileData = await githubResponse.json();
@@ -570,7 +619,7 @@ export function registerRoutes(app: Express): Server {
         const responseData = {
           filename: fileData.name || "deploy.ts",
           content: scriptContent,
-          path: fileData.path || scriptPath,
+          path: fileData.path || successfulPath,
           status: stepStatus,
           updatedAt: stepTime,
           repo: repoName
