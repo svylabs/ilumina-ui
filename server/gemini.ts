@@ -9,9 +9,9 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey || '');
 
-// Create a model instance for Gemini Flash 2.0
+// Create a model instance for Gemini
 const model = genAI.getGenerativeModel({
-  model: 'gemini-flash-2.0', // Using the Flash 2.0 model which is optimized for chat applications
+  model: 'gemini-pro', // Using the Gemini Pro model which is optimized for chat applications
   safetySettings: [
     {
       category: HarmCategory.HARM_CATEGORY_HARASSMENT,

@@ -146,7 +146,7 @@ export function registerRoutes(app: Express): Server {
           if (projectData.length > 0) {
             projectDetails = {
               projectName: projectData[0].name,
-              githubUrl: projectData[0].github_url
+              githubUrl: projectData[0].githubUrl
             };
           }
         } catch (error) {
