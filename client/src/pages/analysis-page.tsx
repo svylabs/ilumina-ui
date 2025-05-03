@@ -778,7 +778,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
       if (stepType === 'deployment_instructions') {
         return step.step === 'deployment_instructions' || step.step === 'analyze_deployment';
       } else if (stepType === 'deployment_implementation') {
-        return step.step === 'deployment_implementation';
+        return step.step === 'deployment_implementation' || step.step === 'implement_deployment_script';
       } else if (stepType === 'verify_deployment') {
         return step.step === 'verify_deployment' || step.step === 'verify_deployment_script';
       }
@@ -786,6 +786,27 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
     });
 
     return matchingStep ? matchingStep.updatedAt : null;
+  };
+
+  // Get a specific step status from analysis.completedSteps
+  const getStepStatus = (stepType: string): string | null => {
+    // Get completedSteps directly from the analysis response
+    if (!analysis?.completedSteps || analysis.completedSteps.length === 0) return null;
+    
+    // Find the matching step
+    const matchingStep = analysis.completedSteps.find(step => {
+      // For deployment-related steps, we have different step names to check
+      if (stepType === 'deployment_instructions') {
+        return step.step === 'deployment_instructions' || step.step === 'analyze_deployment';
+      } else if (stepType === 'deployment_implementation') {
+        return step.step === 'deployment_implementation' || step.step === 'implement_deployment_script';
+      } else if (stepType === 'verify_deployment') {
+        return step.step === 'verify_deployment' || step.step === 'verify_deployment_script';
+      }
+      return step.step === stepType;
+    });
+
+    return matchingStep && matchingStep.status ? matchingStep.status : null;
   };
 
   // Use completedSteps directly from the analysis response
@@ -955,25 +976,47 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                     `Updated at ${format(new Date(deploymentScript.updatedAt || getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
                     getStepTimestamp('deployment_implementation') ?
                       `Updated at ${format(new Date(getStepTimestamp('deployment_implementation') || new Date()), "MMM dd, h:mm a")}` :
-                      "Loading script..."}
+                      "Script not yet available"}
               </p>
             </div>
             <div className="ml-auto">
               {isLoadingScript ? (
                 <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-              ) : deploymentScript ? (
-                <Badge variant={deploymentScript.status === "failed" ? "destructive" : "outline"} 
-                  className={deploymentScript.status === "failed" ? 
-                    "bg-red-900/30 text-red-300 border-red-700" : 
-                    "bg-green-900/30 text-green-300 border-green-700"}
-                >
-                  {deploymentScript.status === "failed" ? "Failed" : "Success"}
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-yellow-900/30 text-yellow-300 border-yellow-700">
-                  Pending
-                </Badge>
-              )}
+              ) : (() => {
+                // First check if we have status directly from the deploymentScript object
+                if (deploymentScript && deploymentScript.status) {
+                  return (
+                    <Badge variant={deploymentScript.status === "error" || deploymentScript.status === "failed" ? "destructive" : "outline"} 
+                      className={deploymentScript.status === "error" || deploymentScript.status === "failed" ? 
+                        "bg-red-900/30 text-red-300 border-red-700" : 
+                        "bg-green-900/30 text-green-300 border-green-700"}
+                    >
+                      {deploymentScript.status === "error" || deploymentScript.status === "failed" ? "Failed" : "Success"}
+                    </Badge>
+                  );
+                }
+                
+                // Next check if we have status from the completedSteps in analysis
+                const stepStatus = getStepStatus('deployment_implementation');
+                if (stepStatus) {
+                  return (
+                    <Badge variant={stepStatus === "error" || stepStatus === "failed" ? "destructive" : "outline"} 
+                      className={stepStatus === "error" || stepStatus === "failed" ? 
+                        "bg-red-900/30 text-red-300 border-red-700" : 
+                        "bg-green-900/30 text-green-300 border-green-700"}
+                    >
+                      {stepStatus === "error" || stepStatus === "failed" ? "Failed" : "Success"}
+                    </Badge>
+                  );
+                }
+                
+                // Default to pending
+                return (
+                  <Badge variant="outline" className="bg-yellow-900/30 text-yellow-300 border-yellow-700">
+                    Pending
+                  </Badge>
+                );
+              })()}
             </div>
           </div>
         </div>
