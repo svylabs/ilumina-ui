@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2 } from "lucide-react";
+import { AlertTriangle, AlertCircle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
@@ -1328,6 +1328,19 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
         {/* Deployment script tab */}
         {activeTab === "script" && (
           <div className="space-y-4">
+            {/* Display error message from submission details if exists */}
+            {submissionDetails?.message && (
+              <div className="bg-red-900/30 border border-red-800 rounded-md p-4 mb-4">
+                <h3 className="text-red-400 font-medium flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  Error in Deployment Script
+                </h3>
+                <pre className="text-sm text-white/80 mt-2 overflow-x-auto whitespace-pre-wrap">
+                  {submissionDetails.message}
+                </pre>
+              </div>
+            )}
+            
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-green-400">Deployment Script</h3>
               {deploymentScript && (
