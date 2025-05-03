@@ -690,10 +690,12 @@ export function registerRoutes(app: Express): Server {
             console.log("Found verify_deployment_script data in step_metadata");
             
             // Get the verification data from step_metadata
-            const verifyData = submissionData.step_metadata.verify_deployment_script;
-            console.log("Found verify_deployment_script data in submission");
-            
+            // The verification data is a JSON string that needs to be parsed
             try {
+              // Parse the JSON string from step_metadata
+              const verifyData = JSON.parse(submissionData.step_metadata.verify_deployment_script);
+              console.log("Successfully parsed verify_deployment_script JSON data");
+              
               // Parse the verification data which should be a JSON string indexed by numbers
               let verificationLogs: string[] = [];
               let contractAddresses: Record<string, string> = {};
@@ -704,6 +706,10 @@ export function registerRoutes(app: Express): Server {
               if (verifyData && verifyData.log && Array.isArray(verifyData.log)) {
                 try {
                   console.log("Parsing verification log array:", JSON.stringify(verifyData.log, null, 2));
+                  
+                  // IMPORTANT: Add some logs at the beginning to identify this data source
+                  verificationLogs.push("[INFO] Using real verification data from Ilumina API");
+                  verificationLogs.push("[INFO] Deployment script verification log output:");
                   
                   // Extract data from the 'log' array
                   // log[0] = response code (0=success, 1=failure)
