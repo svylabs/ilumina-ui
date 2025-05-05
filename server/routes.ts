@@ -365,8 +365,9 @@ export function registerRoutes(app: Express): Server {
                 projectName: projectDetails.projectName,
                 section,
                 analysisStep,
-                sectionData,
-                submissionId
+                // Only include section data and submission ID if they exist
+                sectionData: sectionData || null,
+                submissionId: uuidSubmissionId || null
               }
             );
             

@@ -302,22 +302,34 @@ export default function ChatAssistant({
       let needsConfirmation = data.classification?.needsConfirmation;
       
       // If the classification shows this is a significant action (update, refine), but doesn't already have confirmation,
-      // modify the response to include a checklist of the user's request for confirmation
+      // check if the server is already providing a checklist or if we need to generate one client-side
       console.log('Checking if we need to show a checklist confirmation:', {
         action: data.classification?.action,
         needsConfirmation,
         isPositiveConfirmation: inputValue.toLowerCase().includes('yes') || inputValue.toLowerCase().includes('proceed')
       });
       
+      // Check if the server response already contains a checklist format
+      const hasServerGeneratedChecklist = 
+        content.includes("Here's a summary of what you're asking") && 
+        content.includes('-');
+      
       if (data.classification && 
           ['update', 'refine'].includes(data.classification.action) && 
           data.classification.confidence >= 0.7 &&
           !inputValue.toLowerCase().includes('yes') && 
           !inputValue.toLowerCase().includes('proceed')) {
-        // Override the server response with our checklist
-        console.log('Showing checklist confirmation for user request');
-        content = createChecklistFromRequest(userMessage.content);
-        needsConfirmation = true;
+        
+        // Only override with client-side checklist if server didn't provide one
+        if (!hasServerGeneratedChecklist) {
+          console.log('Showing client-side checklist confirmation for user request');
+          content = createChecklistFromRequest(userMessage.content);
+          needsConfirmation = true;
+        } else {
+          console.log('Using server-generated checklist');
+          // Make sure we set needsConfirmation even when using server-generated checklist
+          needsConfirmation = true;
+        }
       }
 
       // Create the assistant message with classification metadata if available
