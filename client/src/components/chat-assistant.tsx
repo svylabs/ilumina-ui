@@ -333,6 +333,15 @@ export default function ChatAssistant({
       // Check if the request is actionable based on the classification from the server
       const isActionable = data.classification?.isActionable === true;
       
+      // If the response has a checklist format but is not actionable, transform it to a regular response
+      if (hasServerGeneratedChecklist && !isActionable) {
+        console.log('Removing checklist format from non-actionable response');
+        // Keep the content but remove the checklist headers and "Would you like to proceed" question
+        content = content
+          .replace("Here's a summary of what you're asking for:\n\n", "")
+          .replace("\nWould you like me to proceed with these changes?", "");
+      }
+      
       // Don't require confirmation for clarification/explanation requests or non-actionable requests
       const needsUserConfirmation = isSignificantAction && 
           !isExemptAction &&
@@ -348,13 +357,12 @@ export default function ChatAssistant({
           content = createChecklistFromRequest(userMessage.content);
           needsConfirmation = true;
         } else {
-          // If the server response already has checklist format but the action is for clarification,
-          // we should NOT treat it as needing confirmation
-          if (!isExemptAction) {
+          // If the server response already has checklist format, check if it should be treated as a confirmation
+          if (!isExemptAction && isActionable) {
             console.log('Using server-generated checklist for confirmation');
             needsConfirmation = true;
           } else {
-            console.log('Server generated a checklist, but action is exempt from confirmation');
+            console.log('Server generated a checklist, but action is exempt from confirmation or is not actionable');
             needsConfirmation = false;
           }
         }
