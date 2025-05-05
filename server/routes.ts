@@ -591,126 +591,197 @@ export function registerRoutes(app: Express): Server {
             if (logStep) {
               console.log(`Fetching detailed data for step ${logStep} to help answer the question`);
               
-              // Collect all available data for this step from both local and external endpoints
+              // Define a mapping of step types to their data sources and endpoints
+              const stepDataSourceMap = {
+                'analyze_project': {
+                  description: 'Analyzes the GitHub project and contracts to understand their purpose',
+                  statusSource: 'submission_details',
+                  dataEndpoints: ['/api/submission-details'],
+                  dataFields: ['project_summary'],
+                  externalEndpoint: '/api/submission/${submission.id}/step/files'
+                },
+                'analyze_actors': {
+                  description: 'Analyzes potential actors in the system and their actions',
+                  statusSource: 'submission_details',
+                  dataEndpoints: ['/api/submission-details'],
+                  dataFields: ['actors'],
+                  externalEndpoint: '/api/submission/${submission.id}/step/actors'
+                },
+                'analyze_deployment': {
+                  description: 'Analyzes how contracts should be deployed',
+                  statusSource: 'submission_details',
+                  dataEndpoints: ['/api/submission-details'],
+                  dataFields: ['deployment_instructions'],
+                  externalEndpoint: '/api/submission/${submission.id}/step/deployment'
+                },
+                'implement_deployment_script': {
+                  description: 'Creates code necessary for deployment',
+                  statusSource: 'submission_details',
+                  dataEndpoints: ['/api/deployment-script', '/api/submission-details'],
+                  dataFields: ['deployment_script', 'log'],
+                  externalEndpoint: '/api/submission/${submission.id}/step/implement_deployment_script'
+                },
+                'verify_deployment_script': {
+                  description: 'Executes and validates the deployment script',
+                  statusSource: 'verification',
+                  dataEndpoints: ['/api/verify-deployment', '/api/deployment-script', '/api/submission-details'],
+                  dataFields: ['logs', 'log', 'verification_log'],
+                  externalEndpoint: '/api/submission/${submission.id}/step/verify_deployment_script'
+                }
+              };
+              
+              // Default source configuration for unknown steps
+              const defaultSourceConfig = {
+                description: 'General step processing',
+                statusSource: 'submission_details',
+                dataEndpoints: ['/api/submission-details'],
+                dataFields: ['log'],
+                externalEndpoint: '/api/submission/${submission.id}/step/${logStep}'
+              };
+              
+              // Get the specific config for this step or use the default
+              const stepConfig = stepDataSourceMap[logStep] || defaultSourceConfig;
+              console.log(`Using data source configuration for ${logStep}: ${stepConfig.description}`);
+              
+              // Collect all available data for this step from appropriate sources
               let stepLogs = [];
               let logSources = [];
               
-              // First try fetch the external API step data (may contain specific format data)
-              try {
-                  const stepUrl = `https://ilumina-451416.uc.r.appspot.com/api/submission/${submission.id}/step/${logStep}`;
-                  const stepResponse = await fetch(stepUrl);
-                  
-                  if (stepResponse.ok) {
-                    stepData = await stepResponse.json();
-                    console.log(`Retrieved step data from external API for ${logStep}`);
-                    
-                    // Extract log if available
-                    if (stepData && stepData.log) {
-                      stepLog = stepData.log;
-                      console.log(`Found logs for ${logStep} from API`);
-                      stepLogs.push(stepLog);
-                      logSources.push('API')
-                    }
-                  }
-              } catch (stepError) {
-                  console.error(`Error fetching step data from external API: ${stepError}`);
-              }
-              
-              // For any step, try relevant local endpoints that might have additional logs or data
-              // Always collect data from all sources rather than replacing/skipping
-              
-              // Try the verification endpoint for logs (works for any step but mainly for verify_deployment_script)
-              try {
-                const verifyUrl = `/api/verify-deployment/${submission.id}`;
-                const verifyResponse = await fetch(verifyUrl);
-                
-                if (verifyResponse.ok) {
-                  const verifyData = await verifyResponse.json();
-                  
-                  if (verifyData && verifyData.logs && verifyData.logs.length > 0) {
-                    // Don't replace step data, just collect the logs
-                    stepLogs.push(verifyData.logs.join('\n'));
-                    logSources.push('verification');
-                    console.log(`Found verification logs for submission`);
-                    
-                    // If we don't have status yet, use it from here
-                    if (!stepStatus && verifyData.status) {
-                      stepStatus = verifyData.status;
-                    }
-                    
-                    // If we don't have step data but have verification logs, add them to step data
-                    if (!stepData) {
-                      stepData = { verification_log: verifyData.logs || [] };
-                    } else if (!stepData.verification_log) {
-                      // Add to existing stepData if not there
-                      stepData.verification_log = verifyData.logs || [];
-                    }
-                  }
+              // Helper function to add log information when found
+              const addLogData = (source, data, label = 'Log') => {
+                if (data) {
+                  let logContent = typeof data === 'string' ? data :
+                               Array.isArray(data) ? data.join('\n') :
+                               JSON.stringify(data, null, 2);
+                  stepLogs.push(`${label}:\n${logContent}`);
+                  logSources.push(source);
+                  console.log(`Found ${label.toLowerCase()} from ${source} for ${logStep}`);
+                  return true;
                 }
-              } catch (verifyError) {
-                console.error(`Error fetching verification data: ${verifyError}`);
-              }
+                return false;
+              };
               
-              // Try the deployment script endpoint (works for any step but mainly for implement_deployment_script)
-              try {
-                const deploymentScriptUrl = `/api/deployment-script/${submission.id}`;
-                const deploymentScriptResponse = await fetch(deploymentScriptUrl);
-                
-                if (deploymentScriptResponse.ok) {
-                  const deploymentScriptData = await deploymentScriptResponse.json();
+              // First check local endpoints based on step configuration
+              for (const endpoint of stepConfig.dataEndpoints) {
+                try {
+                  const url = endpoint.replace('${submission.id}', submission.id)
+                                      .replace('${logStep}', logStep);
+                  console.log(`Fetching step data from ${url}`);
+                  const response = await fetch(url);
                   
-                  if (deploymentScriptData && deploymentScriptData.content) {
-                    // Extract a snippet of the script to include in logs
-                    const scriptContent = deploymentScriptData.content || '';
-                    const scriptSnippet = scriptContent.substring(0, 500) + 
-                                        (scriptContent.length > 500 ? '...\n[content truncated]' : '');
+                  if (response.ok) {
+                    const data = await response.json();
+                    console.log(`Retrieved data from ${url}`);
                     
-                    stepLogs.push(`Deployment Script:\n${scriptSnippet}`);
-                    logSources.push('deployment script');
-                    console.log(`Found deployment script for submission`);
-                    
-                    // Add to existing stepData if not there
-                    if (!stepData) {
-                      stepData = { deployment_script: deploymentScriptData };
-                    } else if (!stepData.deployment_script) {
-                      stepData.deployment_script = deploymentScriptData;
-                    }
-                  }
-                }
-              } catch (deploymentScriptError) {
-                console.error(`Error fetching deployment script: ${deploymentScriptError}`);
-              }
-              
-              // Try submission details for status and step information
-              try {
-                const detailsUrl = `/api/submission-details/${submission.id}`;
-                const detailsResponse = await fetch(detailsUrl);
-                
-                if (detailsResponse.ok) {
-                  const detailsData = await detailsResponse.json();
-                  
-                  if (detailsData && detailsData.data && detailsData.data.completed_steps) {
-                    const stepInfo = detailsData.data.completed_steps.find(s => s.step === logStep);
-                    
-                    if (stepInfo) {
-                      // If we still don't have status, use it from completed_steps
-                      if (!stepStatus) {
-                        stepStatus = stepInfo.status;
+                    // Check for relevant fields based on step configuration
+                    if (data) {
+                      // For verification endpoint
+                      if (endpoint.includes('verify-deployment') && data.logs) {
+                        addLogData('verification', data.logs, 'Verification Logs');
+                        
+                        // Set status if available from verification endpoint
+                        if (!stepStatus && data.status && stepConfig.statusSource === 'verification') {
+                          stepStatus = data.status;
+                        }
+                        
+                        // Add verification logs to step data
+                        if (!stepData) stepData = {};
+                        stepData.verification_log = data.logs || [];
                       }
                       
-                      // Add step status information to logs
-                      stepLogs.push(`Step Status: ${stepInfo.status} (Updated: ${stepInfo.updated_at})`);
-                      logSources.push('submission details');
+                      // For deployment script endpoint
+                      if (endpoint.includes('deployment-script') && data.content) {
+                        const scriptContent = data.content || '';
+                        const scriptSnippet = scriptContent.substring(0, 500) + 
+                                            (scriptContent.length > 500 ? '...\n[content truncated]' : '');
+                        
+                        addLogData('deployment script', scriptSnippet, 'Deployment Script');
+                        
+                        // Add deployment script to step data
+                        if (!stepData) stepData = {};
+                        stepData.deployment_script = data;
+                      }
+                      
+                      // For submission details endpoint
+                      if (endpoint.includes('submission-details') && data.data) {
+                        // Check status from completion steps
+                        if (data.data.completed_steps && Array.isArray(data.data.completed_steps)) {
+                          const stepInfo = data.data.completed_steps.find(s => s.step === logStep);
+                          
+                          if (stepInfo) {
+                            // Set status from submission details if that's our source of truth
+                            if (!stepStatus && stepConfig.statusSource === 'submission_details') {
+                              stepStatus = stepInfo.status;
+                            }
+                            
+                            // Add step status information to logs
+                            stepLogs.push(`Step Status: ${stepInfo.status} (Updated: ${stepInfo.updated_at})`);
+                            logSources.push('submission details');
+                          }
+                        }
+                        
+                        // Add any project summary or actor data if available
+                        try {
+                          if (logStep === 'analyze_project' && data.data.project_summary) {
+                            const projectSummary = typeof data.data.project_summary === 'string' ?
+                              data.data.project_summary : JSON.stringify(data.data.project_summary, null, 2);
+                            addLogData('submission details', `Project Summary: ${projectSummary}`, 'Project Analysis');
+                          } else if (logStep === 'analyze_actors' && data.data.actors) {
+                            const actorData = typeof data.data.actors === 'string' ?
+                              data.data.actors : JSON.stringify(data.data.actors, null, 2);
+                            addLogData('submission details', `Actor Data: ${actorData}`, 'Actor Analysis');
+                          } else if (logStep === 'analyze_deployment' && data.data.deployment_instructions) {
+                            addLogData('submission details', data.data.deployment_instructions, 'Deployment Instructions');
+                          }
+                        } catch (parseError) {
+                          console.error('Error parsing step-specific data:', parseError);
+                        }
+                      }
                     }
                   }
+                } catch (error) {
+                  console.error(`Error fetching from ${endpoint}: ${error}`);
                 }
-              } catch (detailsError) {
-                console.error(`Error fetching submission details: ${detailsError}`);
+              }
+              
+              // If we haven't found data through local endpoints, try the external API
+              if (!stepData || stepLogs.length === 0) {
+                try {
+                  const externalUrl = stepConfig.externalEndpoint
+                                      .replace('${submission.id}', submission.id)
+                                      .replace('${logStep}', logStep);
+                  console.log(`Fetching from external endpoint: ${externalUrl}`);
+                  
+                  const externalResponse = await fetch(externalUrl);
+                  
+                  if (externalResponse.ok) {
+                    const externalData = await externalResponse.json();
+                    console.log(`Retrieved external data for ${logStep}`);
+                    
+                    // Use the step data from external API
+                    stepData = externalData;
+                    
+                    // Extract log if available
+                    if (externalData && externalData.log) {
+                      addLogData('external API', externalData.log, 'External Log');
+                    }
+                    
+                    // Look for specific data based on step type
+                    for (const field of stepConfig.dataFields) {
+                      if (externalData && externalData[field]) {
+                        addLogData('external API', externalData[field], `${field.replace('_', ' ').toUpperCase()}`);
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error fetching from external API: ${error}`);
+                }
               }
               
               // If we collected logs from any source, combine them into submissionLogs
               if (stepLogs.length > 0) {
-                submissionLogs = `Information for step ${logStep} (Status: ${stepStatus || 'Unknown'}):\n\n`;
+                submissionLogs = `Information for step ${logStep} (${stepConfig.description}):\n`;
+                submissionLogs += `Status: ${stepStatus || 'Unknown'}\n\n`;
                 
                 // Add all the logs with their sources
                 for (let i = 0; i < stepLogs.length; i++) {
