@@ -2712,7 +2712,10 @@ export function registerRoutes(app: Express): Server {
         .where(sql`${projects.teamId} IS NULL`) // Only include personal projects (not team projects)
         .orderBy(projects.createdAt);
 
-      console.log("Personal projects:", userProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
+      // Log what's actually returned to the client
+      console.log("API /projects - user ID:", req.user.id);
+      console.log("API /projects - actual projects returned:", userProjects.map(p => ({ id: p.id, name: p.name, userId: p.userId, teamId: p.teamId })));
+      
       res.json(userProjects);
     } catch (error) {
       console.error("Error fetching user projects:", error);
@@ -5953,6 +5956,8 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
+      console.log("API /all-projects - user ID:", req.user.id);
+      
       // STEP 1: Get user's personal projects (non-team projects, non-deleted only)
       // Only include projects where user is the owner (userId matches)
       const personalProjects = await db
@@ -5962,6 +5967,8 @@ export function registerRoutes(app: Express): Server {
         .where(sql`${projects.teamId} IS NULL`) // Only projects without teamId
         .where(eq(projects.isDeleted, false))
         .orderBy(projects.createdAt);
+        
+      console.log("API /all-projects - raw personal projects query result:", personalProjects.map(p => ({ id: p.id, name: p.name, userId: p.userId, teamId: p.teamId })));
       
       // STEP 2: Get teams the user belongs to (includes active memberships)
       const userTeams = await db
