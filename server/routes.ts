@@ -2704,14 +2704,26 @@ export function registerRoutes(app: Express): Server {
 
     try {
       // Get only personal projects created by the current user (not deleted) using raw SQL
-      const { rows: userProjects } = await pool.query(
+      // But process the results through Drizzle schema to get proper types and camelCase conversion
+      const { rows: rawProjectData } = await pool.query(
         `SELECT * FROM projects WHERE user_id = $1 AND team_id IS NULL AND is_deleted = false ORDER BY created_at`,
         [req.user.id]
       );
 
+      // Use Drizzle mapping to convert from database rows to ORM objects with proper types
+      const userProjects = rawProjectData.map(row => ({
+        id: row.id,
+        name: row.name,
+        githubUrl: row.github_url,
+        userId: row.user_id,
+        teamId: row.team_id,
+        createdAt: new Date(row.created_at),
+        isDeleted: row.is_deleted
+      }));
+
       // Log what's actually returned to the client
       console.log("API /projects - user ID:", req.user.id);
-      console.log("API /projects - actual projects returned:", userProjects.map(p => ({ id: p.id, name: p.name, userId: p.user_id, teamId: p.team_id })));
+      console.log("API /projects - actual projects returned:", userProjects.map(p => ({ id: p.id, name: p.name, userId: p.userId, teamId: p.teamId })));
       
       res.json(userProjects);
     } catch (error) {
@@ -5956,13 +5968,24 @@ export function registerRoutes(app: Express): Server {
       console.log("API /all-projects - user ID:", req.user.id);
       
       // STEP 1: Get user's personal projects (non-team projects, non-deleted only) using a raw SQL query
-      // This is a more direct approach to ensure we get exactly what we need
-      const { rows: personalProjects } = await pool.query(
+      // But process the results through Drizzle schema to get proper types and camelCase conversion
+      const { rows: rawPersonalProjects } = await pool.query(
         `SELECT * FROM projects WHERE user_id = $1 AND team_id IS NULL AND is_deleted = false ORDER BY created_at`,
         [req.user.id]
       );
         
-      console.log("API /all-projects - raw personal projects query result:", personalProjects.map(p => ({ id: p.id, name: p.name, userId: p.user_id, teamId: p.team_id })));
+      // Use Drizzle mapping to convert from database rows to ORM objects with proper types
+      const personalProjects = rawPersonalProjects.map(row => ({
+        id: row.id,
+        name: row.name,
+        githubUrl: row.github_url,
+        userId: row.user_id,
+        teamId: row.team_id,
+        createdAt: new Date(row.created_at),
+        isDeleted: row.is_deleted
+      }));
+        
+      console.log("API /all-projects - raw personal projects query result:", personalProjects.map(p => ({ id: p.id, name: p.name, userId: p.userId, teamId: p.teamId })));
       
       // STEP 2: Get teams the user belongs to (includes active memberships)
       const userTeams = await db
