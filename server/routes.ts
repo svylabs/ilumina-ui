@@ -6053,6 +6053,8 @@ export function registerRoutes(app: Express): Server {
       // STEP 8: Return consolidated response with all project data
       // This provides the frontend with all the data it needs to display projects
       // without needing to do additional filtering or verification
+      console.log("Final personal projects being sent to client:", personalProjects.map(p => ({ id: p.id, name: p.name, userId: p.userId, teamId: p.teamId })));
+      
       return res.json({
         personalProjects,
         teamProjects: formattedTeamProjects,
