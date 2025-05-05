@@ -321,16 +321,17 @@ export default function ChatAssistant({
         
       console.log('Server response has checklist format:', hasServerGeneratedChecklist);
       
-      // Only show checklists for actions that modify content, not for clarification/explanation
+      // Only show checklists for actions that modify content, not for clarification/explanation/guidance
       const actionsThatNeedConfirmation = ['update', 'refine', 'run'];
-      const actionsExemptFromChecklist = ['clarify', 'explain'];
+      const actionsExemptFromChecklist = ['clarify', 'explain', 'needs_followup'];
       
       const isSignificantAction = data.classification && 
           actionsThatNeedConfirmation.includes(data.classification.action) && 
           data.classification.confidence >= 0.7;
       
       const isExemptAction = data.classification && 
-          actionsExemptFromChecklist.includes(data.classification.action);
+          (actionsExemptFromChecklist.includes(data.classification.action) ||
+           data.classification.needsGuidance === true);
       
       // Check if the request is actionable based on the classification from the server
       const isActionable = data.classification?.isActionable === true;

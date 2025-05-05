@@ -458,6 +458,9 @@ Current analysis step: ${context?.analysisStep || 'Unknown'}`;
     } else if (context?.section === 'validation_rules') {
       systemPrompt += '\n\nYou are now focusing on validation rules. Help the user understand how to validate their smart contracts and what security measures to take.';
     }
+    
+    // Add special instruction for guidance requests
+    systemPrompt += '\n\nGUIDANCE REQUESTS: For requests where the user is asking for guidance or explanations (classified as "needs_followup"):\n1. Focus on providing clear, direct information\n2. Do NOT include a checklist format for information-seeking questions\n3. Always format guidance responses in a conversational manner, not as a task list\n4. Tailor your response to the specific guidance being sought';
 
     // Format the chat history for Gemini
     const chatHistory = messages.map(message => ({
