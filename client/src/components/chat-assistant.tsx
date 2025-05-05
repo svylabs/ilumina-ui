@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, RefreshCw, PlusCircle } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, RefreshCw, PlusCircle, Lock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card } from './ui/card';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
 
 type Classification = {
   step: string;
@@ -47,6 +48,7 @@ export default function ChatAssistant({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth(); // Get current authenticated user
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -499,6 +501,9 @@ export default function ChatAssistant({
     }
   };
 
+  // Check if user is on free tier
+  const isFreeUser = user?.plan === 'free';
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {/* Chat toggle button */}
@@ -507,7 +512,7 @@ export default function ChatAssistant({
         size="icon"
         className="h-12 w-12 rounded-full shadow-lg bg-primary hover:bg-primary/90"
       >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {isOpen ? <X className="h-6 w-6" /> : isFreeUser ? <Lock className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </Button>
 
       {/* Chat window */}
@@ -557,63 +562,81 @@ export default function ChatAssistant({
 
           {/* Messages area */}
           <div className="flex-grow overflow-y-auto p-3 space-y-4">
-            {messages.map(message => (
-              <div
-                key={message.id}
-                className={cn(
-                  'flex flex-col max-w-[85%] rounded-lg p-3',
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground ml-auto'
-                    : 'bg-muted mr-auto'
-                )}
-              >
-                <div className="break-words whitespace-pre-wrap">{message.content}</div>
-                
-                {/* Show confirmation buttons if the message needs user confirmation */}
-                {message.role === 'assistant' && message.classification?.needsConfirmation && (
-                  <div className="mt-3 flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="default"
-                      onClick={() => {
-                        // Confirm the action
-                        setInputValue(`Yes, please proceed with ${message.classification?.step} step.`);
-                        setTimeout(handleSendMessage, 100);
-                      }}
+            {isFreeUser ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                <Lock className="h-16 w-16 mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">AI Chat Assistance</h3>
+                <p className="text-muted-foreground mb-2">
+                  This feature is available exclusively for Pro and Teams plans.
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upgrade your plan to get personalized assistance with analyzing and improving your smart contracts.
+                </p>
+                <Button variant="default" onClick={() => window.location.href = '/pricing'}>
+                  Upgrade Your Plan
+                </Button>
+              </div>
+            ) : (
+              <>
+                {messages.map(message => (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      'flex flex-col max-w-[85%] rounded-lg p-3',
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground ml-auto'
+                        : 'bg-muted mr-auto'
+                    )}
+                  >
+                    <div className="break-words whitespace-pre-wrap">{message.content}</div>
+                    
+                    {/* Show confirmation buttons if the message needs user confirmation */}
+                    {message.role === 'assistant' && message.classification?.needsConfirmation && (
+                      <div className="mt-3 flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="default"
+                          onClick={() => {
+                            // Confirm the action
+                            setInputValue(`Yes, please proceed with ${message.classification?.step} step.`);
+                            setTimeout(handleSendMessage, 100);
+                          }}
+                        >
+                          Proceed
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            // Cancel the action
+                            setInputValue("No, let's hold off on that change for now.");
+                            setTimeout(handleSendMessage, 100);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                    
+                    <div
+                      className={cn(
+                        'text-xs mt-1',
+                        message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                      )}
                     >
-                      Proceed
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => {
-                        // Cancel the action
-                        setInputValue("No, let's hold off on that change for now.");
-                        setTimeout(handleSendMessage, 100);
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex items-center space-x-2 bg-muted rounded-lg p-3 max-w-[85%]">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <p className="text-sm">Thinking...</p>
                   </div>
                 )}
-                
-                <div
-                  className={cn(
-                    'text-xs mt-1',
-                    message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                  )}
-                >
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex items-center space-x-2 bg-muted rounded-lg p-3 max-w-[85%]">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <p className="text-sm">Thinking...</p>
-              </div>
+                <div ref={messagesEndRef} />
+              </>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input area */}
