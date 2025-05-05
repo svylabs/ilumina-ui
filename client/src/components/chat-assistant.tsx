@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card } from './ui/card';
@@ -307,18 +307,32 @@ export default function ChatAssistant({
 
   // Toggle the chat window
   const toggleChat = () => {
-    setIsOpen(prev => !prev);
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
     
-    // If we're opening the chat and there are no messages, add a greeting
-    if (!isOpen && messages.length === 0) {
-      setMessages([
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
-          timestamp: new Date(),
-        },
-      ]);
+    // If we're opening the chat
+    if (newIsOpen) {
+      // First try to load existing session
+      if (submissionId && !loadingHistory) {
+        console.log(`Loading chat history for submission ${submissionId}`);
+        // If the conversationId is already set, use it to load specific conversation
+        if (conversationId) {
+          loadChatHistory(conversationId);
+        } else {
+          // Otherwise, try to create a new session
+          createConversationSession();
+        }
+      } else if (messages.length === 0) {
+        // If no submission ID or we're already loading, just show the greeting
+        setMessages([
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
+            timestamp: new Date(),
+          },
+        ]);
+      }
     }
   };
 
@@ -338,7 +352,35 @@ export default function ChatAssistant({
         <Card className="absolute bottom-16 right-0 w-80 sm:w-96 h-[60vh] max-h-[500px] flex flex-col overflow-hidden shadow-xl">
           {/* Chat header */}
           <div className="p-3 border-b bg-primary text-primary-foreground">
-            <h3 className="font-medium">Ilumina Assistant</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Ilumina Assistant</h3>
+              <div className="flex items-center gap-2">
+                {conversationId && (
+                  <div className="text-xs text-primary-foreground/70 bg-primary-foreground/10 px-2 py-1 rounded flex items-center">
+                    <span className="mr-1">Session: {conversationId.substring(0, 6)}...</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Clear conversation state and create a new session
+                        setConversationId(null);
+                        setMessages([]);
+                        createConversationSession();
+                      }}
+                      className="hover:text-white text-primary-foreground/80"
+                      title="Start new conversation"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            {loadingHistory && (
+              <div className="flex items-center mt-1 text-xs text-primary-foreground/70">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                <span>Loading conversation history...</span>
+              </div>
+            )}
           </div>
 
           {/* Messages area */}
