@@ -168,6 +168,84 @@ export async function classifyUserRequest(
 }
 
 // Function to generate a chat response
+// Function to generate a checklist from user request using Gemini
+export async function generateChecklist(
+  allMessages: ChatMessage[],
+  context?: {
+    projectName?: string;
+    section?: string;
+    analysisStep?: string;
+    sectionData?: any;
+    submissionId?: string;
+  }
+): Promise<string> {
+  try {
+    // Use all messages to get the full conversation context
+    // But focus more on most recent messages
+    const conversationHistory = allMessages.map(msg => 
+      `${msg.role.toUpperCase()}: ${msg.content}`
+    ).join('\n');
+    
+    // Get the most recent user message for specific context
+    const recentUserMessages = allMessages
+      .filter(msg => msg.role === 'user')
+      .slice(-3);
+    
+    if (recentUserMessages.length === 0) {
+      return "I couldn't find any recent user messages to summarize.";
+    }
+    
+    // Initialize Google's Generative AI with API key
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    
+    // Create a prompt that includes section data as context when available
+    let sectionContext = '';
+    
+    if (context?.section && context?.sectionData) {
+      try {
+        // Include relevant section data as context
+        if (context.section === 'actor_summary' && context.sectionData.actors) {
+          sectionContext = `\nCurrent actors in system:\n`;
+          
+          if (Array.isArray(context.sectionData.actors)) {
+            sectionContext += context.sectionData.actors
+              .map((actor: any) => `- ${actor.name}: ${actor.summary}`)
+              .join('\n');
+          }
+        } else if (context.section === 'project_summary' && context.sectionData.project_summary) {
+          sectionContext = `\nProject summary: ${context.sectionData.project_summary}`;
+        } else if (context.section === 'deployment_instructions' && context.sectionData.deployment_instructions) {
+          sectionContext = `\nDeployment instructions available (not shown in full due to length).`;
+        }
+      } catch (err) {
+        console.error('Error processing section data for summary:', err);
+        // Continue without section context if there's an error
+      }
+    }
+    
+    // Create a prompt for the model with full conversation history
+    const checklistPrompt = `Given the following conversation, create a concise, bullet-point checklist that summarizes the user's most recent requests and intended actions. Focus on actionable items, especially from the most recent messages.
+
+Format it with a title 'Here's a summary of what you're asking me to do:' followed by bullet points using '- ' prefix.
+
+Submission ID: ${context?.submissionId || 'Unknown'}
+Current project: ${context?.projectName || 'Unknown'}
+Current section: ${context?.section || 'Unknown'}
+Current step: ${context?.analysisStep || 'Unknown'}
+${sectionContext}
+
+Full conversation history:\n${conversationHistory}\n
+Respond ONLY with the checklist summary, no preamble or additional explanations.`;
+    
+    const result = await model.generateContent(checklistPrompt);
+    return result.response.text();
+  } catch (error) {
+    console.error('Error generating checklist from user request:', error);
+    return "Here's a summary of what you're asking for:\n\n- Process your request (I couldn't generate a detailed checklist due to a technical issue)";
+  }
+}
+
 export async function generateChatResponse(
   messages: ChatMessage[],
   context?: {

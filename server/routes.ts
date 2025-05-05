@@ -11,7 +11,7 @@ import {
 import { eq, sql, desc, asc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import { generateChatResponse, classifyUserRequest } from "./gemini";
+import { generateChatResponse, classifyUserRequest, generateChecklist } from "./gemini";
 
 // Authentication middleware
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -358,8 +358,19 @@ export function registerRoutes(app: Express): Server {
           try {
             console.log(`Taking action for ${classification.step} with the uniform /analyze API endpoint`);
             
-            // Format user request as a checklist for the API
-            const formattedRequestChecklist = formatRequestAsChecklist(latestUserMessage.content);
+            // Generate an intelligent checklist from the conversation using Gemini
+            const formattedRequestChecklist = await generateChecklist(
+              messages, 
+              {
+                projectName: projectDetails.projectName,
+                section,
+                analysisStep,
+                sectionData,
+                submissionId
+              }
+            );
+            
+            console.log('Generated intelligent checklist for request:', formattedRequestChecklist);
             
             const response = await callExternalIluminaAPI('/analyze', 'POST', {
               submission_id: uuidSubmissionId,
