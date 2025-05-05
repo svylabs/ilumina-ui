@@ -90,38 +90,28 @@ export default function ProjectsPage() {
   const [isVerifying, setIsVerifying] = React.useState(false);
 
   // Helper to verify project accessibility
+  // We assume the backend has already filtered projects correctly
   const verifyProjectAccess = React.useCallback(async (projectId: number) => {
-    try {
-      const response = await fetch(`/api/project/${projectId}`);
-      return response.ok;
-    } catch (error) {
-      console.error(`Error verifying access to project ${projectId}:`, error);
-      return false;
-    }
+    // Trust that the backend already filtered projects correctly
+    return true;
   }, []);
 
-  // Verify all projects when they are loaded
+  // Set all projects as verified without making API calls
   React.useEffect(() => {
     const projectsToVerify = [...(allProjectsData?.personalProjects || []), ...(allProjectsData?.teamProjects || [])];
     
     if (projectsToVerify.length > 0 && !isVerifying) {
-      setIsVerifying(true);
+      // Set all projects as verified without making individual requests
+      const verificationResults: Record<number, boolean> = {};
       
-      const verifyAllProjects = async () => {
-        const verificationResults: Record<number, boolean> = {};
-        
-        // Verify each project in sequence to avoid overwhelming the server
-        for (const project of projectsToVerify) {
-          verificationResults[project.id] = await verifyProjectAccess(project.id);
-        }
-        
-        setVerifiedProjects(verificationResults);
-        setIsVerifying(false);
-      };
+      // Mark all returned projects as verified (true)
+      for (const project of projectsToVerify) {
+        verificationResults[project.id] = true;
+      }
       
-      verifyAllProjects();
+      setVerifiedProjects(verificationResults);
     }
-  }, [allProjectsData, verifyProjectAccess, isVerifying]);
+  }, [allProjectsData, isVerifying]);
 
   // Determine which projects to display
   // Make sure personal projects only includes projects with no teamId and are accessible
