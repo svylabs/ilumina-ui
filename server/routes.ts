@@ -1041,7 +1041,8 @@ export function registerRoutes(app: Express): Server {
           actionTaken: actionTaken,
           needsConfirmation: needsConfirmation,
           contextSummary: contextSummary,
-          isActionable: classification.isActionable || false // Include isActionable flag from classification
+          isActionable: classification.isActionable || false, // Include isActionable flag from classification
+          needsGuidance: classification.action === 'needs_followup' // Special flag for guidance requests
         }
       });
     } catch (error) {

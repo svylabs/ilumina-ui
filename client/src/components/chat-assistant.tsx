@@ -15,6 +15,7 @@ type Classification = {
   needsConfirmation?: boolean;
   contextSummary?: string;
   isActionable?: boolean; // Whether the request requires action vs just answering a question
+  needsGuidance?: boolean; // Whether the user is asking for guidance (needs_followup classification)
 };
 
 type Message = {
@@ -115,7 +116,8 @@ export default function ChatAssistant({
             actionTaken: msg.classification.actionTaken,
             needsConfirmation: msg.classification.needsConfirmation,
             contextSummary: msg.classification.contextSummary,
-            isActionable: msg.classification.isActionable
+            isActionable: msg.classification.isActionable,
+            needsGuidance: msg.classification.needsGuidance
           } : undefined
         }));
         
@@ -408,7 +410,8 @@ export default function ChatAssistant({
           actionTaken: data.classification.actionTaken,
           needsConfirmation: needsConfirmation,
           contextSummary: data.classification.contextSummary,
-          isActionable: data.classification.isActionable
+          isActionable: data.classification.isActionable,
+          needsGuidance: data.classification.needsGuidance
         } : undefined
       };
 
