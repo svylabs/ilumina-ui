@@ -3079,77 +3079,75 @@ export function registerRoutes(app: Express): Server {
       
       // Get the project ID from the URL parameter
       const requestedId = req.params.id;
-      console.log(`Project API request for ID: ${requestedId}`);
       
       // Only process numeric IDs
       const projectId = parseInt(requestedId);
       
-      // DEBUG: Print out what we're getting from the database
-      console.log(`Running SELECT * FROM projects WHERE id = ${projectId} AND is_deleted = false`);
-      
       if (!isNaN(projectId)) {
-        // Try to find the project with requested ID and is not deleted
-        const dbResult = await pool.query(
-          `SELECT * FROM projects WHERE id = $1 AND is_deleted = false LIMIT 1`, 
-          [projectId]
-        );
+        // Use Drizzle ORM to query only projects the user has access to
+        // This directly filters by ownership without returning other users' projects
         
-        // Debug output to see what's being returned from the database
-        const rows = dbResult.rows || [];
-        console.log(`Found ${rows.length} projects with ID ${projectId}`);
-        if (rows.length > 0) {
-          console.log(`Project details:`, rows[0]);
-        }
-        
-        // If we found a project, check user access and return it
-        if (rows.length > 0) {
-          const project = {
-            id: rows[0].id,
-            name: rows[0].name,
-            githubUrl: rows[0].github_url,
-            userId: rows[0].user_id,
-            teamId: rows[0].team_id,
-            createdAt: rows[0].created_at,
-            isDeleted: rows[0].is_deleted
-          };
-          
-          // Check if the user is the owner or has team access
-          const isOwner = project.userId === req.user.id;
-          let hasTeamAccess = false;
-          
-          // If it's a team project, check team membership
-          if (project.teamId !== null) {
-            // Check if user is a member of the team
-            const teamMembership = await db
-              .select()
-              .from(teamMembers)
-              .where(sql`${teamMembers.teamId} = ${project.teamId}`)
-              .where(sql`${teamMembers.userId} = ${req.user.id}`)
-              .where(sql`${teamMembers.status} = 'active'`);
-              
-            // Also check if user is the team creator
-            const isTeamCreator = await db
-              .select()
-              .from(teams)
-              .where(sql`${teams.id} = ${project.teamId}`)
-              .where(sql`${teams.createdBy} = ${req.user.id}`)
-              .where(sql`${teams.isDeleted} = false`);
-              
-            hasTeamAccess = teamMembership.length > 0 || isTeamCreator.length > 0;
+        try {
+          // First try projects the user owns directly
+          const userOwnedProjects = await db
+            .select()
+            .from(projects)
+            .where(sql`${projects.id} = ${projectId}`)
+            .where(sql`${projects.userId} = ${req.user.id}`)
+            .where(sql`${projects.isDeleted} = false`);
+            
+          if (userOwnedProjects.length > 0) {
+            // User owns this project directly
+            return res.json(userOwnedProjects[0]);
           }
           
-          // Only return the project if the user has access
-          if (isOwner || hasTeamAccess) {
-            console.log(`Returning project:`, project);
-            return res.json(project);
-          } else {
-            console.log(`User ${req.user.id} has no access to project ${projectId}`);
-            return res.status(403).json({ 
-              message: "You don't have permission to access this project" 
-            });
+          // If not owned directly, check team projects
+          // Get team IDs where user is a member
+          const userTeams = await db
+            .select({
+              teamId: teamMembers.teamId
+            })
+            .from(teamMembers)
+            .where(sql`${teamMembers.userId} = ${req.user.id}`)
+            .where(sql`${teamMembers.status} = 'active'`);
+            
+          // Get team IDs where user is creator
+          const createdTeams = await db
+            .select({
+              teamId: teams.id
+            })
+            .from(teams)
+            .where(sql`${teams.createdBy} = ${req.user.id}`)
+            .where(sql`${teams.isDeleted} = false`);
+            
+          // Combine team IDs
+          const teamIds = [
+            ...userTeams.map(t => t.teamId),
+            ...createdTeams.map(t => t.teamId)
+          ];
+          
+          // Look for projects from these teams
+          if (teamIds.length > 0) {
+            const teamProjects = await db
+              .select()
+              .from(projects)
+              .where(sql`${projects.id} = ${projectId}`)
+              .where(sql`${projects.teamId} IN (${teamIds.join(',')})`) 
+              .where(sql`${projects.isDeleted} = false`);
+              
+            if (teamProjects.length > 0) {
+              // User has team access to this project
+              return res.json(teamProjects[0]);
+            }
           }
-        } else {
-          console.log(`No project found with ID ${projectId}`);
+          
+          // If we get here, user has no access to the project
+          return res.status(403).json({ 
+            message: "You don't have permission to access this project" 
+          });
+        } catch (error) {
+          console.error('Error querying project:', error);
+          return res.status(500).json({ message: "Error querying project" });
         }
       } else {
         console.log(`ID ${requestedId} is not a valid numeric ID`);
@@ -3157,45 +3155,81 @@ export function registerRoutes(app: Express): Server {
       
       // If we get here, check if this is a submission ID
       if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestedId)) {
-        console.log(`ID ${requestedId} is a UUID, checking for submission`);
-        
-        // Find the submission
-        const submissionDbResult = await pool.query(
-          `SELECT * FROM submissions WHERE id = $1 LIMIT 1`, 
-          [requestedId]
-        );
-        
-        const submissionRows = submissionDbResult.rows || [];
-        console.log(`Found ${submissionRows.length} submissions with ID ${requestedId}`);
-        
-        // If we found a submission with a project ID, get that project
-        if (submissionRows.length > 0 && submissionRows[0].project_id) {
-          const projectId = submissionRows[0].project_id;
-          console.log(`Submission has project ID: ${projectId}`);
+        try {
+          // Find the submission using Drizzle ORM
+          const userSubmissions = await db
+            .select()
+            .from(submissions)
+            .where(sql`${submissions.id} = ${requestedId}`);
           
-          const projectDbResult = await pool.query(
-            `SELECT * FROM projects WHERE id = $1 AND is_deleted = false LIMIT 1`, 
-            [projectId]
-          );
-          
-          const projectRows = projectDbResult.rows || [];
-          console.log(`Found ${projectRows.length} projects with ID ${projectId} from submission`);
-          
-          if (projectRows.length > 0) {
-            // Convert snake_case to camelCase for frontend consistency
-            const project = {
-              id: projectRows[0].id,
-              name: projectRows[0].name,
-              githubUrl: projectRows[0].github_url,
-              userId: projectRows[0].user_id,
-              teamId: projectRows[0].team_id,
-              createdAt: projectRows[0].created_at,
-              isDeleted: projectRows[0].is_deleted
-            };
+          // If we found a submission with a project ID and it belongs to the current user
+          if (userSubmissions.length > 0 && userSubmissions[0].projectId) {
+            const submissionProjectId = userSubmissions[0].projectId;
             
-            console.log(`Returning project from submission:`, project);
-            return res.json(project);
+            // Now get only the projects the user has access to
+            // Use the same project access logic as before, but for the submission's project ID
+            
+            // 1. Projects owned by the user directly
+            const ownedProjects = await db
+              .select()
+              .from(projects)
+              .where(sql`${projects.id} = ${submissionProjectId}`)
+              .where(sql`${projects.userId} = ${req.user.id}`)
+              .where(sql`${projects.isDeleted} = false`);
+              
+            if (ownedProjects.length > 0) {
+              // User owns this project directly
+              return res.json(ownedProjects[0]);
+            }
+            
+            // 2. Projects from teams where the user is a member
+            // Get team IDs where user is a member
+            const userTeams = await db
+              .select({
+                teamId: teamMembers.teamId
+              })
+              .from(teamMembers)
+              .where(sql`${teamMembers.userId} = ${req.user.id}`)
+              .where(sql`${teamMembers.status} = 'active'`);
+              
+            // Get team IDs where user is creator
+            const createdTeams = await db
+              .select({
+                teamId: teams.id
+              })
+              .from(teams)
+              .where(sql`${teams.createdBy} = ${req.user.id}`)
+              .where(sql`${teams.isDeleted} = false`);
+              
+            // Combine team IDs
+            const teamIds = [
+              ...userTeams.map(t => t.teamId),
+              ...createdTeams.map(t => t.teamId)
+            ];
+            
+            // Look for projects from these teams
+            if (teamIds.length > 0) {
+              const teamProjects = await db
+                .select()
+                .from(projects)
+                .where(sql`${projects.id} = ${submissionProjectId}`)
+                .where(sql`${projects.teamId} IN (${teamIds.join(',')})`) 
+                .where(sql`${projects.isDeleted} = false`);
+                
+              if (teamProjects.length > 0) {
+                // User has team access to this project
+                return res.json(teamProjects[0]);
+              }
+            }
+            
+            // If we get here, user has no access to the project
+            return res.status(403).json({ 
+              message: "You don't have permission to access this project" 
+            });
           }
+        } catch (error) {
+          console.error('Error querying submission project:', error);
+          return res.status(500).json({ message: "Error querying submission project" });
         }
       }
       
