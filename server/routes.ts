@@ -81,9 +81,11 @@ async function getValidSubmissionId(idParam: string): Promise<{
     try {
       const projectId = parseInt(idParam);
       
-      const [latestSubmission] = await db.execute(
+      const result = await db.execute(
         sql`SELECT id FROM "submissions" WHERE "project_id" = ${projectId} ORDER BY "created_at" DESC LIMIT 1`
       );
+      
+      const latestSubmission = result.rows && result.rows.length > 0 ? result.rows[0] : null;
       
       if (latestSubmission) {
         return { 
@@ -168,7 +170,8 @@ export function registerRoutes(app: Express): Server {
       const results = await db.execute(query);
       
       // Transform any snake_case column names to camelCase for frontend
-      const transformedResults = results.map(p => ({
+      // Check if results is an array and handle it accordingly
+      const transformedResults = Array.isArray(results.rows) ? results.rows.map(p => ({
         id: p.id,
         userId: p.user_id,
         teamId: p.team_id,
@@ -178,7 +181,7 @@ export function registerRoutes(app: Express): Server {
         updatedAt: p.updated_at,
         status: p.status,
         isDeleted: p.is_deleted || false
-      }));
+      })) : [];
       
       return res.json(transformedResults);
     } catch (error) {
