@@ -6011,10 +6011,23 @@ export function registerRoutes(app: Express): Server {
       }
       
       // STEP 6: Format the response for team projects
-      const formattedTeamProjects = teamProjects.map(tp => ({
-        ...tp.project,
-        teamName: tp.teamName
-      }));
+      console.log("Raw team projects structure:", teamProjects[0] || "No team projects found");
+      
+      const formattedTeamProjects = teamProjects.map(tp => {
+        // Make sure tp.project is correctly structured and teamId is included
+        console.log("Team project being processed:", {
+          projectData: tp.project || "Missing project data",
+          teamName: tp.teamName,
+          teamId: tp.project?.teamId || "Missing teamId"
+        });
+        
+        return {
+          ...tp.project,
+          teamName: tp.teamName
+        };
+      });
+      
+      console.log("Formatted team projects result:", formattedTeamProjects);
       
       // STEP 7: Group projects by team for easier frontend display
       const projectsByTeam = {};
