@@ -447,19 +447,68 @@ export function registerRoutes(app: Express): Server {
       let finalResponse;
       
       if (needsConfirmation) {
-        // Generate a confirmation message for the user
-        const action = classification.action === 'refine' ? 'refine' :
-                      classification.action === 'update' ? 'update' :
-                      classification.action === 'run' ? 'run verification for' : 'clarify';
-        
-        const step = classification.step === 'analyze_project' ? 'project summary' :
-                    classification.step === 'analyze_actors' ? 'actors analysis' :
-                    classification.step === 'analyze_deployment' ? 'deployment instructions' :
-                    classification.step === 'implement_deployment_script' ? 'deployment script' :
-                    classification.step === 'verify_deployment_script' ? 'script verification' : 'analysis';
-        
-        finalResponse = `Based on your request, I understand you want to ${action} the ${step}. ` +
-                      `Before I proceed, can you confirm this is what you want to do? I will call the external API to update this section based on your feedback.`;
+        // Generate a proper checklist confirmation message for the user
+        try {
+          // Check if we have sufficient conversation context
+          if (messages.length > 0) {
+            // Generate a checklist from all messages, not just the latest one
+            const checklist = await generateChecklist(
+              messages,
+              {
+                projectName: projectDetails.projectName,
+                section,
+                analysisStep: classification.step !== 'unknown' ? classification.step : analysisStep,
+                sectionData: sectionData || null,
+                submissionId: submission?.id || null
+              }
+            );
+            
+            console.log('Generated confirmation checklist with', messages.length, 'messages in context');
+            
+            // Add a preamble to the checklist
+            const action = classification.action === 'refine' ? 'refine' :
+                          classification.action === 'update' ? 'update' :
+                          classification.action === 'run' ? 'run verification for' : 'clarify';
+            
+            const step = classification.step === 'analyze_project' ? 'project summary' :
+                        classification.step === 'analyze_actors' ? 'actors analysis' :
+                        classification.step === 'analyze_deployment' ? 'deployment instructions' :
+                        classification.step === 'implement_deployment_script' ? 'deployment script' :
+                        classification.step === 'verify_deployment_script' ? 'script verification' : 'analysis';
+            
+            // Add the checklist to our response
+            finalResponse = checklist + "\n\nDo you want me to proceed with these changes?";
+          } else {
+            // Fallback if we have no messages
+            const action = classification.action === 'refine' ? 'refine' :
+                          classification.action === 'update' ? 'update' :
+                          classification.action === 'run' ? 'run verification for' : 'clarify';
+            
+            const step = classification.step === 'analyze_project' ? 'project summary' :
+                        classification.step === 'analyze_actors' ? 'actors analysis' :
+                        classification.step === 'analyze_deployment' ? 'deployment instructions' :
+                        classification.step === 'implement_deployment_script' ? 'deployment script' :
+                        classification.step === 'verify_deployment_script' ? 'script verification' : 'analysis';
+            
+            finalResponse = `Based on your request, I understand you want to ${action} the ${step}. ` +
+                          `Before I proceed, can you confirm this is what you want to do? I will call the external API to update this section based on your feedback.`;
+          }
+        } catch (error) {
+          console.error('Error generating confirmation checklist:', error);
+          // Fallback to simple confirmation message
+          const action = classification.action === 'refine' ? 'refine' :
+                        classification.action === 'update' ? 'update' :
+                        classification.action === 'run' ? 'run verification for' : 'clarify';
+          
+          const step = classification.step === 'analyze_project' ? 'project summary' :
+                      classification.step === 'analyze_actors' ? 'actors analysis' :
+                      classification.step === 'analyze_deployment' ? 'deployment instructions' :
+                      classification.step === 'implement_deployment_script' ? 'deployment script' :
+                      classification.step === 'verify_deployment_script' ? 'script verification' : 'analysis';
+          
+          finalResponse = `Based on your request, I understand you want to ${action} the ${step}. ` +
+                        `Before I proceed, can you confirm this is what you want to do? I will call the external API to update this section based on your feedback.`;
+        }
       } else {
         // Otherwise, generate a normal response via Gemini
         const chatResponse = await generateChatResponse(messages, {
