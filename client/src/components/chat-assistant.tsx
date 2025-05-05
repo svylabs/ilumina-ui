@@ -640,23 +640,39 @@ export default function ChatAssistant({
           </div>
 
           {/* Input area */}
-          <div className="p-3 border-t flex items-end gap-2">
-            <Textarea
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question..."
-              className="resize-none min-h-[60px] max-h-[120px]"
-              disabled={isLoading}
-            />
-            <Button
-              size="icon"
-              className="shrink-0 h-10 w-10"
-              onClick={handleSendMessage}
-              disabled={isLoading || !inputValue.trim()}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="p-3 border-t">
+            {isFreeUser ? (
+              <div className="text-center text-sm text-muted-foreground px-4 py-2">
+                <p>Upgrade to a Pro or Teams plan to access AI chat assistance</p>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => window.location.href = '/pricing'}
+                >
+                  View Pricing Plans
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-end gap-2">
+                <Textarea
+                  value={inputValue}
+                  onChange={e => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask a question..."
+                  className="resize-none min-h-[60px] max-h-[120px]"
+                  disabled={isLoading}
+                />
+                <Button
+                  size="icon"
+                  className="shrink-0 h-10 w-10"
+                  onClick={handleSendMessage}
+                  disabled={isLoading || !inputValue.trim()}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       )}
