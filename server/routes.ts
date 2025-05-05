@@ -11,7 +11,7 @@ import {
 import { eq, sql, desc, asc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import { generateChatResponse, classifyUserRequest, generateChecklist } from "./gemini";
+import { generateChatResponse, classifyUserRequest, generateChecklist, classifyConversationType } from "./gemini";
 
 // Authentication middleware
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -227,6 +227,32 @@ export function registerRoutes(app: Express): Server {
       const latestUserMessage = messages[messages.length - 1];
       if (latestUserMessage.role !== 'user') {
         return res.status(400).json({ error: "The last message must be from the user" });
+      }
+      
+      // Determine if this is a new conversation or continuation of existing one
+      let currentConversationId = conversationId;
+      let conversationClassification = null;
+      
+      // Only classify if we have previous messages and no explicit conversation ID
+      if (messages.length > 1 && !conversationId) {
+        // Get all previous messages except the latest one
+        const previousMessages = messages.slice(0, -1);
+        const latestUserContent = latestUserMessage.content;
+        
+        // Classify the conversation type
+        conversationClassification = await classifyConversationType(
+          latestUserContent,
+          previousMessages,
+          { projectName: projectId ? `Project ${projectId}` : undefined, section }
+        );
+        
+        console.log('Conversation classification result:', conversationClassification);
+        
+        // If this is a new conversation with high confidence, generate a new ID
+        if (conversationClassification.type === 'new_conversation' && conversationClassification.confidence > 0.7) {
+          currentConversationId = crypto.randomUUID();
+          console.log(`Starting new conversation with ID: ${currentConversationId}`);
+        }
       }
       
       // Get project details if projectId is provided

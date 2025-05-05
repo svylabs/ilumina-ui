@@ -295,6 +295,86 @@ export async function generateChecklist(
   }
 }
 
+// Function to determine if a message should create a new conversation or continue an existing one
+export async function classifyConversationType(
+  newMessage: string,
+  previousMessages: ChatMessage[] = [],
+  context?: {
+    projectName?: string;
+    section?: string;
+  }
+): Promise<ConversationClassificationResult> {
+  try {
+    // If there are no previous messages, it's always a new conversation
+    if (previousMessages.length === 0) {
+      return {
+        type: 'new_conversation',
+        confidence: 1,
+        explanation: 'No previous conversation exists'
+      };
+    }
+
+    const classificationPrompt = `
+    You are an AI assistant analyzing conversation continuity. Determine if the new message below should continue the existing conversation or start a new unrelated conversation.
+
+    PREVIOUS CONVERSATION:
+    ${previousMessages.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n')}
+
+    NEW MESSAGE: "${newMessage}"
+
+    Project context: ${context?.projectName || 'Unknown'}
+    Current section: ${context?.section || 'Unknown'}
+
+    Is this new message continuing the previous conversation or starting a completely new topic?
+    Analyze factors like:
+    1. Topic continuity and relevance to previous messages
+    2. Whether it refers to concepts, questions, or context from previous messages
+    3. If it's a completely new request or topic unrelated to previous conversation
+
+    Respond with ONLY a JSON object in this exact format:
+    {
+      "type": "continue_conversation" or "new_conversation",
+      "confidence": [number between 0 and 1],
+      "explanation": "[brief explanation of your classification]"
+    }
+    `;
+
+    const result = await classificationModel.generateContent(classificationPrompt);
+    const resultText = result.response.text();
+    
+    // Extract JSON from the response
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('Could not extract JSON from conversation classification response:', resultText);
+      return { 
+        type: 'continue_conversation', 
+        confidence: 0.5,
+        explanation: 'Failed to classify conversation type, defaulting to continuation'
+      };
+    }
+    
+    try {
+      const classification = JSON.parse(jsonMatch[0]) as ConversationClassificationResult;
+      console.log('Conversation type classification:', classification);
+      return classification;
+    } catch (parseError) {
+      console.error('Error parsing conversation classification JSON:', parseError);
+      return { 
+        type: 'continue_conversation', 
+        confidence: 0.5,
+        explanation: 'Failed to parse conversation classification, defaulting to continuation'
+      };
+    }
+  } catch (error) {
+    console.error('Error classifying conversation type:', error);
+    return { 
+      type: 'continue_conversation', 
+      confidence: 0.5,
+      explanation: 'Error during classification, defaulting to conversation continuation'
+    };
+  }
+}
+
 export async function generateChatResponse(
   messages: ChatMessage[],
   context?: {
