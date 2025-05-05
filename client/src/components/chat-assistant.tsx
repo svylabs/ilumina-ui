@@ -303,10 +303,19 @@ export default function ChatAssistant({
       
       // If the classification shows this is a significant action (update, refine), but doesn't already have confirmation,
       // modify the response to include a checklist of the user's request for confirmation
+      console.log('Checking if we need to show a checklist confirmation:', {
+        action: data.classification?.action,
+        needsConfirmation,
+        isPositiveConfirmation: inputValue.toLowerCase().includes('yes') || inputValue.toLowerCase().includes('proceed')
+      });
+      
       if (data.classification && 
           ['update', 'refine'].includes(data.classification.action) && 
-          !needsConfirmation && 
-          !inputValue.toLowerCase().startsWith('yes')) {
+          data.classification.confidence >= 0.7 &&
+          !inputValue.toLowerCase().includes('yes') && 
+          !inputValue.toLowerCase().includes('proceed')) {
+        // Override the server response with our checklist
+        console.log('Showing checklist confirmation for user request');
         content = createChecklistFromRequest(userMessage.content);
         needsConfirmation = true;
       }
