@@ -230,6 +230,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "The last message must be from the user" });
       }
       
+      // For tracking whether we've merged deployment script data with deployment instructions
+      let mergedDeploymentData = false;
+      
       // Determine if this is a new conversation or continuation of existing one
       let currentConversationId = conversationId;
       let conversationClassification = null;

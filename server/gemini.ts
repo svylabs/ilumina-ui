@@ -65,7 +65,6 @@ export type AnalysisStep =
   | 'analyze_actors' 
   | 'analyze_project' 
   | 'analyze_deployment' 
-  | 'implement_deployment_script' 
   | 'verify_deployment_script' 
   | 'unknown';
 
@@ -115,8 +114,7 @@ export async function classifyUserRequest(
     STEPS (choose one):
     - analyze_actors: Request about actors in the smart contract, their roles, permissions, or interactions
     - analyze_project: Request about the overall project, its purpose, architecture, or general questions
-    - analyze_deployment: Request about deployment of smart contracts, deployment strategy or infrastructure
-    - implement_deployment_script: Request about the deployment script implementation itself
+    - analyze_deployment: Request about deployment of smart contracts, deployment strategy, infrastructure, deployment script, deployment instructions or implementation details related to deployment
     - verify_deployment_script: Request to verify, validate, or run the deployment script
     - unknown: If the request doesn't clearly fit into any of the above steps
 
