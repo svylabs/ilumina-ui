@@ -664,7 +664,9 @@ export function registerRoutes(app: Express): Server {
               // First check local endpoints based on step configuration
               for (const endpoint of stepConfig.dataEndpoints) {
                 try {
-                  const url = endpoint.replace('${submission.id}', submission.id)
+                  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+                  const url = `${baseUrl}${endpoint}`
+                                      .replace('${submission.id}', submission.id)
                                       .replace('${logStep}', logStep);
                   console.log(`Fetching step data from ${url}`);
                   const response = await fetch(url);
@@ -750,7 +752,8 @@ export function registerRoutes(app: Express): Server {
               // Always use external API for the special step types, otherwise only if we haven't found data locally
               if ((requiresExternalAPI || (!stepData || stepLogs.length === 0)) && stepConfig.externalEndpoint) {
                 try {
-                  const externalUrl = stepConfig.externalEndpoint
+                  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+                  const externalUrl = `${baseUrl}${stepConfig.externalEndpoint}`
                                       .replace('${submission.id}', submission.id)
                                       .replace('${logStep}', logStep);
                   console.log(`Fetching from external endpoint: ${externalUrl}`);
@@ -810,8 +813,10 @@ export function registerRoutes(app: Express): Server {
               // Check in submissionData for logs for implement_deployment_script and verify_deployment_script
               try {
                 // Get data from the API endpoint that returns the whole submission data
-                const submissionUrl = `/api/submission/${submission.id}`;
-                console.log(`Checking in submissionData for ${logStep} logs`);
+                // Make sure to use the full URL including origin to avoid 'invalid URL' errors
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+                const submissionUrl = `${baseUrl}/api/submission/${submission.id}`;
+                console.log(`Checking in submissionData for ${logStep} logs at URL: ${submissionUrl}`);
                 const submissionResponse = await fetch(submissionUrl);
                 
                 if (submissionResponse.ok) {
