@@ -553,7 +553,9 @@ export function registerRoutes(app: Express): Server {
             // Use the local endpoint to get submission details instead of direct API call
             try {
               // Call our own endpoint which has proper authentication
-              const detailsUrl = `/api/submission-details/${submission.id}`;
+              const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+              const detailsUrl = `${baseUrl}/api/submission-details/${submission.id}`;
+              console.log(`Fetching submission details with full URL: ${detailsUrl}`);
               const detailsResponse = await fetch(detailsUrl);
               
               if (detailsResponse.ok) {
