@@ -3790,7 +3790,7 @@ function validate${action.function_name.split('(')[0]}Result(result) {
         </div>
       </div>
       {/* Add context-aware AI Chat Assistant */}
-      <ChatAssistant projectId={id} currentSection={currentStep.id} />
+      <ChatAssistant projectId={id} currentSection={currentStep.id} submissionId={submissionId} />
     </div>
   );
 }
