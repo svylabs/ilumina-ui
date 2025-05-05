@@ -3752,9 +3752,16 @@ export function registerRoutes(app: Express): Server {
         .where(eq(projects.id, submission[0].projectId))
         .limit(1);
 
-      // Use the project name to determine the project type
+      // Use the project name and ID to determine the project type
       const projectName = actualProject?.name || '';
-      const isStableBaseProject = projectName.toLowerCase().includes('stablebase');
+      const projectId = actualProject?.id || 0;
+      
+      // Fix for project ID 43 - it should be StableBase
+      // We check both name and ID to ensure accuracy
+      const isStableBaseProject = projectName.toLowerCase().includes('stablebase') || projectId === 43;
+      
+      // Log for debugging purposes
+      console.log(`Project data: ID=${projectId}, Name="${projectName}", IsStableBase=${isStableBaseProject}`);
 
       // Create sample data for each project type
       const sampleData = {
