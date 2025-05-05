@@ -338,13 +338,13 @@ export default function ChatAssistant({
         console.log('Removing checklist format from non-actionable response');
         
         // Extract just the bullet points without the checklist format or confirmation question
-        const bulletPoints = content.match(/- (.+)/g);
+        const bulletPoints: string[] = content.match(/- (.+)/g) || [];
         
         if (bulletPoints && bulletPoints.length > 0) {
           // Get the actual information without checklist formatting
           // and compose a more natural response
           const taskDescription = bulletPoints
-            .map(point => point.replace('- ', ''))
+            .map((point: string) => point.replace('- ', ''))
             .join(' ');
             
           // Based on the question/command type, format an appropriate response

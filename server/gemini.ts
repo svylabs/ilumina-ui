@@ -410,6 +410,11 @@ Current analysis step: ${context?.analysisStep || 'Unknown'}`;
       for (const [key, value] of Object.entries(context.projectMetadata)) {
         systemPrompt += `${key}: ${value}\n`;
       }
+      
+      // For informational requests, add specific instructions
+      if (context.projectMetadata.isInformational) {
+        systemPrompt += `\n\nIMPORTANT: This is an informational request, not a request for action. \nThe user is asking for information, explanation, or clarification. \nRespond in a direct, clear manner without using a checklist format. \nDo not ask if the user wants to proceed with any changes.`;
+      }
     }
 
     // Add instructions based on the current section
