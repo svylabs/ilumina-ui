@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { db, pool } from "@db";
+import crypto from "crypto";
 import { 
   submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
@@ -132,8 +133,8 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
-  // Endpoint to get chat messages history
-  app.get("/api/chat/history/:submission_id", isAuthenticated, async (req, res) => {
+  // Endpoint to create a new conversation session
+  app.post("/api/chat/session/:submission_id", isAuthenticated, async (req, res) => {
     try {
       const submissionId = req.params.submission_id;
       const section = req.query.section as string || 'general';
@@ -150,14 +151,61 @@ export function registerRoutes(app: Express): Server {
       if (project.length === 0) {
         return res.status(403).json({ error: "You don't have access to this submission" });
       }
+      
+      // Generate a new conversation ID using crypto's randomUUID
+      const conversationId = crypto.randomUUID();
+      
+      console.log(`Created new conversation session ${conversationId} for submission ${submissionId}`);
+      
+      return res.json({ 
+        conversationId,
+        submissionId,
+        section,
+        createdAt: new Date().toISOString() 
+      });
+    } catch (error) {
+      console.error("Error creating conversation session:", error);
+      return res.status(500).json({ error: "Failed to create conversation session" });
+    }
+  });
+  
+  // Endpoint to get chat messages history
+  app.get("/api/chat/history/:submission_id", isAuthenticated, async (req, res) => {
+    try {
+      const submissionId = req.params.submission_id;
+      const section = req.query.section as string || 'general';
+      const conversationId = req.query.conversationId as string;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      
+      // Validate submission access
+      const project = await db
+        .select()
+        .from(projects)
+        .innerJoin(submissions, eq(submissions.projectId, projects.id))
+        .where(eq(submissions.id, submissionId))
+        .where(eq(projects.userId, req.user!.id))
+        .limit(1);
+        
+      if (project.length === 0) {
+        return res.status(403).json({ error: "You don't have access to this submission" });
+      }
 
-      // Query for chat messages
-      const messages = await db
+      // Build the query for chat messages
+      let query = db
         .select()
         .from(chatMessages)
         .where(eq(chatMessages.submissionId, submissionId))
-        .where(eq(chatMessages.section, section))
-        .orderBy(asc(chatMessages.timestamp));
+        .where(eq(chatMessages.section, section));
+      
+      // Filter by conversation ID if provided
+      if (conversationId) {
+        query = query.where(eq(chatMessages.conversationId, conversationId));
+      }
+      
+      // Order by timestamp and limit results
+      const messages = await query
+        .orderBy(asc(chatMessages.timestamp))
+        .limit(limit);
         
       return res.json(messages);
     } catch (error) {
@@ -169,7 +217,7 @@ export function registerRoutes(app: Express): Server {
   // AI Assistant chat endpoint with request classification and action handling
   app.post("/api/assistant/chat", async (req, res) => {
     try {
-      const { messages, projectId, section, analysisStep } = req.body;
+      const { messages, projectId, section, analysisStep, conversationId } = req.body;
       
       if (!messages || !Array.isArray(messages) || messages.length === 0) {
         return res.status(400).json({ error: "Messages are required and must be an array" });
