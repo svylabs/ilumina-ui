@@ -770,27 +770,72 @@ export function registerRoutes(app: Express): Server {
                     // Handle each step type differently based on the external API response format
                     if (logStep === 'analyze_project') {
                       // Project summary has its own format
-                      if (externalData && typeof externalData === 'object') {
-                        addLogData('external API', externalData, 'Project Summary');
-                        if (!stepData) stepData = {};
-                        stepData.project_summary = externalData;
+                      if (externalData && externalData.project_summary) {
+                        try {
+                          // Parse the project_summary which is a JSON string
+                          const parsedProject = JSON.parse(externalData.project_summary);
+                          addLogData('external API', JSON.stringify(parsedProject, null, 2), 'Project Summary');
+                          if (!stepData) stepData = {};
+                          // Store the parsed project data
+                          stepData.project_summary = parsedProject;
+                        } catch (parseError) {
+                          console.error('Error parsing project summary:', parseError);
+                          // If parsing fails, use the raw data
+                          addLogData('external API', externalData.project_summary, 'Project Summary (Raw)');
+                          if (!stepData) stepData = {};
+                          stepData.project_summary = externalData.project_summary;
+                        }
                       }
                     } 
                     else if (logStep === 'analyze_actors') {
                       // Actor summary has its own format
-                      if (externalData && externalData.actors) {
-                        addLogData('external API', externalData.actors, 'Actors');
-                        if (!stepData) stepData = {};
-                        stepData.actors = externalData;
+                      if (externalData && externalData.actors_summary) {
+                        try {
+                          // Parse the actors_summary which is a JSON string
+                          const parsedActors = JSON.parse(externalData.actors_summary);
+                          if (parsedActors && parsedActors.actors) {
+                            addLogData('external API', JSON.stringify(parsedActors.actors, null, 2), 'Actors');
+                            if (!stepData) stepData = {};
+                            // Store the parsed actor data
+                            stepData.actors = parsedActors.actors;
+                          }
+                        } catch (parseError) {
+                          console.error('Error parsing actors summary:', parseError);
+                          // If parsing fails, use the raw data
+                          addLogData('external API', externalData.actors_summary, 'Actors (Raw)');
+                          if (!stepData) stepData = {};
+                          stepData.actors_summary = externalData.actors_summary;
+                        }
                       }
                     }
                     else if (logStep === 'analyze_deployment') {
-                      // Deployment instructions are typically a string
-                      if (externalData) {
+                      // Deployment instructions might be nested in deployment_instructions field
+                      if (externalData && externalData.deployment_instructions) {
+                        try {
+                          // Try parsing in case it's a JSON string
+                          if (typeof externalData.deployment_instructions === 'string' && 
+                              externalData.deployment_instructions.trim().startsWith('{')) {
+                            const parsedInstructions = JSON.parse(externalData.deployment_instructions);
+                            addLogData('external API', JSON.stringify(parsedInstructions, null, 2), 'Deployment Instructions');
+                            if (!stepData) stepData = {};
+                            stepData.deployment_instructions = parsedInstructions;
+                          } else {
+                            // Use as is if it's already an object or not JSON-parseable string
+                            addLogData('external API', externalData.deployment_instructions, 'Deployment Instructions');
+                            if (!stepData) stepData = {};
+                            stepData.deployment_instructions = externalData.deployment_instructions;
+                          }
+                        } catch (parseError) {
+                          console.error('Error parsing deployment instructions:', parseError);
+                          // If parsing fails, use the raw data
+                          addLogData('external API', externalData.deployment_instructions, 'Deployment Instructions (Raw)');
+                          if (!stepData) stepData = {};
+                          stepData.deployment_instructions = externalData.deployment_instructions;
+                        }
+                      } else if (externalData) {
+                        // If no deployment_instructions field, use the whole object
                         const instructions = typeof externalData === 'string' ? 
-                                          externalData : 
-                                          (externalData.deployment_instructions || 
-                                           JSON.stringify(externalData, null, 2));
+                                          externalData : JSON.stringify(externalData, null, 2);
                         
                         addLogData('external API', instructions, 'Deployment Instructions');
                         if (!stepData) stepData = {};
