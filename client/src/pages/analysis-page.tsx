@@ -1615,6 +1615,8 @@ const checkDeploymentCompletion = async (submissionId: string): Promise<boolean>
 export default function AnalysisPage() {
   const { id } = useParams();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isFreeUser = user?.plan === 'free';
   const [selectedStep, setSelectedStep] = useState<string>("files");
   const [activeSubstep, setActiveSubstep] = useState<string>("");
   const [openChats, setOpenChats] = useState<Record<string, boolean>>({});
