@@ -2703,18 +2703,15 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      // Get only personal projects created by the current user (not deleted)
-      const userProjects = await db
-        .select()
-        .from(projects)
-        .where(eq(projects.userId, req.user.id)) // Only projects owned by the current user
-        .where(eq(projects.isDeleted, false)) // Filter out soft-deleted projects
-        .where(sql`${projects.teamId} IS NULL`) // Only include personal projects (not team projects)
-        .orderBy(projects.createdAt);
+      // Get only personal projects created by the current user (not deleted) using raw SQL
+      const { rows: userProjects } = await pool.query(
+        `SELECT * FROM projects WHERE user_id = $1 AND team_id IS NULL AND is_deleted = false ORDER BY created_at`,
+        [req.user.id]
+      );
 
       // Log what's actually returned to the client
       console.log("API /projects - user ID:", req.user.id);
-      console.log("API /projects - actual projects returned:", userProjects.map(p => ({ id: p.id, name: p.name, userId: p.userId, teamId: p.teamId })));
+      console.log("API /projects - actual projects returned:", userProjects.map(p => ({ id: p.id, name: p.name, userId: p.user_id, teamId: p.team_id })));
       
       res.json(userProjects);
     } catch (error) {
@@ -5958,17 +5955,14 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("API /all-projects - user ID:", req.user.id);
       
-      // STEP 1: Get user's personal projects (non-team projects, non-deleted only)
-      // Only include projects where user is the owner (userId matches)
-      const personalProjects = await db
-        .select()
-        .from(projects)
-        .where(eq(projects.userId, req.user.id)) // Only projects owned by the current user
-        .where(sql`${projects.teamId} IS NULL`) // Only projects without teamId
-        .where(eq(projects.isDeleted, false))
-        .orderBy(projects.createdAt);
+      // STEP 1: Get user's personal projects (non-team projects, non-deleted only) using a raw SQL query
+      // This is a more direct approach to ensure we get exactly what we need
+      const { rows: personalProjects } = await pool.query(
+        `SELECT * FROM projects WHERE user_id = $1 AND team_id IS NULL AND is_deleted = false ORDER BY created_at`,
+        [req.user.id]
+      );
         
-      console.log("API /all-projects - raw personal projects query result:", personalProjects.map(p => ({ id: p.id, name: p.name, userId: p.userId, teamId: p.teamId })));
+      console.log("API /all-projects - raw personal projects query result:", personalProjects.map(p => ({ id: p.id, name: p.name, userId: p.user_id, teamId: p.team_id })));
       
       // STEP 2: Get teams the user belongs to (includes active memberships)
       const userTeams = await db
