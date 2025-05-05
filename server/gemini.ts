@@ -77,10 +77,22 @@ export type RequestAction =
   | 'run' 
   | 'unknown';
 
+// The type of conversation continuation
+export type ConversationType = 
+  | 'continue_conversation' 
+  | 'new_conversation';
+
 // Result of request classification
 export type ClassificationResult = {
   step: AnalysisStep;
   action: RequestAction;
+  confidence: number;
+  explanation: string;
+};
+
+// Result of conversation classification
+export type ConversationClassificationResult = {
+  type: ConversationType;
   confidence: number;
   explanation: string;
 };

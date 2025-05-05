@@ -559,9 +559,12 @@ export function registerRoutes(app: Express): Server {
       }
 
       // 5. Return the response with classification metadata, confirmation status, and conversation ID
+      // Use the messageConversationId we determined above to maintain conversation continuity
+      const responseConversationId = messageConversationId || conversationId || crypto.randomUUID();
+      
       return res.json({ 
         response: finalResponse,
-        conversationId: conversationId || crypto.randomUUID(),
+        conversationId: responseConversationId,
         classification: {
           step: classification.step,
           action: classification.action,
