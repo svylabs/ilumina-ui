@@ -191,22 +191,67 @@ export function registerRoutes(app: Express): Server {
       let needsConfirmation = false;
       let contextSummary = '';
       
-      // Check if this message is confirming a previous action request
-      const isConfirmation = messages.length > 2 && 
+      // Check if this message is responding to a previous confirmation request
+      const isPreviousMessageConfirmationRequest = messages.length > 2 && 
                            messages[messages.length - 2].role === 'assistant' && 
-                           messages[messages.length - 2].content.includes('confirm') &&
+                           messages[messages.length - 2].content.includes('confirm');
+      
+      // Check if this is a positive confirmation
+      const isPositiveConfirmation = isPreviousMessageConfirmationRequest &&
                            (latestUserMessage.content.toLowerCase().includes('yes') || 
                             latestUserMessage.content.toLowerCase().includes('proceed') || 
-                            latestUserMessage.content.toLowerCase().includes('confirm'));
+                            latestUserMessage.content.toLowerCase().includes('confirm') ||
+                            latestUserMessage.content.toLowerCase().includes('agree') ||
+                            latestUserMessage.content.toLowerCase().includes('go ahead'));
+      
+      // Check if this is a negative response (rejection)
+      const isRejection = isPreviousMessageConfirmationRequest &&
+                           (latestUserMessage.content.toLowerCase().includes('no') || 
+                            latestUserMessage.content.toLowerCase().includes('cancel') || 
+                            latestUserMessage.content.toLowerCase().includes('hold off') || 
+                            latestUserMessage.content.toLowerCase().includes('don\'t') || 
+                            latestUserMessage.content.toLowerCase().includes('dont') ||
+                            latestUserMessage.content.toLowerCase().includes('not now') ||
+                            latestUserMessage.content.toLowerCase().includes('wait'));
+      
+      // If the user explicitly rejected the confirmation, we should reset classification
+      if (isRejection) {
+        console.log('User rejected the confirmation request, resetting classification');
+        classification.confidence = 0; // Reset confidence to prevent action
+      }
       
       // Collect all user messages to form context
       contextSummary = messages
         .filter(m => m.role === 'user')
         .map(m => m.content)
         .join('\n\n');
+        
+      // Special handling for deployment script requests
+      // We need to make sure deployment instructions exist before allowing modifications
+      if (classification.step === 'implement_deployment_script' && classification.confidence >= 0.6) {
+        try {
+          // Check if deployment instructions are available and completed
+          const deploymentStatus = await callExternalIluminaAPI(`/deployment_instructions/${submission.id}`);
+          
+          if (!deploymentStatus.ok) {
+            // Deployment instructions are not available yet, so we need to generate them first
+            console.log('Deployment instructions not available yet, forcing analyze_deployment step instead');
+            classification.step = 'analyze_deployment';
+            
+            // Add explanation to context summary to clarify the need for deployment instructions first
+            if (contextSummary) {
+              contextSummary = `The user wants to modify the deployment script, but deployment instructions need to be generated first. Here's the original request: \n\n${contextSummary}`;
+            }
+          }
+        } catch (error) {
+          console.error('Error checking deployment instructions:', error);
+          // Force to deployment instructions if we can't verify
+          classification.step = 'analyze_deployment';
+        }
+      }
       
       // 2. Take appropriate action based on classification if confidence is high enough and user confirmed
-      if (classification.confidence >= 0.7 && submission && isConfirmation) {
+      if (classification.confidence >= 0.7 && submission && isPositiveConfirmation) {
         // Get the UUID submission ID to use with external API
         const uuidSubmissionId = submission.id;
         
@@ -252,7 +297,7 @@ export function registerRoutes(app: Express): Server {
             console.error(`Error executing action for ${classification.step}:`, error);
           }
         }
-      } else if (classification.confidence >= 0.7 && submission && !isConfirmation) {
+      } else if (classification.confidence >= 0.7 && submission && !isPositiveConfirmation && !isRejection) {
         // If we have high confidence but no confirmation yet, set the needsConfirmation flag
         needsConfirmation = true;
       }
