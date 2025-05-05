@@ -88,6 +88,7 @@ export type ClassificationResult = {
   action: RequestAction;
   confidence: number;
   explanation: string;
+  isActionable: boolean; // Whether the request requires taking an action vs just answering a question
 };
 
 // Result of conversation classification
@@ -124,6 +125,11 @@ export async function classifyUserRequest(
     - update: User is providing additional information to update the context
     - run: User wants to execute or run something (like a verification)
     - unknown: If the action isn't clear
+    
+    IS_ACTIONABLE:
+    Determine if the request requires taking some action (modifying something) vs just answering a question.
+    - true: The request requires you to make changes or execute something
+    - false: The request is just asking for information or explanation with no changes needed
 
     Project context: ${context?.projectName || 'Unknown'}
     Current section: ${context?.section || 'Unknown'}
@@ -136,7 +142,8 @@ export async function classifyUserRequest(
       "step": "[one of the STEPS above]",
       "action": "[one of the ACTIONS above]", 
       "confidence": [number between 0 and 1],
-      "explanation": "[brief explanation of your classification]"
+      "explanation": "[brief explanation of your classification]",
+      "isActionable": true or false
     }
     `;
 
@@ -151,7 +158,8 @@ export async function classifyUserRequest(
         step: 'unknown', 
         action: 'unknown',
         confidence: 0,
-        explanation: 'Failed to classify request'
+        explanation: 'Failed to classify request',
+        isActionable: false // Default to non-actionable when classification fails
       };
     }
     
@@ -165,7 +173,8 @@ export async function classifyUserRequest(
         step: 'unknown', 
         action: 'unknown',
         confidence: 0,
-        explanation: 'Failed to parse classification'
+        explanation: 'Failed to parse classification',
+        isActionable: false // Default to non-actionable when parsing fails
       };
     }
   } catch (error) {
@@ -174,7 +183,8 @@ export async function classifyUserRequest(
       step: 'unknown', 
       action: 'unknown',
       confidence: 0,
-      explanation: 'Error during classification'
+      explanation: 'Error during classification',
+      isActionable: false // Default to non-actionable when classification fails
     };
   }
 }

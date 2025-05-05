@@ -317,30 +317,45 @@ export default function ChatAssistant({
         
       console.log('Server response has checklist format:', hasServerGeneratedChecklist);
       
-      // For refine and update actions with high confidence that haven't been confirmed yet,
-      // we should prompt for confirmation
+      // Only show checklists for actions that modify content, not for clarification/explanation
+      const actionsThatNeedConfirmation = ['update', 'refine', 'run'];
+      const actionsExemptFromChecklist = ['clarify', 'explain'];
+      
       const isSignificantAction = data.classification && 
-          ['update', 'refine'].includes(data.classification.action) && 
+          actionsThatNeedConfirmation.includes(data.classification.action) && 
           data.classification.confidence >= 0.7;
-          
+      
+      const isExemptAction = data.classification && 
+          actionsExemptFromChecklist.includes(data.classification.action);
+      
+      // Don't require confirmation for clarification or explanation requests
       const needsUserConfirmation = isSignificantAction && 
+          !isExemptAction &&
           !inputValue.toLowerCase().includes('yes') && 
           !inputValue.toLowerCase().includes('proceed') &&
           !data.classification?.actionTaken;
       
-      // IMPORTANT: Always prefer server-generated checklists when available
+      // IMPORTANT: Only show checklist for actions that modify content
       if (needsUserConfirmation) {
-        // Only generate client-side checklist if server didn't provide one
-        // and this is an action that needs confirmation
         if (!hasServerGeneratedChecklist) {
           console.log('No server checklist found. Creating client-side checklist for confirmation');
           content = createChecklistFromRequest(userMessage.content);
           needsConfirmation = true;
         } else {
-          console.log('Using server-generated checklist for confirmation');
-          // Make sure needsConfirmation is set when using server checklist
-          needsConfirmation = true;
+          // If the server response already has checklist format but the action is for clarification,
+          // we should NOT treat it as needing confirmation
+          if (!isExemptAction) {
+            console.log('Using server-generated checklist for confirmation');
+            needsConfirmation = true;
+          } else {
+            console.log('Server generated a checklist, but action is exempt from confirmation');
+            needsConfirmation = false;
+          }
         }
+      } else if (isExemptAction) {
+        // Explicitly set needsConfirmation to false for exempt actions
+        console.log('Action is exempt from confirmation:', data.classification?.action);
+        needsConfirmation = false;
       }
 
       // Create the assistant message with classification metadata if available
