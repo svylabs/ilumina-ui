@@ -538,6 +538,40 @@ export function registerRoutes(app: Express): Server {
         }
       } else {
         // Otherwise, generate a normal response via Gemini
+        // First, try to fetch relevant logs that might help answer the question
+        let submissionLogs = null;
+        
+        // For informational requests, try to fetch relevant data from the submission
+        if (!classification.isActionable && submission) {
+          try {
+            // Fetch relevant logs based on the step/section of the question
+            const logStep = classification.step !== 'unknown' ? classification.step : 
+                           section === 'project_summary' ? 'files' :
+                           section === 'actor_summary' ? 'actors' :
+                           section === 'deployment_instructions' ? 'deployment' :
+                           section === 'implementation' ? 'test_setup' :
+                           section === 'validation_rules' ? 'simulations' : null;
+                           
+            if (logStep) {
+              console.log(`Fetching logs for step ${logStep} to help answer the question`);
+              // Try to fetch step data from external API
+              const apiUrl = `https://ilumina-451416.uc.r.appspot.com/api/submission/${submission.id}/step/${logStep}`;
+              const logResponse = await fetch(apiUrl);
+              
+              if (logResponse.ok) {
+                const logData = await logResponse.json();
+                if (logData && logData.log) {
+                  submissionLogs = logData.log;
+                  console.log(`Found relevant logs for ${logStep}, including in response context`);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching submission logs:', error);
+            // Continue without logs
+          }
+        }
+        
         const chatResponse = await generateChatResponse(messages, {
           projectName: projectDetails.projectName,
           section,
@@ -545,7 +579,9 @@ export function registerRoutes(app: Express): Server {
           projectMetadata: {
             githubUrl: projectDetails.githubUrl,
             classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`,
-            isInformational: !classification.isActionable // Flag to indicate whether this is just a question
+            isInformational: !classification.isActionable, // Flag to indicate whether this is just a question
+            submissionLogs: submissionLogs, // Include relevant logs to help answer questions
+            submissionId: submission?.id || null
           }
         });
         

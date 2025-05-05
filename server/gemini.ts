@@ -408,12 +408,20 @@ Current analysis step: ${context?.analysisStep || 'Unknown'}`;
     if (context?.projectMetadata) {
       systemPrompt += '\n\nProject metadata:\n';
       for (const [key, value] of Object.entries(context.projectMetadata)) {
-        systemPrompt += `${key}: ${value}\n`;
+        // Don't include log data directly in metadata section, we'll add it separately
+        if (key !== 'submissionLogs') {
+          systemPrompt += `${key}: ${value}\n`;
+        }
       }
       
       // For informational requests, add specific instructions
       if (context.projectMetadata.isInformational) {
         systemPrompt += `\n\nIMPORTANT: This is an informational request, not a request for action. \nThe user is asking for information, explanation, or clarification. \nRespond in a direct, clear manner without using a checklist format. \nDo not ask if the user wants to proceed with any changes.`;
+        
+        // If we have submission logs, include them to help answer the question
+        if (context.projectMetadata.submissionLogs) {
+          systemPrompt += `\n\nHere are relevant logs and data from the submission that may help answer the question:\n\n${context.projectMetadata.submissionLogs}\n\nUse the above information to help answer questions if relevant. If the information doesn't directly address the user's question, use your knowledge to provide a helpful response.`;
+        }
       }
     }
 
