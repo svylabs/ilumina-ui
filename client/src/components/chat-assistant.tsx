@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, RefreshCw } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, RefreshCw, PlusCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card } from './ui/card';
@@ -441,22 +441,31 @@ export default function ChatAssistant({
             <div className="flex items-center justify-between">
               <h3 className="font-medium">Ilumina Assistant</h3>
               <div className="flex items-center gap-2">
+                {/* Plus button to start a new conversation */}
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Clear conversation state and create a new session
+                    setConversationId(null);
+                    setMessages([]);
+                    createConversationSession();
+                    toast({
+                      title: "New Conversation",
+                      description: "Started a new conversation thread.",
+                    });
+                  }}
+                  title="Start new conversation"
+                >
+                  <PlusCircle className="h-4 w-4 mr-1" />
+                  <span className="text-xs">New Chat</span>
+                </Button>
+                
                 {conversationId && (
-                  <div className="text-xs text-primary-foreground/70 bg-primary-foreground/10 px-2 py-1 rounded flex items-center">
-                    <span className="mr-1">Session: {conversationId.substring(0, 6)}...</span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Clear conversation state and create a new session
-                        setConversationId(null);
-                        setMessages([]);
-                        createConversationSession();
-                      }}
-                      className="hover:text-white text-primary-foreground/80"
-                      title="Start new conversation"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                    </button>
+                  <div className="text-xs text-primary-foreground/70 bg-primary-foreground/10 px-2 py-1 rounded">
+                    <span>Session: {conversationId.substring(0, 6)}...</span>
                   </div>
                 )}
               </div>
