@@ -347,9 +347,17 @@ export function registerRoutes(app: Express): Server {
       let contextSummary = '';
       
       // Check if this message is responding to a previous confirmation request
-      const isPreviousMessageConfirmationRequest = messages.length > 2 && 
+      // Look more broadly at confirmation requests by checking for phrases common in confirmation messages
+      const isPreviousMessageConfirmationRequest = messages.length > 1 && 
                            messages[messages.length - 2].role === 'assistant' && 
-                           messages[messages.length - 2].content.includes('confirm');
+                           (messages[messages.length - 2].content.includes('confirm') ||
+                            messages[messages.length - 2].content.includes('proceed') ||
+                            messages[messages.length - 2].content.includes('want me to') ||
+                            messages[messages.length - 2].content.includes('would you like me to') ||
+                            messages[messages.length - 2].content.includes('Do you want'));
+      
+      // Log the previous message to see if we're missing something
+      console.log('Previous assistant message:', messages.length > 1 ? messages[messages.length - 2].content : 'No previous message');
       
       // Check if this is a positive confirmation
       const isPositiveConfirmation = isPreviousMessageConfirmationRequest &&
@@ -358,6 +366,12 @@ export function registerRoutes(app: Express): Server {
                             latestUserMessage.content.toLowerCase().includes('confirm') ||
                             latestUserMessage.content.toLowerCase().includes('agree') ||
                             latestUserMessage.content.toLowerCase().includes('go ahead'));
+      
+      console.log('Confirmation status check:', { 
+        isPreviousMessageConfirmationRequest, 
+        isPositiveConfirmation, 
+        messageContent: latestUserMessage.content 
+      });
       
       // Check if this is a negative response (rejection)
       const isRejection = isPreviousMessageConfirmationRequest &&
@@ -406,9 +420,18 @@ export function registerRoutes(app: Express): Server {
       }
       
       // 2. Take appropriate action based on classification if confidence is high enough and user confirmed
+      console.log('Action execution check:', {
+        confidence: classification.confidence,
+        hasSubmission: !!submission,
+        isPositiveConfirmation,
+        step: classification.step,
+        action: classification.action
+      });
+      
       if (classification.confidence >= 0.7 && submission && isPositiveConfirmation) {
         // Get the UUID submission ID to use with external API
         const uuidSubmissionId = submission.id;
+        console.log('Preparing to execute action with submission ID:', uuidSubmissionId);
         
         // Valid steps for API calls
         const validSteps = [
