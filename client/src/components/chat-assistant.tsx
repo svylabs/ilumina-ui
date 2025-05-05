@@ -325,6 +325,18 @@ export default function ChatAssistant({
       const actionsThatNeedConfirmation = ['update', 'refine', 'run'];
       const actionsExemptFromChecklist = ['clarify', 'explain', 'needs_followup'];
       
+      // Detect if this message is a confirmation message (yes/proceed/etc)
+      const isConfirmationMessage = inputValue.toLowerCase().includes('yes') || 
+                                   inputValue.toLowerCase().includes('proceed') || 
+                                   inputValue.toLowerCase().includes('confirm') ||
+                                   inputValue.toLowerCase().includes('agree') ||
+                                   inputValue.toLowerCase().includes('go ahead');
+      
+      // If this is a confirmation message, we should never show a checklist again
+      if (isConfirmationMessage) {
+        console.log('Detected confirmation message - suppressing any further checklists');
+      }
+      
       const isSignificantAction = data.classification && 
           actionsThatNeedConfirmation.includes(data.classification.action) && 
           data.classification.confidence >= 0.7;
@@ -336,8 +348,9 @@ export default function ChatAssistant({
       // Check if the request is actionable based on the classification from the server
       const isActionable = data.classification?.isActionable === true;
       
-      // If the response has a checklist format but is not actionable, completely transform it to a regular response
-      if (hasServerGeneratedChecklist && !isActionable) {
+      // If the response has a checklist format but is not actionable or it's a response to a confirmation,
+      // completely transform it to a regular response
+      if ((hasServerGeneratedChecklist && !isActionable) || isConfirmationMessage) {
         console.log('Removing checklist format from non-actionable response');
         
         // Extract just the bullet points without the checklist format or confirmation question
@@ -372,8 +385,7 @@ export default function ChatAssistant({
       const needsUserConfirmation = isSignificantAction && 
           !isExemptAction &&
           isActionable && // Only require confirmation for actionable requests
-          !inputValue.toLowerCase().includes('yes') && 
-          !inputValue.toLowerCase().includes('proceed') &&
+          !isConfirmationMessage && // Never show confirmation for confirmation messages
           !data.classification?.actionTaken;
       
       // IMPORTANT: Only show checklist for actions that modify content
