@@ -12,6 +12,8 @@ type Classification = {
   action: string;
   confidence: number;
   actionTaken: boolean;
+  needsConfirmation?: boolean;
+  contextSummary?: string;
 };
 
 type Message = {
@@ -94,7 +96,9 @@ export default function ChatAssistant({
           step: data.classification.step,
           action: data.classification.action,
           confidence: data.classification.confidence,
-          actionTaken: data.classification.actionTaken
+          actionTaken: data.classification.actionTaken,
+          needsConfirmation: data.classification.needsConfirmation,
+          contextSummary: data.classification.contextSummary
         } : undefined
       };
 
@@ -179,6 +183,35 @@ export default function ChatAssistant({
                 )}
               >
                 <div className="break-words whitespace-pre-wrap">{message.content}</div>
+                
+                {/* Show confirmation buttons if the message needs user confirmation */}
+                {message.role === 'assistant' && message.classification?.needsConfirmation && (
+                  <div className="mt-3 flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="default"
+                      onClick={() => {
+                        // Confirm the action
+                        setInputValue(`Yes, please proceed with ${message.classification?.step} step.`);
+                        setTimeout(handleSendMessage, 100);
+                      }}
+                    >
+                      Proceed
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        // Cancel the action
+                        setInputValue("No, let's hold off on that change for now.");
+                        setTimeout(handleSendMessage, 100);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                
                 <div
                   className={cn(
                     'text-xs mt-1',
