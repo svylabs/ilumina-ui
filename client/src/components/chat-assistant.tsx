@@ -216,6 +216,43 @@ export default function ChatAssistant({
     }
   }, [isOpen, projectId, submissionId, conversationId, currentSection, loadingHistory]);
 
+  // Helper function to parse user request into a checklist format
+  const createChecklistFromRequest = (request: string): string => {
+    const lines = request.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    // Try to identify action items in the request
+    const actionItems: string[] = [];
+    
+    // Look for phrases that indicate actions
+    const removeKeywords = ['remove', 'eliminate', 'delete', 'get rid of', 'don\'t need', 'not needed'];
+    const addKeywords = ['add', 'include', 'create', 'insert', 'implement', 'need'];
+    const updateKeywords = ['change', 'modify', 'update', 'edit', 'adjust', 'fix'];
+    
+    for (const line of lines) {
+      // Check if the line contains any of our keywords
+      const hasRemoveKeyword = removeKeywords.some(keyword => line.toLowerCase().includes(keyword));
+      const hasAddKeyword = addKeywords.some(keyword => line.toLowerCase().includes(keyword));
+      const hasUpdateKeyword = updateKeywords.some(keyword => line.toLowerCase().includes(keyword));
+      
+      if (hasRemoveKeyword || hasAddKeyword || hasUpdateKeyword) {
+        actionItems.push(line);
+      }
+    }
+    
+    // If we couldn't identify specific action items, use the entire request
+    if (actionItems.length === 0) {
+      actionItems.push(request);
+    }
+    
+    // Generate the checklist
+    let checklist = "Here's a summary of what you're asking for:\n\n";
+    actionItems.forEach(item => {
+      checklist += `- ${item}\n`;
+    });
+    
+    return checklist + "\nWould you like me to proceed with these changes?";
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
@@ -259,19 +296,33 @@ export default function ChatAssistant({
         console.log(`Received conversation ID from server: ${data.conversationId}`);
         setConversationId(data.conversationId);
       }
+      
+      // Check if this is an action that needs confirmation and no confirmation has been given yet
+      let content = data.response;
+      let needsConfirmation = data.classification?.needsConfirmation;
+      
+      // If the classification shows this is a significant action (update, refine), but doesn't already have confirmation,
+      // modify the response to include a checklist of the user's request for confirmation
+      if (data.classification && 
+          ['update', 'refine'].includes(data.classification.action) && 
+          !needsConfirmation && 
+          !inputValue.toLowerCase().startsWith('yes')) {
+        content = createChecklistFromRequest(userMessage.content);
+        needsConfirmation = true;
+      }
 
       // Create the assistant message with classification metadata if available
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.response,
+        content: content,
         timestamp: new Date(),
         classification: data.classification ? {
           step: data.classification.step,
           action: data.classification.action,
           confidence: data.classification.confidence,
           actionTaken: data.classification.actionTaken,
-          needsConfirmation: data.classification.needsConfirmation,
+          needsConfirmation: needsConfirmation,
           contextSummary: data.classification.contextSummary
         } : undefined
       };
