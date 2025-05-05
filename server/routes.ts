@@ -6010,30 +6010,23 @@ export function registerRoutes(app: Express): Server {
           .orderBy(teams.name, projects.createdAt);
       }
       
-      // Format the response
-      const formattedTeamProjects = teamProjects.map(tp => {
-        const project = {
-          ...tp.project,
-          teamName: tp.teamName
-        };
-        // Make sure teamId is properly set
-        console.log("Original project teamId:", tp.project.teamId, "Type:", typeof tp.project.teamId);
-        return project;
-      });
+      // STEP 6: Format the response for team projects
+      const formattedTeamProjects = teamProjects.map(tp => ({
+        ...tp.project,
+        teamName: tp.teamName
+      }));
       
-      console.log("Team projects:", formattedTeamProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
-      
-      // Group projects by team
+      // STEP 7: Group projects by team for easier frontend display
       const projectsByTeam = {};
       
-      // Add personal projects
+      // Add personal projects group
       projectsByTeam.personal = {
         teamId: null,
         teamName: "Personal Projects",
         projects: personalProjects
       };
       
-      // Add team projects
+      // Add team projects grouped by team
       for (const team of allTeams) {
         const teamProjects = formattedTeamProjects.filter(p => p.teamId === team.teamId);
         projectsByTeam[team.teamId] = {
@@ -6044,6 +6037,9 @@ export function registerRoutes(app: Express): Server {
         };
       }
       
+      // STEP 8: Return consolidated response with all project data
+      // This provides the frontend with all the data it needs to display projects
+      // without needing to do additional filtering or verification
       return res.json({
         personalProjects,
         teamProjects: formattedTeamProjects,
