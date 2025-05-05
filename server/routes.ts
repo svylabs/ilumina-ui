@@ -722,28 +722,28 @@ export function registerRoutes(app: Express): Server {
                         
                         // Add any project summary or actor data if available
                         try {
-                          if (logStep === 'analyze_project' && data.data.steps && data.data.steps.files) {
-                            const stepData = data.data.steps.files;
+                          if (logStep === 'analyze_project' && data.data && data.data.files) {
+                            const stepData = data.data.files;
                             let projectSummary = '';
                             
-                            // Try to get project summary from JSON data in steps[files]
+                            // Try to get project summary from JSON data in files
                             if (stepData.jsonData && stepData.jsonData.project_summary) {
                               projectSummary = typeof stepData.jsonData.project_summary === 'string' ?
                                 stepData.jsonData.project_summary : JSON.stringify(stepData.jsonData.project_summary, null, 2);
                               addLogData('submission details', `Project Summary: ${projectSummary}`, 'Project Analysis');
                             }
-                          } else if (logStep === 'analyze_actors' && data.data.steps && data.data.steps.actors) {
-                            const stepData = data.data.steps.actors;
+                          } else if (logStep === 'analyze_actors' && data.data && data.data.actors) {
+                            const stepData = data.data.actors;
                             let actorData = '';
                             
-                            // Try to get actor data from JSON data in steps[actors]
+                            // Try to get actor data from JSON data in actors
                             if (stepData.jsonData && stepData.jsonData.actors) {
                               actorData = typeof stepData.jsonData.actors === 'string' ?
                                 stepData.jsonData.actors : JSON.stringify(stepData.jsonData.actors, null, 2);
                               addLogData('submission details', `Actor Data: ${actorData}`, 'Actor Analysis');
                             }
-                          } else if (logStep === 'analyze_deployment' && data.data.steps && data.data.steps.deployment) {
-                            const stepData = data.data.steps.deployment;
+                          } else if (logStep === 'analyze_deployment' && data.data && data.data.deployment) {
+                            const stepData = data.data.deployment;
                             
                             // Try to get deployment instructions
                             if (stepData.jsonData && stepData.jsonData.deployment_instructions) {
@@ -834,12 +834,12 @@ export function registerRoutes(app: Express): Server {
                   const submissionApiData = await submissionResponse.json();
                   
                   // Check for logs in step-specific data in the API response
-                  if (submissionApiData && submissionApiData.steps) {
+                  if (submissionApiData) {
                     // These steps have their logs directly in the step data
                     if ((logStep === 'implement_deployment_script' || logStep === 'verify_deployment_script') && 
-                        submissionApiData.steps[logStep]) {
+                        submissionApiData[logStep]) {
                       
-                      const stepData = submissionApiData.steps[logStep];
+                      const stepData = submissionApiData[logStep];
                       
                       // Get status if we don't have it yet
                       if (!stepStatus && stepData.status) {
