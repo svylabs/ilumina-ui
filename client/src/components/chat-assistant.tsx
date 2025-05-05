@@ -114,7 +114,8 @@ export default function ChatAssistant({
             confidence: msg.classification.confidence,
             actionTaken: msg.classification.actionTaken,
             needsConfirmation: msg.classification.needsConfirmation,
-            contextSummary: msg.classification.contextSummary
+            contextSummary: msg.classification.contextSummary,
+            isActionable: msg.classification.isActionable
           } : undefined
         }));
         
@@ -375,7 +376,8 @@ export default function ChatAssistant({
           confidence: data.classification.confidence,
           actionTaken: data.classification.actionTaken,
           needsConfirmation: needsConfirmation,
-          contextSummary: data.classification.contextSummary
+          contextSummary: data.classification.contextSummary,
+          isActionable: data.classification.isActionable
         } : undefined
       };
 
