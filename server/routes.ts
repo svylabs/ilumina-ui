@@ -5953,7 +5953,7 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
-      // Get user's personal projects (non-team projects, non-deleted only)
+      // STEP 1: Get user's personal projects (non-team projects, non-deleted only)
       // Only include projects where user is the owner (userId matches)
       const personalProjects = await db
         .select()
@@ -5963,9 +5963,7 @@ export function registerRoutes(app: Express): Server {
         .where(eq(projects.isDeleted, false))
         .orderBy(projects.createdAt);
       
-      console.log("Personal projects:", personalProjects.map(p => ({ id: p.id, name: p.name, teamId: p.teamId })));
-      
-      // Get teams the user belongs to
+      // STEP 2: Get teams the user belongs to (includes active memberships)
       const userTeams = await db
         .select({
           teamId: teams.id,
@@ -5975,9 +5973,10 @@ export function registerRoutes(app: Express): Server {
         .from(teamMembers)
         .innerJoin(teams, eq(teamMembers.teamId, teams.id))
         .where(eq(teamMembers.userId, req.user.id))
-        .where(eq(teamMembers.status, 'active'));
+        .where(eq(teamMembers.status, 'active'))
+        .where(eq(teams.isDeleted, false));
       
-      // Also include teams created by the user
+      // STEP 3: Also include teams created by the user (where they're not already a member)
       const createdTeams = await db
         .select({
           teamId: teams.id,
@@ -5992,7 +5991,7 @@ export function registerRoutes(app: Express): Server {
           WHERE user_id = ${req.user.id} AND status = 'active'
         )`);
       
-      // Combine all team IDs
+      // STEP 4: Combine all team IDs the user has access to
       const allTeams = [...userTeams, ...createdTeams];
       const teamIds = allTeams.map(t => t.teamId);
       
