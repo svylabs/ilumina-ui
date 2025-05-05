@@ -369,15 +369,23 @@ export default function ChatAssistant({
               inputValue.toLowerCase().startsWith('tell me') || 
               inputValue.toLowerCase().startsWith('can you tell')) {
             content = taskDescription.charAt(0).toUpperCase() + taskDescription.slice(1) + '.';
+          } else if (isConfirmationMessage) {
+            // Format differently for confirmation responses
+            content = `I'll proceed with that right away. ${taskDescription.charAt(0).toUpperCase() + taskDescription.slice(1)}.`;
           } else {
             content = `I'm happy to help with that. ${taskDescription.charAt(0).toUpperCase() + taskDescription.slice(1)}.`;
           }
         } else {
           // Fallback if we can't extract bullet points
-          content = content
-            .replace("Here's a summary of what you're asking for:\n\n", "")
-            .replace("\nWould you like me to proceed with these changes?", "")
-            .replace("\nWould you like me to proceed?", "");
+          if (isConfirmationMessage) {
+            // For confirmation messages, provide a clearer action message
+            content = "I'll proceed with your request right away.";
+          } else {
+            content = content
+              .replace("Here's a summary of what you're asking for:\n\n", "")
+              .replace("\nWould you like me to proceed with these changes?", "")
+              .replace("\nWould you like me to proceed?", "");
+          }
         }
       }
       
