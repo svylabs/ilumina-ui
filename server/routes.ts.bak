@@ -12,7 +12,6 @@ import { eq, sql, desc, asc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { generateChatResponse, classifyUserRequest, generateChecklist, classifyConversationType } from "./gemini";
-import { parseVerificationLogs, extractErrorMessage, explainVerificationError } from "./verification";
 
 // Authentication middleware
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -888,6 +887,7 @@ export function registerRoutes(app: Express): Server {
                                  directStepData.jsonData.verification_results, 
                                  'Verification Results');
                       }
+                    }
                     }
                   }
                 }
@@ -3132,66 +3132,6 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching submission:', error);
       res.status(500).json({ message: "Failed to fetch submission" });
-    }
-  });
-  
-  // New endpoint to specifically get verification logs
-  app.get("/api/verification-logs/:id", async (req, res) => {
-    try {
-      const submissionId = req.params.id;
-      const data = await fetchFromExternalApi('submission', submissionId);
-      
-      if (!data) {
-        return res.status(404).json({ message: "Submission not found" });
-      }
-      
-      // Check for verification logs in step_metadata
-      if (data.step_metadata && data.step_metadata.verify_deployment_script) {
-        // Parse the verification logs
-        const result = parseVerificationLogs(data.step_metadata);
-        
-        // Find status information
-        let status = "unknown";
-        let updatedAt = null;
-        
-        if (data.completed_steps && Array.isArray(data.completed_steps)) {
-          const stepInfo = data.completed_steps.find(s => s.step === 'verify_deployment_script');
-          if (stepInfo) {
-            status = stepInfo.status;
-            updatedAt = stepInfo.updated_at;
-          }
-        }
-        
-        // Generate a user-friendly explanation of the error if needed
-        let errorExplanation = "";
-        if (result.error) {
-          errorExplanation = explainVerificationError(result.logs);
-        }
-        
-        return res.json({
-          verificationLogs: result.logs,
-          returnCode: result.returnCode,
-          contractAddresses: result.contractAddresses,
-          error: result.error,
-          errorExplanation,
-          status,
-          updatedAt,
-          submissionId
-        });
-      } else {
-        return res.json({
-          error: "No verification logs found",
-          verificationLogs: "Verification has not been run yet.",
-          status: "pending",
-          submissionId
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching verification logs:', error);
-      return res.status(500).json({ 
-        message: "Failed to fetch verification logs",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
     }
   });
 

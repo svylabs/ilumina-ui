@@ -420,7 +420,20 @@ Current analysis step: ${context?.analysisStep || 'Unknown'}`;
         
         // If we have submission logs, include them to help answer the question
         if (context.projectMetadata.submissionLogs) {
-          systemPrompt += `\n\nHere are relevant logs and data from the submission that may help answer the question:\n\n${context.projectMetadata.submissionLogs}\n\nUse the above information to help answer questions if relevant. If the information doesn't directly address the user's question, use your knowledge to provide a helpful response.`;
+          // Special handling for verification logs vs regular logs
+          const isVerificationLog = context.analysisStep === 'verify_deployment_script';
+          const logHeading = isVerificationLog 
+            ? '\n\nHere are the verification logs that may help answer the question:'
+            : '\n\nHere are relevant logs and data from the submission that may help answer the question:';
+          
+          systemPrompt += logHeading + `\n\n${context.projectMetadata.submissionLogs}`;
+          
+          // Add a reminder about how to interpret the logs if this is a verification step
+          if (isVerificationLog) {
+            systemPrompt += '\n\nNOTE: Verification logs format: [returnCode, contractAddressMapping, stdout, stderr]. The returnCode 0 indicates success, any other value indicates an error. Look for error patterns in the logs such as compiler errors, duplicate declarations, etc.';
+          }
+          
+          systemPrompt += '\n\nUse the above information to help answer questions if relevant. If the information doesn\'t directly address the user\'s question, use your knowledge to provide a helpful response.';
         }
       }
     }
