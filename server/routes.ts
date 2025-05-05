@@ -233,6 +233,8 @@ export function registerRoutes(app: Express): Server {
       let projectDetails: any = {};
       let submission: any = null;
       
+      let sectionData: any = null;
+
       if (projectId) {
         try {
           // Fetch project data
@@ -259,6 +261,39 @@ export function registerRoutes(app: Express): Server {
             if (submissionData.length > 0) {
               submission = submissionData[0];
               console.log(`Found submission ${submission.id} for project ${projectId}`);
+              
+              // Fetch section data from analysis steps if available
+              if (section) {
+                try {
+                  // Map section names to step IDs
+                  const sectionToStepMap: Record<string, string> = {
+                    'project_summary': 'files',
+                    'actor_summary': 'actors',
+                    'deployment_instructions': 'deployment',
+                    'test_setup': 'test_setup',
+                    'simulations': 'simulations'
+                  };
+                  
+                  const stepId = sectionToStepMap[section] || null;
+                  
+                  if (stepId) {
+                    const analysisStepData = await db
+                      .select()
+                      .from(analysisSteps)
+                      .where(eq(analysisSteps.submissionId, submission.id))
+                      .where(eq(analysisSteps.stepId, stepId as any))
+                      .limit(1);
+                      
+                    if (analysisStepData.length > 0 && analysisStepData[0].jsonData) {
+                      console.log(`Found section data for ${section}`);
+                      sectionData = analysisStepData[0].jsonData;
+                    }
+                  }
+                } catch (sectionDataError) {
+                  console.error(`Error fetching section data for ${section}:`, sectionDataError);
+                  // Continue without section data
+                }
+              }
             }
           }
         } catch (error) {

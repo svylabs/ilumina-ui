@@ -195,9 +195,9 @@ export async function generateChecklist(
       return "I couldn't find any recent user messages to summarize.";
     }
     
-    // Initialize Google's Generative AI with API key
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    // Use the already initialized model from the top of the file
+    // This ensures we're using the latest gemini-2.0-flash model
+    // which is more capable of processing longer conversation histories
     
     // Create a prompt that includes section data as context when available
     let sectionContext = '';
@@ -238,8 +238,14 @@ ${sectionContext}
 Full conversation history:\n${conversationHistory}\n
 Respond ONLY with the checklist summary, no preamble or additional explanations.`;
     
-    const result = await model.generateContent(checklistPrompt);
-    return result.response.text();
+    // Start a chat session with the already initialized model from the top of the file
+    const chat = model.startChat();
+    
+    // Send the checklist prompt to get a response
+    const result = await chat.sendMessage(checklistPrompt);
+    const response = result.response.text();
+    
+    return response;
   } catch (error) {
     console.error('Error generating checklist from user request:', error);
     return "Here's a summary of what you're asking for:\n\n- Process your request (I couldn't generate a detailed checklist due to a technical issue)";
