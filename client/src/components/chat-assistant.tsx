@@ -7,11 +7,19 @@ import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
+type Classification = {
+  step: string;
+  action: string;
+  confidence: number;
+  actionTaken: boolean;
+};
+
 type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  classification?: Classification;
 };
 
 type ChatAssistantProps = {
@@ -76,16 +84,32 @@ export default function ChatAssistant({
 
       const data = await response.json();
 
-      // Create the assistant message
+      // Create the assistant message with classification metadata if available
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: data.response,
         timestamp: new Date(),
+        classification: data.classification ? {
+          step: data.classification.step,
+          action: data.classification.action,
+          confidence: data.classification.confidence,
+          actionTaken: data.classification.actionTaken
+        } : undefined
       };
 
       // Add the assistant message to the messages list
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // If an action was taken, we might want to refresh the current page
+      // to show updated content after a brief delay
+      if (data.classification?.actionTaken) {
+        setTimeout(() => {
+          // Use window.location.reload() to refresh the page after a delay
+          // This will ensure that any updated content from the external API is displayed
+          window.location.reload();
+        }, 5000); // Give the external API some time to process
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({

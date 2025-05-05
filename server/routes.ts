@@ -10,7 +10,7 @@ import { eq, sql, desc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { analysisSteps } from "@db/schema";
-import { generateChatResponse } from "./gemini";
+import { generateChatResponse, classifyUserRequest } from "./gemini";
 
 // Define the type for analysis step status
 type AnalysisStepStatus = {
@@ -124,7 +124,7 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
-  // AI Assistant chat endpoint
+  // AI Assistant chat endpoint with request classification and action handling
   app.post("/api/assistant/chat", async (req, res) => {
     try {
       const { messages, projectId, section, analysisStep } = req.body;
@@ -133,10 +133,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Messages are required and must be an array" });
       }
       
+      // Extract the latest user message for classification
+      const latestUserMessage = messages[messages.length - 1];
+      if (latestUserMessage.role !== 'user') {
+        return res.status(400).json({ error: "The last message must be from the user" });
+      }
+      
       // Get project details if projectId is provided
       let projectDetails: any = {};
+      let submission: any = null;
+      
       if (projectId) {
         try {
+          // Fetch project data
           const projectData = await db
             .select()
             .from(projects)
@@ -148,23 +157,138 @@ export function registerRoutes(app: Express): Server {
               projectName: projectData[0].name,
               githubUrl: projectData[0].githubUrl
             };
+            
+            // Find the latest submission for this project
+            const submissionData = await db
+              .select()
+              .from(submissions)
+              .where(eq(submissions.projectId, parseInt(projectId)))
+              .orderBy(desc(submissions.createdAt))
+              .limit(1);
+              
+            if (submissionData.length > 0) {
+              submission = submissionData[0];
+              console.log(`Found submission ${submission.id} for project ${projectId}`);
+            }
           }
         } catch (error) {
-          console.error("Error fetching project details:", error);
+          console.error("Error fetching project or submission details:", error);
         }
       }
       
-      // Call Gemini to generate a response
-      const response = await generateChatResponse(messages, {
+      // 1. Classify the user request to determine step and action
+      console.log(`Classifying user request: "${latestUserMessage.content.substring(0, 100)}..."`);
+      const classification = await classifyUserRequest(latestUserMessage.content, {
         projectName: projectDetails.projectName,
         section,
-        analysisStep,
+        currentStep: analysisStep
+      });
+      
+      console.log(`Request classified as step: ${classification.step}, action: ${classification.action}, confidence: ${classification.confidence}`);
+      
+      let actionTaken = false;
+      let actionResponse = '';
+      
+      // 2. Take appropriate action based on classification if confidence is high enough
+      if (classification.confidence >= 0.7 && submission) {
+        // Get the UUID submission ID to use with external API
+        const uuidSubmissionId = submission.id;
+        
+        if (classification.action === 'refine') {
+          // Handle refine action based on step
+          if (classification.step === 'analyze_project') {
+            try {
+              console.log(`Taking REFINE action for ANALYZE_PROJECT step`);
+              const response = await callExternalIluminaAPI(`/refine/project_summary/${uuidSubmissionId}`, 'POST', {
+                prompt: latestUserMessage.content
+              });
+              
+              if (response.ok) {
+                actionTaken = true;
+                actionResponse = 'I\'ve requested a refinement of the project summary based on your feedback. The updated analysis should be available shortly.';
+              } else {
+                console.error(`Failed to refine project summary: ${response.status} ${response.statusText}`);
+              }
+            } catch (error) {
+              console.error('Error refining project summary:', error);
+            }
+          } else if (classification.step === 'analyze_actors') {
+            try {
+              console.log(`Taking REFINE action for ANALYZE_ACTORS step`);
+              const response = await callExternalIluminaAPI(`/refine/actors_summary/${uuidSubmissionId}`, 'POST', {
+                prompt: latestUserMessage.content
+              });
+              
+              if (response.ok) {
+                actionTaken = true;
+                actionResponse = 'I\'ve requested a refinement of the actors analysis based on your feedback. The updated analysis should be available shortly.';
+              } else {
+                console.error(`Failed to refine actors summary: ${response.status} ${response.statusText}`);
+              }
+            } catch (error) {
+              console.error('Error refining actors summary:', error);
+            }
+          } else if (classification.step === 'analyze_deployment') {
+            try {
+              console.log(`Taking REFINE action for ANALYZE_DEPLOYMENT step`);
+              const response = await callExternalIluminaAPI(`/refine/deployment_instructions/${uuidSubmissionId}`, 'POST', {
+                prompt: latestUserMessage.content
+              });
+              
+              if (response.ok) {
+                actionTaken = true;
+                actionResponse = 'I\'ve requested a refinement of the deployment instructions based on your feedback. The updated instructions should be available shortly.';
+              } else {
+                console.error(`Failed to refine deployment instructions: ${response.status} ${response.statusText}`);
+              }
+            } catch (error) {
+              console.error('Error refining deployment instructions:', error);
+            }
+          }
+        } else if (classification.action === 'run' && classification.step === 'verify_deployment_script') {
+          try {
+            console.log(`Taking RUN action for VERIFY_DEPLOYMENT_SCRIPT step`);
+            const response = await callExternalIluminaAPI(`/verify/deployment_script/${uuidSubmissionId}`, 'POST');
+            
+            if (response.ok) {
+              actionTaken = true;
+              actionResponse = 'I\'ve initiated verification of the deployment script. Please wait while it runs and the results will be displayed once complete.';
+            } else {
+              console.error(`Failed to verify deployment script: ${response.status} ${response.statusText}`);
+            }
+          } catch (error) {
+            console.error('Error verifying deployment script:', error);
+          }
+        }
+      }
+      
+      // 3. Generate a chat response regardless of whether an action was taken
+      const chatResponse = await generateChatResponse(messages, {
+        projectName: projectDetails.projectName,
+        section,
+        analysisStep: classification.step !== 'unknown' ? classification.step : analysisStep,
         projectMetadata: {
-          githubUrl: projectDetails.githubUrl
+          githubUrl: projectDetails.githubUrl,
+          classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`
         }
       });
       
-      return res.json({ response });
+      // 4. Prepare the final response, including info about any action taken
+      let finalResponse = chatResponse;
+      if (actionTaken && actionResponse) {
+        finalResponse = `${actionResponse}\n\n${chatResponse}`;
+      }
+      
+      // 5. Return the response with classification metadata
+      return res.json({ 
+        response: finalResponse,
+        classification: {
+          step: classification.step,
+          action: classification.action,
+          confidence: classification.confidence,
+          actionTaken: actionTaken
+        }
+      });
     } catch (error) {
       console.error("Error in assistant chat endpoint:", error);
       return res.status(500).json({ 

@@ -32,10 +32,140 @@ const model = genAI.getGenerativeModel({
   ],
 });
 
+// Create a separate model for request classification to keep it isolated
+const classificationModel = genAI.getGenerativeModel({
+  model: 'gemini-2.0-flash',
+  safetySettings: [
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+  ],
+});
+
 type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
 };
+
+// The defined analysis steps that we support
+export type AnalysisStep = 
+  | 'analyze_actors' 
+  | 'analyze_project' 
+  | 'analyze_deployment' 
+  | 'implement_deployment_script' 
+  | 'verify_deployment_script' 
+  | 'unknown';
+
+// The actions that can be taken based on the request
+export type RequestAction = 
+  | 'refine' 
+  | 'clarify' 
+  | 'update' 
+  | 'run' 
+  | 'unknown';
+
+// Result of request classification
+export type ClassificationResult = {
+  step: AnalysisStep;
+  action: RequestAction;
+  confidence: number;
+  explanation: string;
+};
+
+// Function to classify a user request
+export async function classifyUserRequest(
+  userMessage: string,
+  context?: {
+    projectName?: string;
+    section?: string;
+    currentStep?: string;
+  }
+): Promise<ClassificationResult> {
+  try {
+    const classificationPrompt = `
+    You are a blockchain analysis assistant that classifies user requests into specific steps and actions.
+
+    STEPS (choose one):
+    - analyze_actors: Request about actors in the smart contract, their roles, permissions, or interactions
+    - analyze_project: Request about the overall project, its purpose, architecture, or general questions
+    - analyze_deployment: Request about deployment of smart contracts, deployment strategy or infrastructure
+    - implement_deployment_script: Request about the deployment script implementation itself
+    - verify_deployment_script: Request to verify, validate, or run the deployment script
+    - unknown: If the request doesn't clearly fit into any of the above steps
+
+    ACTIONS (choose one):
+    - refine: User wants to refine or improve some aspect of the analysis
+    - clarify: User is asking for clarification or explanation
+    - update: User is providing additional information to update the context
+    - run: User wants to execute or run something (like a verification)
+    - unknown: If the action isn't clear
+
+    Project context: ${context?.projectName || 'Unknown'}
+    Current section: ${context?.section || 'Unknown'}
+    Current step: ${context?.currentStep || 'Unknown'}
+
+    USER REQUEST: "${userMessage}"
+
+    Analyze this request and respond with ONLY a JSON object in this exact format:
+    {
+      "step": "[one of the STEPS above]",
+      "action": "[one of the ACTIONS above]", 
+      "confidence": [number between 0 and 1],
+      "explanation": "[brief explanation of your classification]"
+    }
+    `;
+
+    const result = await classificationModel.generateContent(classificationPrompt);
+    const resultText = result.response.text();
+    
+    // Extract JSON from the response (in case the model includes any other text)
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('Could not extract JSON from classification response:', resultText);
+      return { 
+        step: 'unknown', 
+        action: 'unknown',
+        confidence: 0,
+        explanation: 'Failed to classify request'
+      };
+    }
+    
+    try {
+      const classification = JSON.parse(jsonMatch[0]) as ClassificationResult;
+      console.log('Request classification:', classification);
+      return classification;
+    } catch (parseError) {
+      console.error('Error parsing classification JSON:', parseError);
+      return { 
+        step: 'unknown', 
+        action: 'unknown',
+        confidence: 0,
+        explanation: 'Failed to parse classification'
+      };
+    }
+  } catch (error) {
+    console.error('Error classifying user request:', error);
+    return { 
+      step: 'unknown', 
+      action: 'unknown',
+      confidence: 0,
+      explanation: 'Error during classification'
+    };
+  }
+}
 
 // Function to generate a chat response
 export async function generateChatResponse(
