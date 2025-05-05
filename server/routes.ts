@@ -188,105 +188,119 @@ export function registerRoutes(app: Express): Server {
       
       let actionTaken = false;
       let actionResponse = '';
+      let needsConfirmation = false;
+      let contextSummary = '';
       
-      // 2. Take appropriate action based on classification if confidence is high enough
-      if (classification.confidence >= 0.7 && submission) {
+      // Check if this message is confirming a previous action request
+      const isConfirmation = messages.length > 2 && 
+                           messages[messages.length - 2].role === 'assistant' && 
+                           messages[messages.length - 2].content.includes('confirm') &&
+                           (latestUserMessage.content.toLowerCase().includes('yes') || 
+                            latestUserMessage.content.toLowerCase().includes('proceed') || 
+                            latestUserMessage.content.toLowerCase().includes('confirm'));
+      
+      // Collect all user messages to form context
+      contextSummary = messages
+        .filter(m => m.role === 'user')
+        .map(m => m.content)
+        .join('\n\n');
+      
+      // 2. Take appropriate action based on classification if confidence is high enough and user confirmed
+      if (classification.confidence >= 0.7 && submission && isConfirmation) {
         // Get the UUID submission ID to use with external API
         const uuidSubmissionId = submission.id;
         
-        if (classification.action === 'refine') {
-          // Handle refine action based on step
-          if (classification.step === 'analyze_project') {
-            try {
-              console.log(`Taking REFINE action for ANALYZE_PROJECT step`);
-              const response = await callExternalIluminaAPI(`/refine/project_summary/${uuidSubmissionId}`, 'POST', {
-                prompt: latestUserMessage.content
-              });
-              
-              if (response.ok) {
-                actionTaken = true;
-                actionResponse = 'I\'ve requested a refinement of the project summary based on your feedback. The updated analysis should be available shortly.';
-              } else {
-                console.error(`Failed to refine project summary: ${response.status} ${response.statusText}`);
-              }
-            } catch (error) {
-              console.error('Error refining project summary:', error);
-            }
-          } else if (classification.step === 'analyze_actors') {
-            try {
-              console.log(`Taking REFINE action for ANALYZE_ACTORS step`);
-              const response = await callExternalIluminaAPI(`/refine/actors_summary/${uuidSubmissionId}`, 'POST', {
-                prompt: latestUserMessage.content
-              });
-              
-              if (response.ok) {
-                actionTaken = true;
-                actionResponse = 'I\'ve requested a refinement of the actors analysis based on your feedback. The updated analysis should be available shortly.';
-              } else {
-                console.error(`Failed to refine actors summary: ${response.status} ${response.statusText}`);
-              }
-            } catch (error) {
-              console.error('Error refining actors summary:', error);
-            }
-          } else if (classification.step === 'analyze_deployment') {
-            try {
-              console.log(`Taking REFINE action for ANALYZE_DEPLOYMENT step`);
-              const response = await callExternalIluminaAPI(`/refine/deployment_instructions/${uuidSubmissionId}`, 'POST', {
-                prompt: latestUserMessage.content
-              });
-              
-              if (response.ok) {
-                actionTaken = true;
-                actionResponse = 'I\'ve requested a refinement of the deployment instructions based on your feedback. The updated instructions should be available shortly.';
-              } else {
-                console.error(`Failed to refine deployment instructions: ${response.status} ${response.statusText}`);
-              }
-            } catch (error) {
-              console.error('Error refining deployment instructions:', error);
-            }
-          }
-        } else if (classification.action === 'run' && classification.step === 'verify_deployment_script') {
+        // Valid steps for API calls
+        const validSteps = [
+          'analyze_project', 
+          'analyze_actors', 
+          'analyze_deployment', 
+          'implement_deployment_script', 
+          'verify_deployment_script'
+        ];
+        
+        if (validSteps.includes(classification.step)) {
           try {
-            console.log(`Taking RUN action for VERIFY_DEPLOYMENT_SCRIPT step`);
-            const response = await callExternalIluminaAPI(`/verify/deployment_script/${uuidSubmissionId}`, 'POST');
+            console.log(`Taking action for ${classification.step} with the uniform /analyze API endpoint`);
+            const response = await callExternalIluminaAPI('/analyze', 'POST', {
+              submission_id: uuidSubmissionId,
+              step: classification.step,
+              user_prompt: contextSummary
+            });
             
             if (response.ok) {
               actionTaken = true;
-              actionResponse = 'I\'ve initiated verification of the deployment script. Please wait while it runs and the results will be displayed once complete.';
+              
+              // Set appropriate success messages based on the action and step
+              if (classification.action === 'refine') {
+                if (classification.step === 'analyze_project') {
+                  actionResponse = 'I\'ve requested a refinement of the project summary based on your feedback. The updated analysis should be available shortly.';
+                } else if (classification.step === 'analyze_actors') {
+                  actionResponse = 'I\'ve requested a refinement of the actors analysis based on your feedback. The updated analysis should be available shortly.';
+                } else if (classification.step === 'analyze_deployment') {
+                  actionResponse = 'I\'ve requested a refinement of the deployment instructions based on your feedback. The updated instructions should be available shortly.';
+                } else if (classification.step === 'implement_deployment_script') {
+                  actionResponse = 'I\'ve requested an update to the deployment script implementation based on your feedback. The updated script should be available shortly.';
+                }
+              } else if (classification.action === 'run' && classification.step === 'verify_deployment_script') {
+                actionResponse = 'I\'ve initiated verification of the deployment script. Please wait while it runs and the results will be displayed once complete.';
+              }
             } else {
-              console.error(`Failed to verify deployment script: ${response.status} ${response.statusText}`);
+              console.error(`Failed to execute ${classification.action} for ${classification.step}: ${response.status} ${response.statusText}`);
             }
           } catch (error) {
-            console.error('Error verifying deployment script:', error);
+            console.error(`Error executing action for ${classification.step}:`, error);
           }
         }
+      } else if (classification.confidence >= 0.7 && submission && !isConfirmation) {
+        // If we have high confidence but no confirmation yet, set the needsConfirmation flag
+        needsConfirmation = true;
       }
       
-      // 3. Generate a chat response regardless of whether an action was taken
-      const chatResponse = await generateChatResponse(messages, {
-        projectName: projectDetails.projectName,
-        section,
-        analysisStep: classification.step !== 'unknown' ? classification.step : analysisStep,
-        projectMetadata: {
-          githubUrl: projectDetails.githubUrl,
-          classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`
-        }
-      });
+      // 3. Generate a chat response based on the situation
+      let finalResponse;
       
-      // 4. Prepare the final response, including info about any action taken
-      let finalResponse = chatResponse;
-      if (actionTaken && actionResponse) {
-        finalResponse = `${actionResponse}\n\n${chatResponse}`;
+      if (needsConfirmation) {
+        // Generate a confirmation message for the user
+        const action = classification.action === 'refine' ? 'refine' :
+                      classification.action === 'update' ? 'update' :
+                      classification.action === 'run' ? 'run verification for' : 'clarify';
+        
+        const step = classification.step === 'analyze_project' ? 'project summary' :
+                    classification.step === 'analyze_actors' ? 'actors analysis' :
+                    classification.step === 'analyze_deployment' ? 'deployment instructions' :
+                    classification.step === 'implement_deployment_script' ? 'deployment script' :
+                    classification.step === 'verify_deployment_script' ? 'script verification' : 'analysis';
+        
+        finalResponse = `Based on your request, I understand you want to ${action} the ${step}. ` +
+                      `Before I proceed, can you confirm this is what you want to do? I will call the external API to update this section based on your feedback.`;
+      } else {
+        // Otherwise, generate a normal response via Gemini
+        const chatResponse = await generateChatResponse(messages, {
+          projectName: projectDetails.projectName,
+          section,
+          analysisStep: classification.step !== 'unknown' ? classification.step : analysisStep,
+          projectMetadata: {
+            githubUrl: projectDetails.githubUrl,
+            classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`
+          }
+        });
+        
+        // Include action status in the response if an action was taken
+        finalResponse = actionTaken && actionResponse ? 
+          `${actionResponse}\n\n${chatResponse}` : chatResponse;
       }
       
-      // 5. Return the response with classification metadata
+      // 5. Return the response with classification metadata and confirmation status
       return res.json({ 
         response: finalResponse,
         classification: {
           step: classification.step,
           action: classification.action,
           confidence: classification.confidence,
-          actionTaken: actionTaken
+          actionTaken: actionTaken,
+          needsConfirmation: needsConfirmation,
+          contextSummary: contextSummary
         }
       });
     } catch (error) {
