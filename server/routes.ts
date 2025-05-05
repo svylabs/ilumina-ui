@@ -465,10 +465,17 @@ export function registerRoutes(app: Express): Server {
             console.error(`Error executing action for ${classification.step}:`, error);
           }
         }
-      } else if (classification.confidence >= 0.7 && submission && !isPositiveConfirmation && !isRejection && classification.isActionable) {
-        // If we have high confidence but no confirmation yet, set the needsConfirmation flag
-        // But only if this is an actionable request (not just asking for information)
-        needsConfirmation = true;
+      } else if (classification.confidence >= 0.7 && submission && !isPositiveConfirmation && !isRejection) {
+        // Only set needsConfirmation if:
+        // 1. The request is actionable (requiring changes)
+        // 2. We have sufficient information to take action
+        // 3. The request is not asking for more information or guidance
+        
+        if (classification.isActionable && classification.action !== 'needs_followup') {
+          // For refine/update/run actions, we need to confirm first
+          needsConfirmation = true;
+        }
+        // For needs_followup or clarify actions, we should provide information instead of asking for confirmation
       }
       
       // 3. Generate a chat response based on the situation
@@ -978,6 +985,7 @@ export function registerRoutes(app: Express): Server {
             githubUrl: projectDetails.githubUrl,
             classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`,
             isInformational: !classification.isActionable, // Flag to indicate whether this is just a question
+            needsGuidance: classification.action === 'needs_followup', // Flag to indicate user is asking for guidance
             submissionLogs: submissionLogs, // Include relevant logs to help answer questions
             submissionId: submission?.id || null
           }

@@ -75,6 +75,7 @@ export type RequestAction =
   | 'clarify' 
   | 'update' 
   | 'run' 
+  | 'needs_followup' 
   | 'unknown';
 
 // The type of conversation continuation
@@ -121,9 +122,10 @@ export async function classifyUserRequest(
 
     ACTIONS (choose one):
     - refine: User wants to refine or improve some aspect of the analysis
-    - clarify: User is asking for clarification or explanation
+    - clarify: User is asking for clarification or explanation about existing content
     - update: User is providing additional information to update the context
     - run: User wants to execute or run something (like a verification)
+    - needs_followup: User is asking about how to do something or asking for guidance/next steps
     - unknown: If the action isn't clear
     
     IS_ACTIONABLE:
@@ -416,7 +418,13 @@ Current analysis step: ${context?.analysisStep || 'Unknown'}`;
       
       // For informational requests, add specific instructions
       if (context.projectMetadata.isInformational) {
-        systemPrompt += `\n\nIMPORTANT: This is an informational request, not a request for action. \nThe user is asking for information, explanation, or clarification. \nRespond in a direct, clear manner without using a checklist format. \nDo not ask if the user wants to proceed with any changes.`;
+        // If it's a specific guidance request (needs_followup classification)
+        if (context.projectMetadata.needsGuidance) {
+          systemPrompt += `\n\nIMPORTANT: This is a guidance request. \nThe user is asking for guidance on how to do something or what steps to take next. \nProvide helpful, step-by-step instructions or guidance on how to proceed. \nBe clear, thorough, and actionable in your guidance. \nIf there are multiple approaches, explain the trade-offs of each approach. \nDo not ask if the user wants to proceed with any changes.`;
+        } else {
+          // Regular informational requests
+          systemPrompt += `\n\nIMPORTANT: This is an informational request, not a request for action. \nThe user is asking for information, explanation, or clarification. \nRespond in a direct, clear manner without using a checklist format. \nDo not ask if the user wants to proceed with any changes.`;
+        }
         
         // If we have submission logs, include them to help answer the question
         if (context.projectMetadata.submissionLogs) {
