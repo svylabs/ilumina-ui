@@ -552,12 +552,13 @@ export function registerRoutes(app: Express): Server {
           `${actionResponse}\n\n${chatResponse}` : chatResponse;
       }
       
+      // Generate or use the conversation ID for this interaction
+      // Determine which conversation ID to use for all subsequent operations
+      const finalConversationId = currentConversationId || conversationId || crypto.randomUUID();
+      console.log(`Using conversation ID: ${finalConversationId}`);
+      
       // Store the message in the database for persistence
       try {
-        // Generate a new conversation ID if not provided
-        const messageConversationId = conversationId || crypto.randomUUID();
-        console.log(`Using conversation ID: ${messageConversationId}`);
-        
         // Save the user message
         await db.insert(chatMessages).values({
           submissionId: submission.id,
@@ -565,7 +566,7 @@ export function registerRoutes(app: Express): Server {
           content: latestUserMessage.content,
           timestamp: new Date(),
           section: section || 'general',
-          conversationId: messageConversationId
+          conversationId: finalConversationId
         });
         
         // Save the assistant response with classification data
@@ -577,7 +578,7 @@ export function registerRoutes(app: Express): Server {
           classification: classification,
           actionTaken: actionTaken,
           section: section || 'general',
-          conversationId: messageConversationId
+          conversationId: finalConversationId
         });
       } catch (dbError) {
         console.error('Error saving chat messages to database:', dbError);
@@ -585,12 +586,10 @@ export function registerRoutes(app: Express): Server {
       }
 
       // 5. Return the response with classification metadata, confirmation status, and conversation ID
-      // Use the messageConversationId we determined above to maintain conversation continuity
-      const responseConversationId = messageConversationId || conversationId || crypto.randomUUID();
       
       return res.json({ 
         response: finalResponse,
-        conversationId: responseConversationId,
+        conversationId: finalConversationId,
         classification: {
           step: classification.step,
           action: classification.action,
