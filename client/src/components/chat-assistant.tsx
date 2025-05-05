@@ -333,13 +333,36 @@ export default function ChatAssistant({
       // Check if the request is actionable based on the classification from the server
       const isActionable = data.classification?.isActionable === true;
       
-      // If the response has a checklist format but is not actionable, transform it to a regular response
+      // If the response has a checklist format but is not actionable, completely transform it to a regular response
       if (hasServerGeneratedChecklist && !isActionable) {
         console.log('Removing checklist format from non-actionable response');
-        // Keep the content but remove the checklist headers and "Would you like to proceed" question
-        content = content
-          .replace("Here's a summary of what you're asking for:\n\n", "")
-          .replace("\nWould you like me to proceed with these changes?", "");
+        
+        // Extract just the bullet points without the checklist format or confirmation question
+        const bulletPoints = content.match(/- (.+)/g);
+        
+        if (bulletPoints && bulletPoints.length > 0) {
+          // Get the actual information without checklist formatting
+          // and compose a more natural response
+          const taskDescription = bulletPoints
+            .map(point => point.replace('- ', ''))
+            .join(' ');
+            
+          // Based on the question/command type, format an appropriate response
+          if (inputValue.toLowerCase().startsWith('what') || 
+              inputValue.toLowerCase().startsWith('explain') || 
+              inputValue.toLowerCase().startsWith('tell me') || 
+              inputValue.toLowerCase().startsWith('can you tell')) {
+            content = taskDescription.charAt(0).toUpperCase() + taskDescription.slice(1) + '.';
+          } else {
+            content = `I'm happy to help with that. ${taskDescription.charAt(0).toUpperCase() + taskDescription.slice(1)}.`;
+          }
+        } else {
+          // Fallback if we can't extract bullet points
+          content = content
+            .replace("Here's a summary of what you're asking for:\n\n", "")
+            .replace("\nWould you like me to proceed with these changes?", "")
+            .replace("\nWould you like me to proceed?", "");
+        }
       }
       
       // Don't require confirmation for clarification/explanation requests or non-actionable requests

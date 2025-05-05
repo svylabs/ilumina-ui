@@ -464,8 +464,9 @@ export function registerRoutes(app: Express): Server {
             console.error(`Error executing action for ${classification.step}:`, error);
           }
         }
-      } else if (classification.confidence >= 0.7 && submission && !isPositiveConfirmation && !isRejection) {
+      } else if (classification.confidence >= 0.7 && submission && !isPositiveConfirmation && !isRejection && classification.isActionable) {
         // If we have high confidence but no confirmation yet, set the needsConfirmation flag
+        // But only if this is an actionable request (not just asking for information)
         needsConfirmation = true;
       }
       
@@ -543,7 +544,8 @@ export function registerRoutes(app: Express): Server {
           analysisStep: classification.step !== 'unknown' ? classification.step : analysisStep,
           projectMetadata: {
             githubUrl: projectDetails.githubUrl,
-            classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`
+            classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`,
+            isInformational: !classification.isActionable // Flag to indicate whether this is just a question
           }
         });
         
