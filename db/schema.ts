@@ -148,7 +148,7 @@ export const chatMessages = pgTable("chat_messages", {
   classification: jsonb("classification"), // Store step, action, confidence, etc.
   actionTaken: boolean("action_taken").default(false),
   section: text("section").default("general"),
-  conversationId: text("conversation_id")
+  conversationId: text("conversation_id").notNull() // Unique ID for each conversation session
 });
 
 // New table to store project files data
