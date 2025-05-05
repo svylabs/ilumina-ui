@@ -596,7 +596,8 @@ export function registerRoutes(app: Express): Server {
           confidence: classification.confidence,
           actionTaken: actionTaken,
           needsConfirmation: needsConfirmation,
-          contextSummary: contextSummary
+          contextSummary: contextSummary,
+          isActionable: classification.isActionable || false // Include isActionable flag from classification
         }
       });
     } catch (error) {

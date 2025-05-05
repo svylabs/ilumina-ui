@@ -14,6 +14,7 @@ type Classification = {
   actionTaken: boolean;
   needsConfirmation?: boolean;
   contextSummary?: string;
+  isActionable?: boolean; // Whether the request requires action vs just answering a question
 };
 
 type Message = {
@@ -328,9 +329,13 @@ export default function ChatAssistant({
       const isExemptAction = data.classification && 
           actionsExemptFromChecklist.includes(data.classification.action);
       
-      // Don't require confirmation for clarification or explanation requests
+      // Check if the request is actionable based on the classification from the server
+      const isActionable = data.classification?.isActionable === true;
+      
+      // Don't require confirmation for clarification/explanation requests or non-actionable requests
       const needsUserConfirmation = isSignificantAction && 
           !isExemptAction &&
+          isActionable && // Only require confirmation for actionable requests
           !inputValue.toLowerCase().includes('yes') && 
           !inputValue.toLowerCase().includes('proceed') &&
           !data.classification?.actionTaken;
