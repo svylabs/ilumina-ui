@@ -1937,9 +1937,9 @@ export default function AnalysisPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">{project?.name || "Project"} Simulation</h1>
-                {project?.githubUrl && (
-                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mt-1 text-sm">
-                    {project.githubUrl}
+                {analysis?.submissionId && (
+                  <a href={`https://github.com/${simRepo?.owner}/${simRepo?.repo}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mt-1 text-sm">
+                    https://github.com/{simRepo?.owner}/{simRepo?.repo}
                   </a>
                 )}
               </div>
