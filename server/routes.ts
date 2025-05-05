@@ -1,16 +1,24 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { db, pool } from "@db";
 import { 
   submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
-  pricingPlans, planFeatures, teams, teamMembers, teamInvitations
+  pricingPlans, planFeatures, teams, teamMembers, teamInvitations,
+  chatMessages, analysisSteps
 } from "@db/schema";
-import { eq, sql, desc, and, or } from "drizzle-orm";
+import { eq, sql, desc, asc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import { analysisSteps } from "@db/schema";
 import { generateChatResponse, classifyUserRequest } from "./gemini";
+
+// Authentication middleware
+function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  return res.status(401).json({ error: "Not authenticated" });
+}
 
 // Define the type for analysis step status
 type AnalysisStepStatus = {
@@ -123,6 +131,40 @@ async function getValidSubmissionId(idParam: string): Promise<{
 export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
+  
+  // Endpoint to get chat messages history
+  app.get("/api/chat/history/:submission_id", isAuthenticated, async (req, res) => {
+    try {
+      const submissionId = req.params.submission_id;
+      const section = req.query.section as string || 'general';
+      
+      // Validate submission access
+      const project = await db
+        .select()
+        .from(projects)
+        .innerJoin(submissions, eq(submissions.projectId, projects.id))
+        .where(eq(submissions.id, submissionId))
+        .where(eq(projects.userId, req.user!.id))
+        .limit(1);
+        
+      if (project.length === 0) {
+        return res.status(403).json({ error: "You don't have access to this submission" });
+      }
+
+      // Query for chat messages
+      const messages = await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.submissionId, submissionId))
+        .where(eq(chatMessages.section, section))
+        .orderBy(asc(chatMessages.timestamp));
+        
+      return res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      return res.status(500).json({ error: "Failed to fetch chat history" });
+    }
+  });
   
   // AI Assistant chat endpoint with request classification and action handling
   app.post("/api/assistant/chat", async (req, res) => {
@@ -336,6 +378,32 @@ export function registerRoutes(app: Express): Server {
           `${actionResponse}\n\n${chatResponse}` : chatResponse;
       }
       
+      // Store the message in the database for persistence
+      try {
+        // Save the user message
+        await db.insert(chatMessages).values({
+          submissionId: submission.id,
+          role: 'user',
+          content: latestUserMessage.content,
+          timestamp: new Date(),
+          section: section || 'general'
+        });
+        
+        // Save the assistant response with classification data
+        await db.insert(chatMessages).values({
+          submissionId: submission.id,
+          role: 'assistant',
+          content: finalResponse,
+          timestamp: new Date(),
+          classification: classification,
+          actionTaken: actionTaken,
+          section: section || 'general'
+        });
+      } catch (dbError) {
+        console.error('Error saving chat messages to database:', dbError);
+        // Continue even if there's an error saving to DB
+      }
+
       // 5. Return the response with classification metadata and confirmation status
       return res.json({ 
         response: finalResponse,

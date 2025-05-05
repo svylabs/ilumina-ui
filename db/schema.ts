@@ -138,6 +138,19 @@ export const simulationRuns = pgTable("simulation_runs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Table to store chat message history
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  submissionId: uuid("submission_id").notNull(),
+  role: text("role", { enum: ["user", "assistant"] }).notNull(),
+  content: text("content").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  classification: jsonb("classification"), // Store step, action, confidence, etc.
+  actionTaken: boolean("action_taken").default(false),
+  section: text("section").default("general"),
+  conversationId: text("conversation_id")
+});
+
 // New table to store project files data
 export const projectFiles = pgTable("project_files", {
   id: serial("id").primaryKey(),
@@ -193,6 +206,9 @@ export const selectPlanFeatureSchema = createSelectSchema(planFeatures);
 export const insertSimulationRunSchema = createInsertSchema(simulationRuns);
 export const selectSimulationRunSchema = createSelectSchema(simulationRuns);
 
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
+export const selectChatMessageSchema = createSelectSchema(chatMessages);
+
 export const insertProjectFilesSchema = createInsertSchema(projectFiles);
 export const selectProjectFilesSchema = createSelectSchema(projectFiles);
 
@@ -210,6 +226,8 @@ export type InsertSimulationRun = typeof simulationRuns.$inferInsert;
 export type SelectSimulationRun = typeof simulationRuns.$inferSelect;
 export type InsertProjectFiles = typeof projectFiles.$inferInsert;
 export type SelectProjectFiles = typeof projectFiles.$inferSelect;
+export type InsertChatMessage = typeof chatMessages.$inferInsert;
+export type SelectChatMessage = typeof chatMessages.$inferSelect;
 
 export const insertAnalysisStepSchema = createInsertSchema(analysisSteps);
 export const selectAnalysisStepSchema = createSelectSchema(analysisSteps);
