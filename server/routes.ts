@@ -428,13 +428,18 @@ export function registerRoutes(app: Express): Server {
       
       // Store the message in the database for persistence
       try {
+        // Generate a new conversation ID if not provided
+        const messageConversationId = conversationId || crypto.randomUUID();
+        console.log(`Using conversation ID: ${messageConversationId}`);
+        
         // Save the user message
         await db.insert(chatMessages).values({
           submissionId: submission.id,
           role: 'user',
           content: latestUserMessage.content,
           timestamp: new Date(),
-          section: section || 'general'
+          section: section || 'general',
+          conversationId: messageConversationId
         });
         
         // Save the assistant response with classification data
@@ -445,16 +450,18 @@ export function registerRoutes(app: Express): Server {
           timestamp: new Date(),
           classification: classification,
           actionTaken: actionTaken,
-          section: section || 'general'
+          section: section || 'general',
+          conversationId: messageConversationId
         });
       } catch (dbError) {
         console.error('Error saving chat messages to database:', dbError);
         // Continue even if there's an error saving to DB
       }
 
-      // 5. Return the response with classification metadata and confirmation status
+      // 5. Return the response with classification metadata, confirmation status, and conversation ID
       return res.json({ 
         response: finalResponse,
+        conversationId: conversationId || crypto.randomUUID(),
         classification: {
           step: classification.step,
           action: classification.action,

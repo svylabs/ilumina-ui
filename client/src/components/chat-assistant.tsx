@@ -28,17 +28,21 @@ type ChatAssistantProps = {
   projectId?: string | number;
   currentSection?: string;
   currentStep?: string;
+  submissionId?: string;
 };
 
 export default function ChatAssistant({
   projectId,
   currentSection,
   currentStep,
+  submissionId,
 }: ChatAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -48,6 +52,166 @@ export default function ChatAssistant({
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen]);
+  
+  // Create a new conversation session or load chat history when opening the chat
+  useEffect(() => {
+    const createConversationSession = async () => {
+      if (!isOpen || !projectId || loadingHistory) return;
+      
+      // If we already have a conversation ID, skip creating a new one
+      if (conversationId) {
+        await loadChatHistory();
+        return;
+      }
+      
+      try {
+        setLoadingHistory(true);
+        
+        // Get the submission ID from props or try to get it via project ID
+        const subId = submissionId || await getSubmissionIdFromProjectId();
+        if (!subId) {
+          // Add a greeting if we don't have a submission ID yet
+          if (messages.length === 0) {
+            setMessages([
+              {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
+                timestamp: new Date(),
+              },
+            ]);
+          }
+          return;
+        }
+        
+        // Create a new conversation session
+        const response = await apiRequest('POST', `/api/chat/session/${subId}`, {
+          section: currentSection || 'general'
+        });
+        
+        const data = await response.json();
+        console.log('Created new conversation session:', data.conversationId);
+        
+        // Store the conversation ID
+        setConversationId(data.conversationId);
+        
+        // Now load chat history with the new conversation ID
+        await loadChatHistory(data.conversationId);
+      } catch (error) {
+        console.error('Error creating conversation session:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to create a conversation session. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+    
+    // Function to get the submission ID from a project ID
+    const getSubmissionIdFromProjectId = async (): Promise<string | null> => {
+      if (!projectId) return null;
+      
+      try {
+        const response = await apiRequest('GET', `/api/project/${projectId}`);
+        const projectData = await response.json();
+        
+        // Find linked submissions
+        const submissionsResponse = await apiRequest('GET', `/api/project/${projectId}/submissions`);
+        const submissions = await submissionsResponse.json();
+        
+        if (submissions && submissions.length > 0) {
+          // Return the most recent submission ID
+          return submissions[0].id;
+        }
+      } catch (error) {
+        console.error('Error getting submission ID from project:', error);
+      }
+      
+      return null;
+    };
+    
+    // Function to load chat history
+    const loadChatHistory = async (sessionId?: string) => {
+      if (!projectId) return;
+      
+      try {
+        setLoadingHistory(true);
+        
+        // Get the submission ID from props or try to get it via project ID
+        const subId = submissionId || await getSubmissionIdFromProjectId();
+        if (!subId) return;
+        
+        const queryParams = new URLSearchParams({
+          section: currentSection || 'general'
+        });
+        
+        // Add conversation ID to query params if available
+        if (sessionId || conversationId) {
+          queryParams.append('conversationId', sessionId || conversationId!);
+        }
+        
+        // Fetch chat history
+        const response = await apiRequest('GET', `/api/chat/history/${subId}?${queryParams}`);
+        const historyMessages = await response.json();
+        
+        if (historyMessages && historyMessages.length > 0) {
+          // Transform API messages to our Message format
+          const formattedMessages = historyMessages.map((msg: any) => ({
+            id: crypto.randomUUID(),
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            classification: msg.classification ? {
+              step: msg.classification.step,
+              action: msg.classification.action,
+              confidence: msg.classification.confidence,
+              actionTaken: msg.classification.actionTaken,
+              needsConfirmation: msg.classification.needsConfirmation,
+              contextSummary: msg.classification.contextSummary
+            } : undefined
+          }));
+          
+          setMessages(formattedMessages);
+        } else if (messages.length === 0) {
+          // Add a greeting if we don't have any history
+          setMessages([
+            {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+        // Continue even if loading history fails, but show a toast
+        toast({
+          title: 'Error',
+          description: 'Failed to load chat history. Starting a new conversation.',
+          variant: 'destructive',
+        });
+        
+        // Add a greeting if loading history fails
+        if (messages.length === 0) {
+          setMessages([
+            {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+    
+    createConversationSession();
+  }, [isOpen, projectId, submissionId, conversationId, currentSection]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -82,9 +246,16 @@ export default function ChatAssistant({
         projectId,
         section: currentSection,
         analysisStep: currentStep,
+        conversationId: conversationId || undefined,  // Include conversationId if available
       });
 
       const data = await response.json();
+      
+      // If we received a conversation ID in the response, store it
+      if (data.conversationId && (!conversationId || data.conversationId !== conversationId)) {
+        console.log(`Received conversation ID from server: ${data.conversationId}`);
+        setConversationId(data.conversationId);
+      }
 
       // Create the assistant message with classification metadata if available
       const assistantMessage: Message = {
