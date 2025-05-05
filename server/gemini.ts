@@ -180,33 +180,33 @@ export async function generateChecklist(
   }
 ): Promise<string> {
   try {
-    // Use all messages to get the full conversation context
-    // But focus more on most recent messages
+    // Extract all user messages to understand the full context
+    const userMessages = allMessages.filter(msg => msg.role === 'user');
+    
+    if (userMessages.length === 0) {
+      return "I couldn't find any user messages to summarize.";
+    }
+    
+    // Format the full conversation history with roles for better context
     const conversationHistory = allMessages.map(msg => 
       `${msg.role.toUpperCase()}: ${msg.content}`
     ).join('\n');
     
-    // Get the most recent user message for specific context
-    const recentUserMessages = allMessages
-      .filter(msg => msg.role === 'user')
-      .slice(-3);
-    
-    if (recentUserMessages.length === 0) {
-      return "I couldn't find any recent user messages to summarize.";
-    }
-    
-    // Use the already initialized model from the top of the file
-    // This ensures we're using the latest gemini-2.0-flash model
-    // which is more capable of processing longer conversation histories
-    
-    // Create a prompt that includes section data as context when available
+    // Create a better structured section context when available
     let sectionContext = '';
     
+    // Try to extract structured data from the section context if available
     if (context?.section && context?.sectionData) {
       try {
-        // Include relevant section data as context
+        console.log('Section data available for checklist generation:', {
+          section: context.section,
+          hasData: !!context.sectionData,
+          dataKeys: context.sectionData ? Object.keys(context.sectionData) : []
+        });
+        
+        // Include relevant section data as context with proper formatting
         if (context.section === 'actor_summary' && context.sectionData.actors) {
-          sectionContext = `\nCurrent actors in system:\n`;
+          sectionContext = '\n\nCURRENT ACTORS IN SYSTEM:\n';
           
           if (Array.isArray(context.sectionData.actors)) {
             sectionContext += context.sectionData.actors
@@ -214,41 +214,72 @@ export async function generateChecklist(
               .join('\n');
           }
         } else if (context.section === 'project_summary' && context.sectionData.project_summary) {
-          sectionContext = `\nProject summary: ${context.sectionData.project_summary}`;
+          sectionContext = `\n\nCURRENT PROJECT SUMMARY:\n${context.sectionData.project_summary}`;
         } else if (context.section === 'deployment_instructions' && context.sectionData.deployment_instructions) {
-          sectionContext = `\nDeployment instructions available (not shown in full due to length).`;
+          // Extract just the beginning of deployment instructions to avoid too much text
+          const instructionsPreview = typeof context.sectionData.deployment_instructions === 'string' 
+            ? context.sectionData.deployment_instructions.substring(0, 200) + '...' 
+            : 'Available but not shown in full due to length';
+            
+          sectionContext = `\n\nCURRENT DEPLOYMENT INSTRUCTIONS PREVIEW:\n${instructionsPreview}`;
         }
       } catch (err) {
-        console.error('Error processing section data for summary:', err);
+        console.error('Error processing section data for checklist generation:', err);
         // Continue without section context if there's an error
       }
     }
     
-    // Create a prompt for the model with full conversation history
-    const checklistPrompt = `Given the following conversation, create a concise, bullet-point checklist that summarizes the user's most recent requests and intended actions. Focus on actionable items, especially from the most recent messages.
-
-Format it with a title 'Here's a summary of what you're asking me to do:' followed by bullet points using '- ' prefix.
-
-Submission ID: ${context?.submissionId || 'Unknown'}
-Current project: ${context?.projectName || 'Unknown'}
-Current section: ${context?.section || 'Unknown'}
-Current step: ${context?.analysisStep || 'Unknown'}
-${sectionContext}
-
-Full conversation history:\n${conversationHistory}\n
-Respond ONLY with the checklist summary, no preamble or additional explanations.`;
+    // Create an improved prompt that clearly guides the model to analyze the full conversation
+    const checklistPrompt = `
+    You are an expert assistant helping with blockchain smart contract analysis.
     
-    // Start a chat session with the already initialized model from the top of the file
+    TASK: Create a concise, actionable checklist that summarizes ALL the user's requests across the ENTIRE conversation history below.
+    
+    CONTEXT INFORMATION:
+    - Submission ID: ${context?.submissionId || 'Unknown'}
+    - Project: ${context?.projectName || 'Unknown'}
+    - Current section: ${context?.section || 'Unknown'}
+    - Current analysis step: ${context?.analysisStep || 'Unknown'}
+    ${sectionContext}
+    
+    IMPORTANT FORMATTING INSTRUCTIONS:
+    1. Start with the title "Here's a summary of what you're asking me to do:"
+    2. List each action as a bullet point with "- " prefix
+    3. Include ALL the user's requests and intended actions from the ENTIRE conversation
+    4. Respond ONLY with the checklist - no preamble, explanations or questions
+    5. If the user has asked for multiple things, group related items together
+    6. Be specific and actionable in each bullet point
+    
+    FULL CONVERSATION HISTORY:
+    ${conversationHistory}
+    
+    Now create the checklist summarizing ALL user requests from the ENTIRE conversation:
+    `;
+    
+    console.log('Generating checklist with conversation context from', userMessages.length, 'user messages');
+    
+    // Start a chat session with the model initialized at the top of the file (gemini-2.0-flash)
     const chat = model.startChat();
     
-    // Send the checklist prompt to get a response
+    // Send the improved checklist prompt to the model
     const result = await chat.sendMessage(checklistPrompt);
     const response = result.response.text();
+    
+    console.log('Generated checklist response with length:', response.length);
+    
+    // Simple validation to make sure we got proper checklist format
+    if (!response.includes("Here's a summary") || !response.includes('-')) {
+      console.warn('Checklist response missing expected format, falling back to default format');
+      
+      // Create a simpler list if the model didn't follow the format properly
+      const summaryPoints = userMessages.map(m => `- ${m.content.split('.')[0]}.`).slice(-3);
+      return `Here's a summary of what you're asking me to do:\n\n${summaryPoints.join('\n')}\n\nWould you like me to proceed with these changes?`;
+    }
     
     return response;
   } catch (error) {
     console.error('Error generating checklist from user request:', error);
-    return "Here's a summary of what you're asking for:\n\n- Process your request (I couldn't generate a detailed checklist due to a technical issue)";
+    return "Here's a summary of what you're asking me to do:\n\n- Process your request (I couldn't generate a detailed checklist due to a technical issue)\n\nWould you like me to proceed?";
   }
 }
 

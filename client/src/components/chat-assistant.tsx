@@ -301,11 +301,12 @@ export default function ChatAssistant({
       let content = data.response;
       let needsConfirmation = data.classification?.needsConfirmation;
       
-      // If the classification shows this is a significant action (update, refine), but doesn't already have confirmation,
-      // check if the server is already providing a checklist or if we need to generate one client-side
+      // Log classification information for debugging
       console.log('Checking if we need to show a checklist confirmation:', {
         action: data.classification?.action,
         needsConfirmation,
+        hasActionTaken: data.classification?.actionTaken,
+        confidence: data.classification?.confidence,
         isPositiveConfirmation: inputValue.toLowerCase().includes('yes') || inputValue.toLowerCase().includes('proceed')
       });
       
@@ -313,21 +314,31 @@ export default function ChatAssistant({
       const hasServerGeneratedChecklist = 
         content.includes("Here's a summary of what you're asking") && 
         content.includes('-');
-      
-      if (data.classification && 
-          ['update', 'refine'].includes(data.classification.action) && 
-          data.classification.confidence >= 0.7 &&
-          !inputValue.toLowerCase().includes('yes') && 
-          !inputValue.toLowerCase().includes('proceed')) {
         
-        // Only override with client-side checklist if server didn't provide one
+      console.log('Server response has checklist format:', hasServerGeneratedChecklist);
+      
+      // For refine and update actions with high confidence that haven't been confirmed yet,
+      // we should prompt for confirmation
+      const isSignificantAction = data.classification && 
+          ['update', 'refine'].includes(data.classification.action) && 
+          data.classification.confidence >= 0.7;
+          
+      const needsUserConfirmation = isSignificantAction && 
+          !inputValue.toLowerCase().includes('yes') && 
+          !inputValue.toLowerCase().includes('proceed') &&
+          !data.classification?.actionTaken;
+      
+      // IMPORTANT: Always prefer server-generated checklists when available
+      if (needsUserConfirmation) {
+        // Only generate client-side checklist if server didn't provide one
+        // and this is an action that needs confirmation
         if (!hasServerGeneratedChecklist) {
-          console.log('Showing client-side checklist confirmation for user request');
+          console.log('No server checklist found. Creating client-side checklist for confirmation');
           content = createChecklistFromRequest(userMessage.content);
           needsConfirmation = true;
         } else {
-          console.log('Using server-generated checklist');
-          // Make sure we set needsConfirmation even when using server-generated checklist
+          console.log('Using server-generated checklist for confirmation');
+          // Make sure needsConfirmation is set when using server checklist
           needsConfirmation = true;
         }
       }
