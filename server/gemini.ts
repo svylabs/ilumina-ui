@@ -449,8 +449,8 @@ Current analysis step: ${context?.analysisStep || 'Unknown'}`;
       systemPrompt += '\n\nYou are now focusing on the project summary. Help the user understand the overall project, its purpose, and architecture.';
     } else if (context?.section === 'actor_summary') {
       systemPrompt += '\n\nYou are now focusing on actor analysis. Help the user understand different actors in the smart contract ecosystem and their interactions.';
-    } else if (context?.section === 'deployment_instructions') {
-      systemPrompt += '\n\nYou are now focusing on deployment instructions. Help the user understand how to deploy the contracts and any potential issues they might face.';
+    } else if (context?.section === 'deployment_instructions' || context?.analysisStep === 'analyze_deployment') {
+      systemPrompt += '\n\nYou are now focusing on deployment instructions and implementation. Help the user understand how to deploy the contracts, the deployment script details, and any potential issues they might face.';
     } else if (context?.section === 'implementation') {
       systemPrompt += '\n\nYou are now focusing on implementation details. Help the user understand the code implementation and suggest best practices.';
     } else if (context?.section === 'validation_rules') {

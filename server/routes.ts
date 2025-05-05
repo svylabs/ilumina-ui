@@ -674,6 +674,65 @@ export function registerRoutes(app: Express): Server {
                 return false;
               };
               
+              // Special handling for analyze_deployment step - also check for implementation_deployment_script data
+              if (logStep === 'analyze_deployment' && !mergedDeploymentData) {
+                console.log('Detected analyze_deployment step, also checking for implementation_deployment_script data');
+                mergedDeploymentData = true;
+                
+                // Get implementation-specific config
+                const implConfig = stepDataSourceMap['implement_deployment_script'] || defaultSourceConfig;
+                console.log(`Using config for implementation step: ${implConfig.description}`);
+                
+                // First check local endpoints for implementation data
+                for (const endpoint of implConfig.dataEndpoints) {
+                  try {
+                    const implBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+                    const implUrl = `${implBaseUrl}${endpoint}`
+                                    .replace('${submission.id}', submission.id)
+                                    .replace('${logStep}', 'implement_deployment_script');
+                    console.log(`Fetching implementation data from ${implUrl}`);
+                    
+                    try {
+                      const implResponse = await fetch(implUrl);
+                      if (implResponse.ok) {
+                        const implData = await implResponse.json();
+                        
+                        // Add implementation data with special labeling
+                        for (const field of implConfig.dataFields) {
+                          if (implData[field]) {
+                            addLogData('implementation_data', implData[field], `Deployment Script (${field})`);
+                          }
+                        }
+                      }
+                    } catch (implFetchError) {
+                      console.error(`Error fetching implementation data from ${implUrl}:`, implFetchError);
+                    }
+                  } catch (implEndpointError) {
+                    console.error(`Error processing implementation endpoint:`, implEndpointError);
+                  }
+                }
+                
+                // Check submission data to look for any implementation data
+                try {
+                  const submApiBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+                  const implSubmissionApiData = await (await fetch(`${submApiBaseUrl}/api/submission/${submission.id}`)).json();
+                  
+                  if (implSubmissionApiData.implement_deployment_script) {
+                    const implData = implSubmissionApiData.implement_deployment_script;
+                    
+                    if (implData.log) {
+                      addLogData('direct_impl_data', implData.log, 'Deployment Script Logs');
+                    }
+                    
+                    if (implData.jsonData && implData.jsonData.script) {
+                      addLogData('direct_impl_data', implData.jsonData.script, 'Deployment Script');
+                    }
+                  }
+                } catch (implSubmissionError) {
+                  console.error(`Error fetching implementation data from submission:`, implSubmissionError);
+                }
+              }
+              
               // First check local endpoints based on step configuration
               for (const endpoint of stepConfig.dataEndpoints) {
                 try {
