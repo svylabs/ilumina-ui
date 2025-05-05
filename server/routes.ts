@@ -720,38 +720,14 @@ export function registerRoutes(app: Express): Server {
                           }
                         }
                         
-                        // Add any project summary or actor data if available
+                        // For project summary, actor summary, and deployment instructions,
+                        // we will only use data from the external API, not from submission data.
+                        // No summaries are stored in the submission data itself.
                         try {
-                          if (logStep === 'analyze_project' && data.data && data.data.files) {
-                            const stepData = data.data.files;
-                            let projectSummary = '';
-                            
-                            // Try to get project summary from JSON data in files
-                            if (stepData.jsonData && stepData.jsonData.project_summary) {
-                              projectSummary = typeof stepData.jsonData.project_summary === 'string' ?
-                                stepData.jsonData.project_summary : JSON.stringify(stepData.jsonData.project_summary, null, 2);
-                              addLogData('submission details', `Project Summary: ${projectSummary}`, 'Project Analysis');
-                            }
-                          } else if (logStep === 'analyze_actors' && data.data && data.data.actors) {
-                            const stepData = data.data.actors;
-                            let actorData = '';
-                            
-                            // Try to get actor data from JSON data in actors
-                            if (stepData.jsonData && stepData.jsonData.actors) {
-                              actorData = typeof stepData.jsonData.actors === 'string' ?
-                                stepData.jsonData.actors : JSON.stringify(stepData.jsonData.actors, null, 2);
-                              addLogData('submission details', `Actor Data: ${actorData}`, 'Actor Analysis');
-                            }
-                          } else if (logStep === 'analyze_deployment' && data.data && data.data.deployment) {
-                            const stepData = data.data.deployment;
-                            
-                            // Try to get deployment instructions
-                            if (stepData.jsonData && stepData.jsonData.deployment_instructions) {
-                              addLogData('submission details', stepData.jsonData.deployment_instructions, 'Deployment Instructions');
-                            } else if (stepData.log) {
-                              addLogData('submission details', stepData.log, 'Deployment Analysis Log');
-                            }
-                          }
+                          // Only check for non-summary data in submission details
+                          // Step-specific summary data will be handled by the external API calls instead
+                          console.log(`${logStep} is a special step type that requires external API data.`);
+                        
                         } catch (parseError) {
                           console.error('Error parsing step-specific data:', parseError);
                         }
@@ -763,8 +739,16 @@ export function registerRoutes(app: Express): Server {
                 }
               }
               
-              // If we haven't found data through local endpoints, try the external API
-              if ((!stepData || stepLogs.length === 0) && stepConfig.externalEndpoint) {
+              // For analyze_project, analyze_actors, and analyze_deployment, we MUST use the external API
+              // Other steps can use local data if available
+              const requiresExternalAPI = [
+                'analyze_project', 
+                'analyze_actors', 
+                'analyze_deployment'
+              ].includes(logStep);
+              
+              // Always use external API for the special step types, otherwise only if we haven't found data locally
+              if ((requiresExternalAPI || (!stepData || stepLogs.length === 0)) && stepConfig.externalEndpoint) {
                 try {
                   const externalUrl = stepConfig.externalEndpoint
                                       .replace('${submission.id}', submission.id)
