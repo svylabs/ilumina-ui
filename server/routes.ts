@@ -591,159 +591,131 @@ export function registerRoutes(app: Express): Server {
             if (logStep) {
               console.log(`Fetching detailed data for step ${logStep} to help answer the question`);
               
-              // Use specialized endpoints based on the step type
-              // For verification step, use our verify-deployment endpoint
-              if (logStep === 'verify_deployment_script') {
-                try {
-                  const verifyUrl = `/api/verify-deployment/${submission.id}`;
-                  const verifyResponse = await fetch(verifyUrl);
-                  
-                  if (verifyResponse.ok) {
-                    const verifyData = await verifyResponse.json();
-                    
-                    // Use the verification data directly
-                    if (verifyData) {
-                      stepData = {
-                        verification_log: verifyData.logs || []
-                      };
-                      
-                      // Set the status if available
-                      if (verifyData.status) {
-                        stepStatus = verifyData.status;
-                      }
-                      
-                      console.log(`Found verification logs for ${logStep}`);                  
-                    }
-                  }
-                } catch (verifyError) {
-                  console.error(`Error fetching verification data: ${verifyError}`);
-                }
-              }
-              // For deployment script implementation, get it from our local endpoint
-              else if (logStep === 'implement_deployment_script') {
-                try {
-                  const deploymentScriptUrl = `/api/deployment-script/${submission.id}`;
-                  const deploymentScriptResponse = await fetch(deploymentScriptUrl);
-                  
-                  if (deploymentScriptResponse.ok) {
-                    const deploymentScriptData = await deploymentScriptResponse.json();
-                    
-                    // Use the deployment script data directly
-                    if (deploymentScriptData) {
-                      stepData = {
-                        deployment_script: deploymentScriptData
-                      };
-                      console.log(`Found deployment script for ${logStep}`);
-                    }
-                  }
-                } catch (deploymentScriptError) {
-                  console.error(`Error fetching deployment script: ${deploymentScriptError}`);
-                }
-              }
-              // Try external API for logs if we couldn't get step data through local endpoints
-              if (!stepData) {
-                try {
+              // Collect all available data for this step from both local and external endpoints
+              let stepLogs = [];
+              let logSources = [];
+              
+              // First try fetch the external API step data (may contain specific format data)
+              try {
                   const stepUrl = `https://ilumina-451416.uc.r.appspot.com/api/submission/${submission.id}/step/${logStep}`;
                   const stepResponse = await fetch(stepUrl);
                   
                   if (stepResponse.ok) {
                     stepData = await stepResponse.json();
                     console.log(`Retrieved step data from external API for ${logStep}`);
+                    
+                    // Extract log if available
+                    if (stepData && stepData.log) {
+                      stepLog = stepData.log;
+                      console.log(`Found logs for ${logStep} from API`);
+                      stepLogs.push(stepLog);
+                      logSources.push('API')
+                    }
                   }
-                } catch (stepError) {
+              } catch (stepError) {
                   console.error(`Error fetching step data from external API: ${stepError}`);
-                }
               }
               
-              // Extract step log if available from whatever source we got the data
-              if (stepData && stepData.log) {
-                stepLog = stepData.log;
-                console.log(`Found logs for ${logStep}, including in response context`);
+              // For any step, try relevant local endpoints that might have additional logs or data
+              // Always collect data from all sources rather than replacing/skipping
+              
+              // Try the verification endpoint for logs (works for any step but mainly for verify_deployment_script)
+              try {
+                const verifyUrl = `/api/verify-deployment/${submission.id}`;
+                const verifyResponse = await fetch(verifyUrl);
+                
+                if (verifyResponse.ok) {
+                  const verifyData = await verifyResponse.json();
+                  
+                  if (verifyData && verifyData.logs && verifyData.logs.length > 0) {
+                    // Don't replace step data, just collect the logs
+                    stepLogs.push(verifyData.logs.join('\n'));
+                    logSources.push('verification');
+                    console.log(`Found verification logs for submission`);
+                    
+                    // If we don't have status yet, use it from here
+                    if (!stepStatus && verifyData.status) {
+                      stepStatus = verifyData.status;
+                    }
+                    
+                    // If we don't have step data but have verification logs, add them to step data
+                    if (!stepData) {
+                      stepData = { verification_log: verifyData.logs || [] };
+                    } else if (!stepData.verification_log) {
+                      // Add to existing stepData if not there
+                      stepData.verification_log = verifyData.logs || [];
+                    }
+                  }
+                }
+              } catch (verifyError) {
+                console.error(`Error fetching verification data: ${verifyError}`);
               }
               
-              // Get output data - different steps have different outputs
-              if (logStep === 'verify_deployment_script' && stepData && stepData.verification_log) {
-                // For deployment verification, include both logs and verification output
-                submissionLogs = `Verification Status: ${stepStatus || 'Unknown'}\n\n`;
-                submissionLogs += `Verification Logs:\n${stepData.verification_log.join('\n')}\n\n`;
+              // Try the deployment script endpoint (works for any step but mainly for implement_deployment_script)
+              try {
+                const deploymentScriptUrl = `/api/deployment-script/${submission.id}`;
+                const deploymentScriptResponse = await fetch(deploymentScriptUrl);
                 
-                if (stepLog) {
-                  submissionLogs += `Step Logs:\n${stepLog}`;
-                }
-              } 
-              else if (logStep === 'implement_deployment_script' && stepData && stepData.deployment_script) {
-                // For deployment script implementation
-                submissionLogs = `Deployment Script Status: ${stepStatus || 'Unknown'}\n\n`;
-                
-                if (stepLog) {
-                  submissionLogs += `Step Logs:\n${stepLog}\n\n`;
-                }
-                
-                // Include a snippet of the deployment script
-                const scriptContent = stepData.deployment_script.content || '';
-                const scriptSnippet = scriptContent.substring(0, 500) + (scriptContent.length > 500 ? '...[truncated]' : '');
-                submissionLogs += `Deployment Script Snippet:\n${scriptSnippet}`;
-              }
-              else if (logStep === 'actors' && stepData && stepData.actors) {
-                // For actor analysis, include actor information
-                submissionLogs = `Actor Analysis Status: ${stepStatus || 'Unknown'}\n\n`;
-                
-                if (stepLog) {
-                  submissionLogs += `Step Logs:\n${stepLog}\n\n`;
-                }
-                
-                // Include actor data if available
-                try {
-                  const actorData = typeof stepData.actors === 'string' ? 
-                    JSON.parse(stepData.actors) : stepData.actors;
+                if (deploymentScriptResponse.ok) {
+                  const deploymentScriptData = await deploymentScriptResponse.json();
                   
-                  if (actorData && actorData.actors) {
-                    submissionLogs += `Actors Information:\n`;
-                    actorData.actors.forEach(actor => {
-                      submissionLogs += `- ${actor.name}: ${actor.summary}\n`;
-                    });
+                  if (deploymentScriptData && deploymentScriptData.content) {
+                    // Extract a snippet of the script to include in logs
+                    const scriptContent = deploymentScriptData.content || '';
+                    const scriptSnippet = scriptContent.substring(0, 500) + 
+                                        (scriptContent.length > 500 ? '...\n[content truncated]' : '');
+                    
+                    stepLogs.push(`Deployment Script:\n${scriptSnippet}`);
+                    logSources.push('deployment script');
+                    console.log(`Found deployment script for submission`);
+                    
+                    // Add to existing stepData if not there
+                    if (!stepData) {
+                      stepData = { deployment_script: deploymentScriptData };
+                    } else if (!stepData.deployment_script) {
+                      stepData.deployment_script = deploymentScriptData;
+                    }
                   }
-                } catch (parseError) {
-                  console.error('Error parsing actor data:', parseError);
                 }
+              } catch (deploymentScriptError) {
+                console.error(`Error fetching deployment script: ${deploymentScriptError}`);
               }
-              else if (logStep === 'files' && stepData && stepData.project_summary) {
-                // For project analysis, include project summary
-                submissionLogs = `Project Analysis Status: ${stepStatus || 'Unknown'}\n\n`;
+              
+              // Try submission details for status and step information
+              try {
+                const detailsUrl = `/api/submission-details/${submission.id}`;
+                const detailsResponse = await fetch(detailsUrl);
                 
-                if (stepLog) {
-                  submissionLogs += `Step Logs:\n${stepLog}\n\n`;
-                }
-                
-                // Include project summary data if available
-                try {
-                  const projectData = typeof stepData.project_summary === 'string' ? 
-                    JSON.parse(stepData.project_summary) : stepData.project_summary;
+                if (detailsResponse.ok) {
+                  const detailsData = await detailsResponse.json();
                   
-                  if (projectData) {
-                    submissionLogs += `Project Information:\nName: ${projectData.name}\n`;
-                    submissionLogs += `Type: ${projectData.type}\n`;
-                    submissionLogs += `Summary: ${projectData.summary}\n`;
+                  if (detailsData && detailsData.data && detailsData.data.completed_steps) {
+                    const stepInfo = detailsData.data.completed_steps.find(s => s.step === logStep);
+                    
+                    if (stepInfo) {
+                      // If we still don't have status, use it from completed_steps
+                      if (!stepStatus) {
+                        stepStatus = stepInfo.status;
+                      }
+                      
+                      // Add step status information to logs
+                      stepLogs.push(`Step Status: ${stepInfo.status} (Updated: ${stepInfo.updated_at})`);
+                      logSources.push('submission details');
+                    }
                   }
-                } catch (parseError) {
-                  console.error('Error parsing project data:', parseError);
                 }
+              } catch (detailsError) {
+                console.error(`Error fetching submission details: ${detailsError}`);
               }
-              else if (logStep === 'deployment' && stepData && stepData.deployment_instructions) {
-                // For deployment analysis, include deployment instructions
-                submissionLogs = `Deployment Analysis Status: ${stepStatus || 'Unknown'}\n\n`;
+              
+              // If we collected logs from any source, combine them into submissionLogs
+              if (stepLogs.length > 0) {
+                submissionLogs = `Information for step ${logStep} (Status: ${stepStatus || 'Unknown'}):\n\n`;
                 
-                if (stepLog) {
-                  submissionLogs += `Step Logs:\n${stepLog}\n\n`;
+                // Add all the logs with their sources
+                for (let i = 0; i < stepLogs.length; i++) {
+                  submissionLogs += `=== Source: ${logSources[i]} ===\n${stepLogs[i]}\n\n`;
                 }
-                
-                // Include deployment instructions if available
-                submissionLogs += `Deployment Instructions:\n${stepData.deployment_instructions}\n`;
-              }
-              else if (stepLog) {
-                // Default case: just include logs if available
-                submissionLogs = `Step Status: ${stepStatus || 'Unknown'}\n\n`;
-                submissionLogs += `Step Logs:\n${stepLog}`;
               }
             }
             
