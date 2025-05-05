@@ -597,21 +597,21 @@ export function registerRoutes(app: Express): Server {
                   description: 'Analyzes the GitHub project and contracts to understand their purpose',
                   statusSource: 'submission_details',
                   dataEndpoints: ['/api/submission-details'],
-                  dataFields: ['files'],
+                  dataFields: ['analyze_project'],
                   externalEndpoint: '/api/project_summary/${submission.id}'
                 },
                 'analyze_actors': {
                   description: 'Analyzes potential actors in the system and their actions',
                   statusSource: 'submission_details',
                   dataEndpoints: ['/api/submission-details'],
-                  dataFields: ['actors'],
+                  dataFields: ['analyze_actors'],
                   externalEndpoint: '/api/actors_summary/${submission.id}'
                 },
                 'analyze_deployment': {
                   description: 'Analyzes how contracts should be deployed',
                   statusSource: 'submission_details',
                   dataEndpoints: ['/api/submission-details'],
-                  dataFields: ['deployment'],
+                  dataFields: ['analyze_deployment'],
                   externalEndpoint: '/api/deployment_instructions/${submission.id}'
                 },
                 'implement_deployment_script': {
@@ -722,16 +722,35 @@ export function registerRoutes(app: Express): Server {
                         
                         // Add any project summary or actor data if available
                         try {
-                          if (logStep === 'analyze_project' && data.data.project_summary) {
-                            const projectSummary = typeof data.data.project_summary === 'string' ?
-                              data.data.project_summary : JSON.stringify(data.data.project_summary, null, 2);
-                            addLogData('submission details', `Project Summary: ${projectSummary}`, 'Project Analysis');
-                          } else if (logStep === 'analyze_actors' && data.data.actors) {
-                            const actorData = typeof data.data.actors === 'string' ?
-                              data.data.actors : JSON.stringify(data.data.actors, null, 2);
-                            addLogData('submission details', `Actor Data: ${actorData}`, 'Actor Analysis');
-                          } else if (logStep === 'analyze_deployment' && data.data.deployment_instructions) {
-                            addLogData('submission details', data.data.deployment_instructions, 'Deployment Instructions');
+                          if (logStep === 'analyze_project' && data.data.steps && data.data.steps.files) {
+                            const stepData = data.data.steps.files;
+                            let projectSummary = '';
+                            
+                            // Try to get project summary from JSON data in steps[files]
+                            if (stepData.jsonData && stepData.jsonData.project_summary) {
+                              projectSummary = typeof stepData.jsonData.project_summary === 'string' ?
+                                stepData.jsonData.project_summary : JSON.stringify(stepData.jsonData.project_summary, null, 2);
+                              addLogData('submission details', `Project Summary: ${projectSummary}`, 'Project Analysis');
+                            }
+                          } else if (logStep === 'analyze_actors' && data.data.steps && data.data.steps.actors) {
+                            const stepData = data.data.steps.actors;
+                            let actorData = '';
+                            
+                            // Try to get actor data from JSON data in steps[actors]
+                            if (stepData.jsonData && stepData.jsonData.actors) {
+                              actorData = typeof stepData.jsonData.actors === 'string' ?
+                                stepData.jsonData.actors : JSON.stringify(stepData.jsonData.actors, null, 2);
+                              addLogData('submission details', `Actor Data: ${actorData}`, 'Actor Analysis');
+                            }
+                          } else if (logStep === 'analyze_deployment' && data.data.steps && data.data.steps.deployment) {
+                            const stepData = data.data.steps.deployment;
+                            
+                            // Try to get deployment instructions
+                            if (stepData.jsonData && stepData.jsonData.deployment_instructions) {
+                              addLogData('submission details', stepData.jsonData.deployment_instructions, 'Deployment Instructions');
+                            } else if (stepData.log) {
+                              addLogData('submission details', stepData.log, 'Deployment Analysis Log');
+                            }
                           }
                         } catch (parseError) {
                           console.error('Error parsing step-specific data:', parseError);
