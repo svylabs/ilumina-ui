@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, AlertCircle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2 } from "lucide-react";
+import { AlertTriangle, AlertCircle, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
@@ -3823,8 +3823,22 @@ function validate${action.function_name.split('(')[0]}Result(result) {
           </div>
         </div>
       </div>
-      {/* Add context-aware AI Chat Assistant */}
-      <ChatAssistant projectId={id} currentSection={currentStep.id} submissionId={submissionId} />
+      {/* Add context-aware AI Chat Assistant - only for Pro and Teams users */}
+      {isFreeUser ? (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Lock className="h-4 w-4 text-yellow-500" />
+            <p className="text-sm font-medium text-yellow-500">AI Chat Assistant is only available on Pro and Teams plans</p>
+          </div>
+          <Button 
+            onClick={() => window.location.href = '/pricing'}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white">
+            Upgrade to Pro
+          </Button>
+        </div>
+      ) : (
+        <ChatAssistant projectId={id} currentSection={currentStep.id} submissionId={submissionId} />
+      )}
     </div>
   );
 }
