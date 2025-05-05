@@ -357,10 +357,14 @@ export function registerRoutes(app: Express): Server {
         if (validSteps.includes(classification.step)) {
           try {
             console.log(`Taking action for ${classification.step} with the uniform /analyze API endpoint`);
+            
+            // Format user request as a checklist for the API
+            const formattedRequestChecklist = formatRequestAsChecklist(latestUserMessage.content);
+            
             const response = await callExternalIluminaAPI('/analyze', 'POST', {
               submission_id: uuidSubmissionId,
               step: classification.step,
-              user_prompt: contextSummary
+              user_prompt: formattedRequestChecklist
             });
             
             if (response.ok) {
@@ -1349,6 +1353,43 @@ export function registerRoutes(app: Express): Server {
     }).join(", ");
   }
   
+  // Helper function to format user request as a checklist for the API
+  function formatRequestAsChecklist(request: string): string {
+    const lines = request.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    // Try to identify action items in the request
+    const actionItems: string[] = [];
+    
+    // Look for phrases that indicate actions
+    const removeKeywords = ['remove', 'eliminate', 'delete', 'get rid of', 'don\'t need', 'not needed'];
+    const addKeywords = ['add', 'include', 'create', 'insert', 'implement', 'need'];
+    const updateKeywords = ['change', 'modify', 'update', 'edit', 'adjust', 'fix'];
+    
+    for (const line of lines) {
+      // Check if the line contains any of our keywords
+      const hasRemoveKeyword = removeKeywords.some(keyword => line.toLowerCase().includes(keyword));
+      const hasAddKeyword = addKeywords.some(keyword => line.toLowerCase().includes(keyword));
+      const hasUpdateKeyword = updateKeywords.some(keyword => line.toLowerCase().includes(keyword));
+      
+      if (hasRemoveKeyword || hasAddKeyword || hasUpdateKeyword) {
+        actionItems.push(line);
+      }
+    }
+    
+    // If we couldn't identify specific action items, use the entire request
+    if (actionItems.length === 0) {
+      actionItems.push(request);
+    }
+    
+    // Generate the checklist
+    let checklist = "Here's a summary of what the user is asking for:\n\n";
+    actionItems.forEach(item => {
+      checklist += `- ${item}\n`;
+    });
+    
+    return checklist;
+  }
+  
   // Trigger deployment analysis with external API
   app.post("/api/analyze-deployment", async (req, res) => {
     try {
@@ -1375,11 +1416,17 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Format user prompt as a checklist if it exists
+      let formattedPrompt = user_prompt;
+      if (user_prompt) {
+        formattedPrompt = formatRequestAsChecklist(user_prompt);
+      }
+      
       // Use our helper function to call the external API
       const response = await callExternalIluminaAPI('/analyze', 'POST', {
         submission_id: result.submissionId,
         step: "analyze_deployment",
-        user_prompt
+        user_prompt: formattedPrompt
       });
       
       if (!response.ok) {
