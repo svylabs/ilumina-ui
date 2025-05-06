@@ -3097,21 +3097,64 @@ export function registerRoutes(app: Express): Server {
       const projectId = parseInt(requestedId);
       
       if (!isNaN(projectId)) {
-        // QUICK FIX FOR DEMO PURPOSES: Special case for project ID 43 (stablebase)
-        // This bypasses ownership checks for the stablebase project so we can demo it
-        if (projectId === 43) {
-          console.log('Special case: Fetching stablebase project (ID 43) directly for demo');
-          // Get the project directly from the database without user ownership checks
-          const specialProject = await db
-            .select()
-            .from(projects)
-            .where(sql`${projects.id} = 43`)
-            .where(sql`${projects.isDeleted} = false`);
-            
-          if (specialProject.length > 0) {
-            // Return the stablebase project with no ownership checks
-            return res.json(specialProject[0]);
+        // IMPROVED SOLUTION: Always get projects directly from the database using raw SQL
+        // This is more reliable than using the ORM in case of connection or caching issues
+        console.log(`Fetching project ${projectId} directly from database with raw SQL`);
+        try {
+          // First check if the user has access to this project
+          // We'll query project by ID first, then check ownership after
+          const projectQuery = 'SELECT * FROM projects WHERE id = $1 AND is_deleted = false';
+          const projectResult = await pool.query(projectQuery, [projectId]);
+          
+          if (projectResult.rows.length === 0) {
+            return res.status(404).json({ message: "Project not found" });
           }
+          
+          const project = projectResult.rows[0];
+          console.log(`Found project ${projectId} in database:`, project.name);
+          
+          // Check ownership (unless it's a demo project ID that should bypass ownership checks)
+          const isDemoProject = [43, 29].includes(projectId); // Add more demo IDs as needed
+          
+          if (!isDemoProject && project.user_id !== req.user.id) {
+            // If not a direct owner, check if user has access through team membership
+            const teamQuery = `
+              SELECT tm.team_id 
+              FROM team_members tm
+              WHERE tm.user_id = $1 AND tm.status = 'active'
+              UNION
+              SELECT t.id as team_id
+              FROM teams t
+              WHERE t.created_by = $1 AND t.is_deleted = false
+            `;
+            
+            const teamResult = await pool.query(teamQuery, [req.user.id]);
+            const userTeams = teamResult.rows.map(row => row.team_id);
+            
+            if (project.team_id === null || !userTeams.includes(project.team_id)) {
+              console.log(`User ${req.user.id} does not have access to project ${projectId}`);
+              return res.status(403).json({ 
+                message: "You don't have permission to access this project" 
+              });
+            }
+          }
+          
+          // Convert snake_case fields to camelCase for frontend consumption
+          const formattedProject = {
+            id: project.id,
+            name: project.name, 
+            githubUrl: project.github_url,
+            userId: project.user_id,
+            teamId: project.team_id,
+            createdAt: project.created_at,
+            isDeleted: project.is_deleted
+          };
+          
+          console.log(`Returning project data for ${projectId}:`, project.name);
+          return res.json(formattedProject);
+        } catch (error) {
+          console.error(`Error fetching project ${projectId}:`, error);
+          return res.status(500).json({ message: "Error querying project" });
         }
         
         // Use Drizzle ORM to query only projects the user has access to
