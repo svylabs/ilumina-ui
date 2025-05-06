@@ -3091,6 +3091,7 @@ export function registerRoutes(app: Express): Server {
       
       // Get the project ID from the URL parameter
       const requestedId = req.params.id;
+      console.log(`API /project/:id - Requested project ID: ${requestedId}, User ID: ${req.user.id}`);
       
       // Only process numeric IDs
       const projectId = parseInt(requestedId);
@@ -3110,8 +3111,10 @@ export function registerRoutes(app: Express): Server {
             
           if (userOwnedProjects.length > 0) {
             // User owns this project directly
+            console.log(`Found project ${projectId} owned by user ${req.user.id}: ${JSON.stringify(userOwnedProjects[0])}`);
             return res.json(userOwnedProjects[0]);
           }
+          console.log(`Project ${projectId} not directly owned by user ${req.user.id}, checking team access...`);
           
           // If not owned directly, check team projects
           // Get team IDs where user is a member
