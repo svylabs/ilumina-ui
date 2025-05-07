@@ -32,8 +32,18 @@ type AnalysisStepStatus = {
 
 // Helper function for calling external Ilumina APIs with standardized error handling
 async function callExternalIluminaAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<Response> {
+// Helper to ensure we don't have double slashes in URLs
+function joinPath(base, path) {
+  if (base.endsWith('/') && path.startsWith('/')) {
+    return base + path.substring(1);
+  } else if (!base.endsWith('/') && !path.startsWith('/')) {
+    return base + '/' + path;
+  }
+  return base + path;
+}
+
   const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
-  const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+  const url = joinPath(baseUrl, endpoint);
   
   console.log(`Calling external Ilumina API: ${method} ${url}`);
   
@@ -2872,8 +2882,18 @@ export function registerRoutes(app: Express): Server {
     // Call the external analysis API
     try {
       const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
+      // Helper to ensure we don't have double slashes in URLs
+      const joinPath = (base, path) => {
+        if (base.endsWith('/') && path.startsWith('/')) {
+          return base + path.substring(1);
+        } else if (!base.endsWith('/') && !path.startsWith('/')) {
+          return base + '/' + path;
+        }
+        return base + path;
+      };
+
       const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
-      const analysisResponse = await fetch(`${baseUrl}/begin_analysis`, {
+      const analysisResponse = await fetch(joinPath(baseUrl, "begin_analysis"), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3063,8 +3083,18 @@ export function registerRoutes(app: Express): Server {
     // Call the external analysis API
     try {
       const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
+      // Helper to ensure we don't have double slashes in URLs
+      const joinPath = (base, path) => {
+        if (base.endsWith('/') && path.startsWith('/')) {
+          return base + path.substring(1);
+        } else if (!base.endsWith('/') && !path.startsWith('/')) {
+          return base + '/' + path;
+        }
+        return base + path;
+      };
+
       const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
-      const analysisResponse = await fetch(`${baseUrl}/begin_analysis`, {
+      const analysisResponse = await fetch(joinPath(baseUrl, "begin_analysis"), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3325,6 +3355,16 @@ export function registerRoutes(app: Express): Server {
     console.log(`Fetching from external API: ${submissionId}`);
     try {
       const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
+      // Helper to ensure we don't have double slashes in URLs
+      const joinPath = (base, path) => {
+        if (base.endsWith('/') && path.startsWith('/')) {
+          return base + path.substring(1);
+        } else if (!base.endsWith('/') && !path.startsWith('/')) {
+          return base + '/' + path;
+        }
+        return base + path;
+      };
+
       const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
       const response = await fetch(`${baseUrl}/${endpoint}/${submissionId}`, {
         method: 'GET',
