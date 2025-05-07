@@ -32,13 +32,13 @@ type AnalysisStepStatus = {
 
 // Helper function for calling external Ilumina APIs with standardized error handling
 async function callExternalIluminaAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<Response> {
-  const baseUrl = 'https://ilumina-451416.uc.r.appspot.com/api';
+  const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
   const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
   
   console.log(`Calling external Ilumina API: ${method} ${url}`);
   
   const headers: HeadersInit = {
-    'Authorization': 'Bearer my_secure_password', 
+    'Authorization': `Bearer ${process.env.ILUMINA_API_KEY || 'my_secure_password'}`, 
     'Content-Type': 'application/json'
   };
   
@@ -3320,10 +3320,12 @@ export function registerRoutes(app: Express): Server {
   async function fetchFromExternalApi(endpoint: string, submissionId: string) {
     console.log(`Fetching from external API: ${submissionId}`);
     try {
-      const response = await fetch(`https://ilumina-451416.uc.r.appspot.com/api/${endpoint}/${submissionId}`, {
+      const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
+      const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
+      const response = await fetch(`${baseUrl}/${endpoint}/${submissionId}`, {
         method: 'GET',
         headers: {
-          'Authorization': 'Bearer my_secure_password'
+          'Authorization': `Bearer ${apiKey}`
         }
       });
       
