@@ -2871,11 +2871,13 @@ export function registerRoutes(app: Express): Server {
 
     // Call the external analysis API
     try {
-      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/api/begin_analysis', {
+      const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
+      const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
+      const analysisResponse = await fetch(`${baseUrl}/begin_analysis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer my_secure_password'
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           github_repository_url: submission.githubUrl,
@@ -3060,11 +3062,13 @@ export function registerRoutes(app: Express): Server {
 
     // Call the external analysis API
     try {
-      const analysisResponse = await fetch('https://ilumina-451416.uc.r.appspot.com/api/begin_analysis', {
+      const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
+      const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
+      const analysisResponse = await fetch(`${baseUrl}/begin_analysis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer my_secure_password'
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           github_repository_url: submission.githubUrl,
