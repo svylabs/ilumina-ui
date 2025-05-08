@@ -32,6 +32,7 @@ type AnalysisStepStatus = {
 type AnalysisResponse = {
   status: string;
   steps: Record<string, AnalysisStepStatus>;
+  completedSteps?: any[]; // Add support for completedSteps array
 };
 
 // Updated analysis steps with new sequence
@@ -171,6 +172,22 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
     default:
       return <CircleDot className="h-6 w-6 text-gray-300" />;
   }
+}
+
+// Function to check if deployment verification is completed
+function isDeploymentVerificationCompleted(completedSteps: any[] | undefined): boolean {
+  if (!completedSteps || completedSteps.length === 0) return false;
+  
+  // Check if verify_deployment_script is in the completed steps
+  const result = completedSteps.some(step => 
+    step.step === 'verify_deployment_script' || step.step === 'verify_deployment'
+  );
+  
+  // Log the verification status for debugging
+  console.log("Deployment verification completed:", result);
+  console.log("Completed steps:", completedSteps);
+  
+  return result;
 }
 
 export default function AnalysisPage() {
@@ -742,7 +759,9 @@ export default function AnalysisPage() {
                             }
                           })()}
                         </div>
-                      ) : currentStep.id === "simulations" && getStepStatus(currentStep.id) === "completed" ? (
+                      ) : (currentStep.id === "simulations" && getStepStatus(currentStep.id) === "completed") || 
+                          (isDeploymentVerificationCompleted(analysis.completedSteps) && 
+                           (currentStep.id === "test_setup" || currentStep.id === "deployment")) ? (
                         <div className="text-white font-mono">
                           {(() => {
                             try {
