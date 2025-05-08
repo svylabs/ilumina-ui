@@ -174,22 +174,6 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
   }
 }
 
-// Function to check if deployment verification is completed
-function isDeploymentVerificationCompleted(completedSteps: any[] | undefined): boolean {
-  if (!completedSteps || completedSteps.length === 0) return false;
-  
-  // Check if verify_deployment_script is in the completed steps
-  const result = completedSteps.some(step => 
-    step.step === 'verify_deployment_script' || step.step === 'verify_deployment'
-  );
-  
-  // Log the verification status for debugging
-  console.log("Deployment verification completed:", result);
-  console.log("Completed steps:", completedSteps);
-  
-  return result;
-}
-
 export default function AnalysisPage() {
   const { id } = useParams();
   const [selectedStep, setSelectedStep] = useState<string>("files");
@@ -212,20 +196,6 @@ export default function AnalysisPage() {
       return hasInProgressStep ? 2000 : false;
     },
   });
-
-  // Log completed steps for debugging
-  useEffect(() => {
-    if (analysis) {
-      console.log("Analysis data:", analysis);
-      console.log("Completed steps:", analysis.completedSteps);
-      
-      // Check deployment verification status
-      if (analysis.completedSteps) {
-        const deploymentVerified = isDeploymentVerificationCompleted(analysis.completedSteps);
-        console.log("Deployment verification completed:", deploymentVerified);
-      }
-    }
-  }, [analysis]);
 
   // Set the selected step to the current in-progress step or the first completed one
   useEffect(() => {
@@ -354,16 +324,10 @@ export default function AnalysisPage() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {step.id === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps) ? (
-                        <div title="Available early - deployment verified">
-                          <CheckCircle2 className="h-6 w-6 text-blue-500" />
-                        </div>
-                      ) : (
-                        <StepStatus 
-                          status={getStepStatus(step.id)} 
-                          startTime={analysis.steps[step.id]?.startTime}
-                        />
-                      )}
+                      <StepStatus 
+                        status={getStepStatus(step.id)} 
+                        startTime={analysis.steps[step.id]?.startTime}
+                      />
                       {selectedStep === step.id && (
                         <ChevronRight className="h-5 w-5 text-primary" />
                       )}
@@ -380,8 +344,7 @@ export default function AnalysisPage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>{currentStep.id === "files" ? "Project Summary" : `${currentStep.title} Output`}</span>
-                  {currentStep.link && (getStepStatus(currentStep.id) === "completed" || 
-                    (currentStep.id === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps))) && (
+                  {currentStep.link && getStepStatus(currentStep.id) === "completed" && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -780,10 +743,7 @@ export default function AnalysisPage() {
                             }
                           })()}
                         </div>
-                      ) : (currentStep.id === "simulations" && getStepStatus(currentStep.id) === "completed") || 
-                          (isDeploymentVerificationCompleted(analysis.completedSteps) && 
-                           (currentStep.id === "test_setup" || currentStep.id === "deployment")) ? (
-                           // Show simulations early if deployment verification is complete
+                      ) : currentStep.id === "simulations" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
                           {(() => {
                             try {
@@ -802,16 +762,6 @@ export default function AnalysisPage() {
                               
                               return (
                                 <div className="space-y-6">
-                                  {/* Show early access notice if we're not on the simulations step yet */}
-                                  {isDeploymentVerificationCompleted(analysis.completedSteps) && 
-                                   currentStep.id !== "simulations" && (
-                                    <div className="bg-blue-900 text-blue-200 p-3 rounded-md mb-4 border border-blue-700">
-                                      <h3 className="font-medium mb-1">Early Access: Simulation Results</h3>
-                                      <p className="text-sm">
-                                        Deployment verification is complete! You can view simulation results while the remaining analysis completes.
-                                      </p>
-                                    </div>
-                                  )}
                                   <div className="bg-gray-900 p-4 rounded-md">
                                     <h3 className="text-xl font-semibold text-green-400 mb-4">Test Summary</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
