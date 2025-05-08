@@ -1829,6 +1829,16 @@ export default function AnalysisPage() {
       apiStepName === "run_simulation" ? "simulations" : "";
   };
   
+  // Check if deployment verification is completed
+  const isDeploymentVerificationCompleted = (): boolean => {
+    if (!analysis?.completedSteps) return false;
+    
+    // Check if verify_deployment_script is in the completed steps
+    return analysis.completedSteps.some(step => 
+      step.step === 'verify_deployment_script' || step.step === 'verify_deployment'
+    );
+  };
+  
   // Get timestamp for completed step from API data
   const getCompletedStepTimestamp = (stepId: string): string | null => {
     // First convert the UI stepId to API step name
@@ -3402,7 +3412,8 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                             }
                           })()}
                         </div>
-                      ) : currentStep.id === "simulations" ? (
+                      ) : currentStep.id === "simulations" || 
+                        (isDeploymentVerificationCompleted() && currentStep.id === "test_setup") ? (
                         <SimulationsComponent />
                       
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
