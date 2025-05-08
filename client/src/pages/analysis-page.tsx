@@ -1918,6 +1918,11 @@ export default function AnalysisPage() {
   };
   
   const getStepStatus = (stepId: string): StepStatus => {
+    // Special case for simulations step - if deployment is verified, mark it as completed
+    if (stepId === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps)) {
+      return "completed";
+    }
+    
     // ONLY use the completedSteps array to determine if a step is completed
     if (isStepActuallyCompleted(stepId)) {
       return "completed";
