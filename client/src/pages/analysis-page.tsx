@@ -32,7 +32,6 @@ type AnalysisStepStatus = {
 type AnalysisResponse = {
   status: string;
   steps: Record<string, AnalysisStepStatus>;
-  completedSteps?: any[]; // Add support for completedSteps array
 };
 
 // Updated analysis steps with new sequence
