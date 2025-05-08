@@ -32,6 +32,7 @@ type AnalysisStepStatus = {
 type AnalysisResponse = {
   status: string;
   steps: Record<string, AnalysisStepStatus>;
+  completedSteps?: any[]; // Add support for completedSteps array
 };
 
 // Updated analysis steps with new sequence
@@ -150,6 +151,18 @@ Recommendations generated and available in full report.
 `
   }
 ];
+
+// Helper function to check if deployment verification is completed
+function isDeploymentVerificationCompleted(completedSteps: any[] | undefined): boolean {
+  if (!completedSteps || completedSteps.length === 0) return false;
+  
+  // Check if verify_deployment_script is in the completed steps
+  const result = completedSteps.some(step => 
+    step.step === 'verify_deployment_script' || step.step === 'verify_deployment'
+  );
+  
+  return result;
+}
 
 function StepStatus({ status, startTime }: { status: StepStatus; startTime?: string | null }) {
   switch (status) {
@@ -343,7 +356,8 @@ export default function AnalysisPage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>{currentStep.id === "files" ? "Project Summary" : `${currentStep.title} Output`}</span>
-                  {currentStep.link && getStepStatus(currentStep.id) === "completed" && (
+                  {currentStep.link && (getStepStatus(currentStep.id) === "completed" || 
+                   (currentStep.id === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps))) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -368,7 +382,7 @@ export default function AnalysisPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       <p className="ml-2 text-primary">Processing...</p>
                     </div>
-                  ) : getStepStatus(currentStep.id) === "completed" ? (
+                  ) : getStepStatus(currentStep.id) === "completed" || (currentStep.id === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps)) ? (
                     <div>
                       {currentStep.id === "files" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
@@ -742,7 +756,7 @@ export default function AnalysisPage() {
                             }
                           })()}
                         </div>
-                      ) : currentStep.id === "simulations" && getStepStatus(currentStep.id) === "completed" ? (
+                      ) : currentStep.id === "simulations" && (getStepStatus(currentStep.id) === "completed" || isDeploymentVerificationCompleted(analysis.completedSteps)) ? (
                         <div className="text-white font-mono">
                           {(() => {
                             try {
