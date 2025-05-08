@@ -2397,7 +2397,30 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      // Get simulation runs for this submission
+      try {
+        // First, try to fetch simulation runs from the external API
+        console.log(`Fetching simulation runs from external API for submission: ${submissionId}`);
+        const externalApiUrl = `${process.env.EXTERNAL_API_URL}/api/submission/${submissionId}/simulations/list`;
+        console.log(`Calling external API: ${externalApiUrl}`);
+        
+        const response = await fetch(externalApiUrl);
+        
+        if (response.ok) {
+          // Return the data from the external API
+          const data = await response.json();
+          console.log(`Successfully fetched simulation runs from external API: ${data.length} runs`);
+          return res.json(data);
+        } else {
+          console.warn(`External API returned status ${response.status} when fetching simulation runs`);
+          // If we get an error from the external API, fall back to local database
+        }
+      } catch (apiError) {
+        console.error("Error fetching simulation runs from external API:", apiError);
+        // If the external API call fails, fall back to using the local database
+      }
+      
+      // Fall back to the local database if the external API didn't return data
+      console.log(`Fetching simulation runs from local database for submission: ${submissionId}`);
       const runs = await db.select()
         .from(simulationRuns)
         .where(eq(simulationRuns.submissionId, submissionId))
