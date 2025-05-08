@@ -2066,7 +2066,7 @@ export default function AnalysisPage() {
                        currentStep.id === "actors" ? "Actor Summary" :
                        currentStep.id === "deployment" ? "Deployment Instructions" :
                        currentStep.id === "test_setup" ? "Simulation Setup" :
-                       currentStep.id === "simulations" ? "Simulation Results" :
+                       currentStep.id === "simulations" ? "Simulation Runs" :
                        currentStep.id}
                     </span>
                     <div className="flex items-center gap-2">
@@ -2085,13 +2085,13 @@ export default function AnalysisPage() {
                       {/* Chat interface for refining removed */}
                     </div>
                   </div>
-                  {currentStep.link && getStepStatus(currentStep.id) === "completed" && (
+                  {currentStep.link && getStepStatus(currentStep.id) === "completed" && currentStep.id !== "simulations" && (
                     <Button
                       variant="outline"
                       size="sm"
                       asChild
                     >
-                      <Link href={currentStep.id === "simulations" ? `/results/${id}` : currentStep.link}>
+                      <Link href={currentStep.link}>
                         {currentStep.linkText}
                       </Link>
                     </Button>
@@ -2201,6 +2201,11 @@ export default function AnalysisPage() {
                     } 
                     
                     // If no timestamp available at all
+                    // Special case for simulations step
+                    if (currentStep.id === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps)) {
+                      return "Ready to run simulations";
+                    }
+                    
                     return "Analysis complete";
                   }
                   
