@@ -105,18 +105,48 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
         if (runsResponse.ok) {
           const runsData = await runsResponse.json();
-          // Convert database records to our SimulationRun type
-          const formattedRuns: SimulationRun[] = runsData.map((run: any) => ({
-            id: run.runId, // Use the runId as our display ID
-            status: run.status as 'success' | 'failure',
-            date: run.date,
-            logUrl: run.logUrl || '#log',
-            summary: run.summary || {
-              totalTests: 0,
-              passed: 0,
-              failed: 0
+          console.log("Received simulation runs:", runsData);
+          
+          // Convert API data to our SimulationRun type
+          const formattedRuns: SimulationRun[] = runsData.map((run: any) => {
+            // Check if the response data is already in our expected format
+            if (run.id && run.status) {
+              return run;
             }
-          }));
+            
+            // Handle data from external API
+            if (run.run_id || run.id) {
+              const status = run.status === "SUCCESS" ? "success" : 
+                             run.status === "FAILURE" ? "failure" : 
+                             run.status?.toLowerCase() || "failure";
+              
+              return {
+                id: run.run_id || run.id,
+                status: status as 'success' | 'failure',
+                date: run.created_at || run.date || new Date().toISOString(),
+                logUrl: run.log_url || run.logUrl || '#log',
+                summary: run.summary || {
+                  totalTests: run.total_tests || 0,
+                  passed: run.passed_tests || 0,
+                  failed: run.failed_tests || (run.total_tests || 0) - (run.passed_tests || 0) || 0
+                }
+              };
+            }
+            
+            // Fallback for old format
+            return {
+              id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
+              status: run.status as 'success' | 'failure',
+              date: run.date || new Date().toISOString(),
+              logUrl: run.logUrl || '#log',
+              summary: run.summary || {
+                totalTests: 0,
+                passed: 0,
+                failed: 0
+              }
+            };
+          });
+          
           setSimulationRuns(formattedRuns);
         }
       } catch (error) {
@@ -223,18 +253,48 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
             if (runsResponse.ok) {
               const runsData = await runsResponse.json();
-              // Convert database records to our SimulationRun type
-              const formattedRuns: SimulationRun[] = runsData.map((run: any) => ({
-                id: run.runId, // Use the runId as our display ID
-                status: run.status as 'success' | 'failure',
-                date: run.date,
-                logUrl: run.logUrl || '#log',
-                summary: run.summary || {
-                  totalTests: 0,
-                  passed: 0,
-                  failed: 0
+              console.log("Received simulation runs:", runsData);
+              
+              // Convert API data to our SimulationRun type
+              const formattedRuns: SimulationRun[] = runsData.map((run: any) => {
+                // Check if the response data is already in our expected format
+                if (run.id && run.status) {
+                  return run;
                 }
-              }));
+                
+                // Handle data from external API
+                if (run.run_id || run.id) {
+                  const status = run.status === "SUCCESS" ? "success" : 
+                                run.status === "FAILURE" ? "failure" : 
+                                run.status?.toLowerCase() || "failure";
+                  
+                  return {
+                    id: run.run_id || run.id,
+                    status: status as 'success' | 'failure',
+                    date: run.created_at || run.date || new Date().toISOString(),
+                    logUrl: run.log_url || run.logUrl || '#log',
+                    summary: run.summary || {
+                      totalTests: run.total_tests || 0,
+                      passed: run.passed_tests || 0,
+                      failed: run.failed_tests || (run.total_tests || 0) - (run.passed_tests || 0) || 0
+                    }
+                  };
+                }
+                
+                // Fallback for old format
+                return {
+                  id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
+                  status: run.status as 'success' | 'failure',
+                  date: run.date || new Date().toISOString(),
+                  logUrl: run.logUrl || '#log',
+                  summary: run.summary || {
+                    totalTests: 0,
+                    passed: 0,
+                    failed: 0
+                  }
+                };
+              });
+              
               setSimulationRuns(formattedRuns);
             } else {
               // Fallback to just adding the new run as a formatted SimulationRun
