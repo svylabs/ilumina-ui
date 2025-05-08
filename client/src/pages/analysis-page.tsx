@@ -44,7 +44,12 @@ type SimulationRun = {
 };
 
 // Component for Simulations tab
-function SimulationsComponent() {
+interface SimulationsComponentProps {
+  analysis?: AnalysisResponse;
+  deploymentVerified?: boolean;
+}
+
+function SimulationsComponent({ analysis, deploymentVerified = false }: SimulationsComponentProps) {
   const { id: submissionId } = useParams();
   
   // State for simulation runs
@@ -64,9 +69,6 @@ function SimulationsComponent() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // State to track early access from deployment verification
-  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
-  
   // Fetch simulation runs and status on component mount
   useEffect(() => {
     if (!user || !submissionId) return;
@@ -77,8 +79,21 @@ function SimulationsComponent() {
         const statusResponse = await fetch('/api/can-run-simulation');
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
-          setSimStatus(statusData);
-          setShowUpgradeMessage(!statusData.canRun);
+          
+          // Check if deployment was verified to enable early access
+          if (deploymentVerified && !statusData.canRun) {
+            console.log("Deployment verified, enabling early access to simulations");
+            setSimStatus({
+              ...statusData,
+              canRun: true,
+              earlyAccess: true,
+              message: "Early access enabled through deployment verification"
+            });
+            setShowUpgradeMessage(false);
+          } else {
+            setSimStatus(statusData);
+            setShowUpgradeMessage(!statusData.canRun);
+          }
         } else if (statusResponse.status === 401) {
           setSimStatus({
             canRun: false,
@@ -115,7 +130,7 @@ function SimulationsComponent() {
     };
     
     fetchData();
-  }, [user, submissionId, toast]);
+  }, [user, submissionId, toast, deploymentVerified]);
   
   // Helper function to check if deployment is completed
   const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
@@ -271,6 +286,17 @@ function SimulationsComponent() {
   return (
     <div className="text-white">
       <div className="space-y-6">
+        {simStatus?.earlyAccess && (
+          <div className="p-4 bg-yellow-900/50 border border-yellow-700 rounded-md mb-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-yellow-400" />
+              <span className="font-semibold text-yellow-300">Early Access Enabled</span>
+            </div>
+            <p className="text-gray-300 mt-1">
+              You have early access to simulations because you've completed the deployment verification step.
+            </p>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <div>
             <h3 className="text-xl font-semibold text-blue-400">Simulations</h3>
@@ -3417,7 +3443,10 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                           })()}
                         </div>
                       ) : currentStep.id === "simulations" ? (
-                        <SimulationsComponent />
+                        <SimulationsComponent 
+                          analysis={analysis} 
+                          deploymentVerified={isDeploymentVerificationCompleted(analysis.completedSteps)} 
+                        />
                       
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
