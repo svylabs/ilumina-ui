@@ -74,6 +74,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     earlyAccess?: boolean;
   } | null>(null);
   const [showUpgradeMessage, setShowUpgradeMessage] = useState(false);
+  const [simulationType, setSimulationType] = useState<'run' | 'batch_run'>('run');
+  const [simRepo, setSimRepo] = useState<{ owner: string; repo: string } | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -108,6 +110,27 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             canRun: false,
             message: "Please login to run simulations"
           });
+        }
+        
+        // Extract GitHub repo info from the project data if available
+        if (analysis?.steps?.files?.jsonData) {
+          const projectData = analysis.steps.files.jsonData;
+          if (projectData.repo_url) {
+            try {
+              // Parse GitHub URL to extract owner and repo
+              const url = new URL(projectData.repo_url);
+              const pathParts = url.pathname.split('/').filter(Boolean);
+              
+              if (pathParts.length >= 2 && url.hostname.includes('github.com')) {
+                const owner = pathParts[0];
+                const repo = pathParts[1];
+                console.log(`Extracted GitHub repo info: ${owner}/${repo}`);
+                setSimRepo({ owner, repo });
+              }
+            } catch (parseError) {
+              console.error('Error parsing GitHub URL:', parseError);
+            }
+          }
         }
         
         // Fetch existing simulation runs
@@ -204,6 +227,44 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     }
   };
   
+  // Fetch available branches for the simulation repository
+  useEffect(() => {
+    if (!submissionId || !simRepo) return;
+    
+    const fetchBranches = async () => {
+      try {
+        setIsLoadingBranches(true);
+        
+        // Use the GitHub API endpoint we created to fetch branches
+        const response = await fetch(`/api/github/branches/${simRepo.owner}/${simRepo.repo}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch branches: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.branches && Array.isArray(data.branches)) {
+          setAvailableBranches(data.branches);
+          
+          // If there's a default branch, select it
+          const defaultBranch = data.branches.find((b: any) => b.isDefault) || data.branches[0];
+          if (defaultBranch) {
+            setSelectedBranch(defaultBranch.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching branches:', error);
+        // Fallback to main branch if there's an error
+        setAvailableBranches([{ name: 'main', isDefault: true }]);
+      } finally {
+        setIsLoadingBranches(false);
+      }
+    };
+    
+    fetchBranches();
+  }, [submissionId, simRepo]);
+  
   // Generate a new simulation ID
   const generateSimId = () => {
     return `sim-${String(Math.floor(Math.random() * 900) + 100)}`;
@@ -231,7 +292,10 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          submissionId: uuidSubmissionId // Send the UUID format submission ID
+          submissionId: uuidSubmissionId, // Send the UUID format submission ID
+          branch: selectedBranch, // Include selected branch
+          numSimulations: numSimulations, // Include number of simulations
+          simulationType: simulationType // Include simulation type (run or batch_run)
         })
       });
       
@@ -255,8 +319,17 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         variant: "default"
       });
       
-      // Display a clear success message to the user
-      setSimulationMessage("Simulation started successfully. Results will appear in the list below shortly.");
+      // Parse the response for more detailed information
+      const responseData = await response.json();
+      
+      // Display a clear success message to the user with details
+      const messagePrefix = numSimulations > 1 
+        ? `Batch simulation with ${numSimulations} runs started successfully` 
+        : "Simulation started successfully";
+      
+      setSimulationMessage(
+        `${messagePrefix} on branch "${selectedBranch}". Results will appear in the list below shortly.`
+      );
       
       // Set a timeout to refresh the simulation runs
       setTimeout(async () => {
@@ -372,7 +445,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             </p>
           </div>
         )}
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
           <div>
             <h3 className="text-xl font-semibold text-blue-400">Simulations</h3>
             {simStatus && (
@@ -384,23 +457,80 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
               </p>
             )}
           </div>
-          <div className="flex gap-3 items-center">
-            {showUpgradeMessage && (
-              <Link href="/pricing" className="text-sm text-yellow-400 hover:text-yellow-300 underline">
-                Upgrade Plan
-              </Link>
-            )}
-            <button
-              onClick={startSimulation}
-              disabled={isRunningSimulation || !simStatus?.canRun}
-              className={`px-4 py-2 rounded-md font-medium ${
-                isRunningSimulation || !simStatus?.canRun
-                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isRunningSimulation ? 'Running...' : 'Run Simulation'}
-            </button>
+          
+          <div className="flex flex-col gap-3">
+            {/* Simulation Parameters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-800 p-3 rounded-md">
+              {/* Branch Selection */}
+              <div className="flex flex-col gap-1">
+                <label htmlFor="branch-select" className="text-sm text-gray-300">
+                  Branch
+                </label>
+                <select
+                  id="branch-select"
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  disabled={isLoadingBranches || isRunningSimulation || availableBranches.length === 0}
+                  className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {isLoadingBranches ? (
+                    <option>Loading branches...</option>
+                  ) : availableBranches.length === 0 ? (
+                    <option>No branches available</option>
+                  ) : (
+                    availableBranches.map((branch) => (
+                      <option key={branch.name} value={branch.name}>
+                        {branch.name} {branch.isDefault ? "(default)" : ""}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              
+              {/* Number of Simulations */}
+              <div className="flex flex-col gap-1">
+                <label htmlFor="sim-count" className="text-sm text-gray-300">
+                  Number of Simulations
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="sim-count"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={numSimulations}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (!isNaN(val) && val >= 1 && val <= 10) {
+                        setNumSimulations(val);
+                        setSimulationType(val > 1 ? 'batch_run' : 'run');
+                      }
+                    }}
+                    disabled={isRunningSimulation}
+                    className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end items-center gap-3">
+              {showUpgradeMessage && (
+                <Link href="/pricing" className="text-sm text-yellow-400 hover:text-yellow-300 underline">
+                  Upgrade Plan
+                </Link>
+              )}
+              <button
+                onClick={startSimulation}
+                disabled={isRunningSimulation || !simStatus?.canRun}
+                className={`px-4 py-2 rounded-md font-medium ${
+                  isRunningSimulation || !simStatus?.canRun
+                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                {isRunningSimulation ? 'Running...' : numSimulations > 1 ? `Run ${numSimulations} Simulations` : 'Run Simulation'}
+              </button>
+            </div>
           </div>
         </div>
         
