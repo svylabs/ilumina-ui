@@ -2388,7 +2388,8 @@ export function registerRoutes(app: Express): Server {
       console.log(`Calling external API: ${externalApiUrl}`);
       
       try {
-        const response = await fetch(externalApiUrl);
+        // Use the same authentication method as other external API calls
+        const response = await callExternalIluminaAPI(`/submission/${submissionId}/simulations/list`);
         
         if (response.ok) {
           // Return the data from the external API
