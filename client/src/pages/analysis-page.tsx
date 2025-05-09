@@ -262,9 +262,12 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
       // Show a success toast notification
       toast({
         title: "Success",
-        description: "Simulation has been started",
+        description: "Simulation has been started successfully",
         variant: "default"
       });
+      
+      // Display a clear success message to the user
+      setSimulationMessage("Simulation started successfully. Results will appear in the list below shortly.");
       
       // Set a timeout to refresh the simulation runs
       setTimeout(async () => {
@@ -388,8 +391,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             {simStatus && (
               <p className="text-sm text-gray-400 mt-1">
                 {simStatus.canRun 
-                  ? `${simStatus.message}`
-                  : `${simStatus.message}`
+                  ? "You have unlimited simulation runs available."
+                  : simStatus.message
                 }
               </p>
             )}
