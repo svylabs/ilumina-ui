@@ -461,10 +461,10 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           <div className="bg-gray-900 rounded-md">
             <div className="border-b border-gray-800 p-4">
               <div className="hidden md:grid md:grid-cols-12 text-sm text-gray-400 font-medium">
-                <div className="col-span-3">Run ID</div>
+                <div className="col-span-4">Run ID</div>
                 <div className="col-span-3">Status</div>
-                <div className="col-span-3">Date</div>
-                <div className="col-span-3">Actions</div>
+                <div className="col-span-4">Date</div>
+                <div className="col-span-1">Log</div>
               </div>
             </div>
             
@@ -493,11 +493,16 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
   // State to track if details section is expanded
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Toggle details when clicking on the row
+  const toggleDetails = () => {
+    setIsExpanded(!isExpanded);
+  };
+  
   return (
-    <div className="hover:bg-gray-800/50 transition-colors">
+    <div className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={toggleDetails}>
       <div className="p-4">
         <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0">
-          <div className="md:col-span-3 font-mono text-white">
+          <div className="md:col-span-4 font-mono text-white">
             <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
             <div className="truncate max-w-[200px]">{run.id}</div>
           </div>
@@ -512,34 +517,21 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
               {run.status === 'success' ? '✓ Success' : '✗ Failed'}
             </span>
           </div>
-          <div className="md:col-span-3 text-gray-300">
+          <div className="md:col-span-4 text-gray-300">
             <div className="md:hidden text-xs text-gray-400 mb-1">Date</div>
             {new Date(run.date).toLocaleString()}
           </div>
-          <div className="md:col-span-3 flex flex-wrap gap-2 md:space-x-2">
-            {run.logUrl ? (
+          <div className="md:col-span-1 flex flex-wrap gap-2 md:space-x-2" onClick={(e) => e.stopPropagation()}>
+            {run.logUrl && (
               <a 
                 href={run.logUrl} 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
               >
-                <span className="mr-1">📝</span> View Log
+                <span className="mr-1">📝</span> Log
               </a>
-            ) : (
-              <button
-                className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-400 cursor-not-allowed"
-                disabled
-              >
-                <span className="mr-1">📝</span> No Log
-              </button>
             )}
-            <button 
-              onClick={() => setIsExpanded(!isExpanded)} 
-              className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
-            >
-              <span className="mr-1">{isExpanded ? '📉' : '📊'}</span> {isExpanded ? 'Hide Details' : 'Details'}
-            </button>
           </div>
         </div>
       </div>
@@ -548,48 +540,8 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
       {isExpanded && (
         <div className="px-4 pb-4 pt-0 bg-gray-900/50 border-t border-gray-800">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Summary section */}
-            {run.summary && (
-              <div className="bg-gray-800/50 p-3 rounded-md">
-                <h4 className="text-sm font-medium text-blue-400 mb-2">Test Summary</h4>
-                <div className="text-sm space-y-1">
-                  <div className="flex justify-between text-gray-300">
-                    <span>Total Tests:</span>
-                    <span className="font-mono">{run.summary.totalTests || 0}</span>
-                  </div>
-                  <div className="flex justify-between text-green-300">
-                    <span>Passed:</span>
-                    <span className="font-mono">{run.summary.passed || 0}</span>
-                  </div>
-                  <div className="flex justify-between text-red-300">
-                    <span>Failed:</span>
-                    <span className="font-mono">{run.summary.failed || 0}</span>
-                  </div>
-                  
-                  {/* Progress bar */}
-                  {run.summary.totalTests > 0 && (
-                    <div className="mt-2">
-                      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-green-500" 
-                          style={{ 
-                            width: `${(run.summary.passed / run.summary.totalTests) * 100}%` 
-                          }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-400 mt-1">
-                        <span>0%</span>
-                        <span>{Math.round((run.summary.passed / run.summary.totalTests) * 100)}% passed</span>
-                        <span>100%</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
             {/* Run metadata */}
-            <div className="bg-gray-800/50 p-3 rounded-md">
+            <div className="bg-gray-800/50 p-3 rounded-md md:col-span-2">
               <h4 className="text-sm font-medium text-blue-400 mb-2">Run Details</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between text-gray-300">
