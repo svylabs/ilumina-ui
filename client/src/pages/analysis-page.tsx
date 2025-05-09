@@ -420,19 +420,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         
         {isRunningSimulation && (
           <div className="bg-gray-900 p-4 rounded-md">
-            <div className="flex items-center mb-2">
+            <div className="flex items-center">
               <div className="w-4 h-4 rounded-full bg-blue-500 animate-pulse mr-2"></div>
-              <span className="text-blue-400 font-medium">Simulation in progress</span>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-2.5 mb-2">
-              <div 
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <div className="text-right text-xs text-gray-400">{progress}% complete</div>
-            <div className="mt-2 text-sm text-gray-300">
-              <p>Simulation request sent. Processing on server...</p>
+              <span className="text-blue-400 font-medium">Simulation request sent. Processing on server...</span>
             </div>
           </div>
         )}
