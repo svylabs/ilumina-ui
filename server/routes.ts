@@ -2421,6 +2421,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Endpoint to fetch and stream simulation log contents from GCS URL
+  app.get("/api/simulation-log", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
+    
+    try {
+      const logUrl = req.query.url as string;
+      
+      if (!logUrl) {
+        return res.status(400).json({ error: "Log URL is required" });
+      }
+      
+      console.log(`Fetching log content from: ${logUrl}`);
+      
+      // Fetch the log content directly from Google Cloud Storage
+      const response = await fetch(logUrl);
+      
+      if (!response.ok) {
+        console.error(`Error fetching log content: ${response.status} ${response.statusText}`);
+        return res.status(response.status).json({ 
+          error: "Failed to fetch log content", 
+          details: response.statusText 
+        });
+      }
+      
+      // Stream the log content back to the client
+      const logContent = await response.text();
+      
+      // Return the log content
+      return res.send(logContent);
+    } catch (error) {
+      console.error("Error fetching log content:", error);
+      return res.status(500).json({ 
+        error: "Error fetching log content", 
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Get project files endpoint
   app.get("/api/files/:id", async (req, res) => {
     try {

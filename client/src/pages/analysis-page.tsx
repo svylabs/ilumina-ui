@@ -492,10 +492,118 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
 function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }) {
   // State to track if details section is expanded
   const [isExpanded, setIsExpanded] = useState(false);
+  // State to track if log viewer is shown
+  const [showLogViewer, setShowLogViewer] = useState(false);
+  // State to hold log content
+  const [logContent, setLogContent] = useState<string | null>(null);
+  // State to track log loading state
+  const [isLoadingLog, setIsLoadingLog] = useState(false);
+  // State to track log viewing error
+  const [logError, setLogError] = useState<string | null>(null);
   
   // Toggle details when clicking on the row
   const toggleDetails = () => {
     setIsExpanded(!isExpanded);
+  };
+  
+  // State to track pagination for large logs
+  const [logChunkSize] = useState(100 * 1024); // 100KB chunks
+  const [logOffset, setLogOffset] = useState(0);
+  const [hasMoreLogData, setHasMoreLogData] = useState(true);
+  
+  // Load and show log content
+  const viewLogContent = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row toggle
+    
+    // If log viewer is already open, just close it
+    if (showLogViewer) {
+      setShowLogViewer(false);
+      return;
+    }
+    
+    // Reset log state if reopening
+    if (!showLogViewer) {
+      setLogContent("");
+      setLogOffset(0);
+      setHasMoreLogData(true);
+    }
+    
+    // Start loading
+    setIsLoadingLog(true);
+    setLogError(null);
+    setShowLogViewer(true);
+    
+    // Load first chunk
+    loadNextLogChunk();
+  };
+  
+  // Load the next chunk of log data
+  const loadNextLogChunk = async () => {
+    if (!run.logUrl || !hasMoreLogData) return;
+    
+    try {
+      setIsLoadingLog(true);
+      
+      // Calculate range for next chunk
+      const rangeStart = logOffset;
+      const rangeEnd = logOffset + logChunkSize - 1;
+      
+      // Fetch log content directly from GCS with range header
+      const response = await fetch(run.logUrl, {
+        headers: {
+          'Range': `bytes=${rangeStart}-${rangeEnd}`
+        }
+      });
+      
+      // Check for partial content success (206) or regular success (200)
+      if (response.status !== 206 && response.status !== 200) {
+        throw new Error(`Error fetching log: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get content length if available
+      const contentRange = response.headers.get('Content-Range');
+      const contentLength = response.headers.get('Content-Length');
+      
+      // Parse content range to determine if there's more data
+      if (contentRange) {
+        // Format: "bytes start-end/total"
+        const total = parseInt(contentRange.split('/')[1]);
+        const end = parseInt(contentRange.split('-')[1].split('/')[0]);
+        
+        // If we've reached the end of the content
+        if (end + 1 >= total) {
+          setHasMoreLogData(false);
+        } else {
+          // Update offset for next chunk
+          setLogOffset(end + 1);
+          setHasMoreLogData(true);
+        }
+      } else if (contentLength) {
+        // If no Content-Range but has Content-Length, check if we got less than requested
+        const length = parseInt(contentLength);
+        if (length < logChunkSize) {
+          setHasMoreLogData(false);
+        } else {
+          // Update offset for next chunk
+          setLogOffset(logOffset + length);
+          setHasMoreLogData(true);
+        }
+      } else {
+        // No way to tell if there's more, assume we're done
+        setHasMoreLogData(false);
+      }
+      
+      const chunk = await response.text();
+      
+      // Append new chunk to existing content
+      setLogContent(prev => prev + chunk);
+    } catch (error) {
+      console.error("Error fetching log content:", error);
+      setLogError(error instanceof Error ? error.message : "Failed to load log content");
+      setHasMoreLogData(false);
+    } finally {
+      setIsLoadingLog(false);
+    }
   };
   
   return (
@@ -523,21 +631,79 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
           </div>
           <div className="md:col-span-1 flex flex-wrap gap-2 md:space-x-2" onClick={(e) => e.stopPropagation()}>
             {run.logUrl && (
-              <a 
-                href={run.logUrl} 
-                target="_blank"
-                rel="noopener noreferrer"
+              <button 
+                onClick={viewLogContent}
                 className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
               >
                 <span className="mr-1">📝</span> Log
-              </a>
+              </button>
             )}
           </div>
         </div>
       </div>
       
+      {/* Log viewer section */}
+      {showLogViewer && (
+        <div className="px-4 pb-4 pt-0 bg-gray-900/30 border-t border-gray-800" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-sm font-medium text-blue-400">Simulation Log</h4>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLogViewer(false);
+              }}
+              className="text-xs px-2 py-1 rounded text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+            >
+              Close
+            </button>
+          </div>
+          
+          <div className="bg-black rounded border border-gray-800 h-96">
+            {isLoadingLog && (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            )}
+            
+            {logError && (
+              <div className="text-red-400 p-4 text-sm">
+                <p className="font-medium mb-1">Error loading log:</p>
+                <p className="font-mono">{logError}</p>
+              </div>
+            )}
+            
+            {logContent && (
+              <div className="flex flex-col h-full">
+                <div className="text-xs text-gray-300 font-mono whitespace-pre-wrap p-4 flex-grow overflow-y-auto">
+                  {logContent}
+                </div>
+                
+                {hasMoreLogData && (
+                  <div className="border-t border-gray-800 p-2 flex justify-center">
+                    <button 
+                      onClick={loadNextLogChunk}
+                      disabled={isLoadingLog}
+                      className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded flex items-center"
+                    >
+                      {isLoadingLog ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b border-white mr-2"></div>
+                          Loading...
+                        </>
+                      ) : (
+                        <>Load More</>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Expandable details section */}
-      {isExpanded && (
+      {isExpanded && !showLogViewer && (
         <div className="px-4 pb-4 pt-0 bg-gray-900/50 border-t border-gray-800">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Run metadata */}
