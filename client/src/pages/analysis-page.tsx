@@ -213,6 +213,14 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
       setIsRunningSimulation(true);
       setProgress(0);
       
+      // Extract the UUID submission ID from analysis data
+      // The analysis data contains the UUID format submission ID which is needed by the external API
+      const uuidSubmissionId = analysis?.submissionId || 
+                              analysis?.steps?.files?.jsonData?.submission_id || 
+                              submissionId;
+      
+      console.log("Using submission UUID for simulation:", uuidSubmissionId);
+      
       // Show progress animation
       const interval = setInterval(() => {
         setProgress(prev => {
@@ -231,7 +239,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          submissionId
+          submissionId: uuidSubmissionId // Send the UUID format submission ID
         })
       });
       

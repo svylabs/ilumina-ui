@@ -6284,15 +6284,51 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Verify if the submissionId is a UUID (for direct analysis data) or a numeric project ID
+      let actualSubmissionId = submissionId;
+      
+      // If it's a numeric project ID, we need to look up the corresponding submission UUID
+      if (!submissionId.includes('-') && !isNaN(Number(submissionId))) {
+        console.log(`Received project ID ${submissionId}, looking up corresponding submission ID`);
+        
+        // Look up the submission ID from the database using the project ID
+        const projectId = Number(submissionId);
+        
+        try {
+          // Query the submissions table to find the corresponding UUID
+          const [submission] = await db.select({ id: submissions.id, submissionUuid: submissions.submissionUuid })
+            .from(submissions)
+            .where(eq(submissions.projectId, projectId))
+            .orderBy(desc(submissions.createdAt))
+            .limit(1);
+          
+          if (submission && submission.submissionUuid) {
+            actualSubmissionId = submission.submissionUuid;
+            console.log(`Found submission ID ${actualSubmissionId} for project ID ${projectId}`);
+          } else {
+            return res.status(404).json({ 
+              error: 'Submission not found',
+              message: 'Could not find a valid submission for the provided project ID'
+            });
+          }
+        } catch (dbError) {
+          console.error('Error looking up submission:', dbError);
+          return res.status(500).json({ 
+            error: 'Database error',
+            message: 'Failed to look up submission ID'
+          });
+        }
+      }
+      
       // Call the external API to run a simulation using the correct analyze endpoint
-      console.log(`Calling external API to run a simulation for submission ${submissionId}`);
+      console.log(`Calling external API to run a simulation for submission ${actualSubmissionId}`);
       
       // Using direct fetch for this specific endpoint to avoid URL path issues
       // Make sure we're using the correct URL format without duplicate '/api' segments
       const baseUrl = process.env.EXTERNAL_API_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app';
       const url = `${baseUrl}/api/analyze`;
       
-      console.log(`Direct API call to: ${url} with submission_id=${submissionId}`);
+      console.log(`Direct API call to: ${url} with submission_id=${actualSubmissionId}`);
       
       const apiResponse = await fetch(url, {
         method: 'POST',
@@ -6302,7 +6338,7 @@ export function registerRoutes(app: Express): Server {
         },
         body: JSON.stringify({
           // The external API expects a UUID string for submission_id
-          submission_id: String(submissionId),
+          submission_id: String(actualSubmissionId),
           step: "run_simulation"
         })
       });
