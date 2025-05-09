@@ -33,14 +33,19 @@ import { Badge } from "@/components/ui/badge";
 // Simulation run type definition
 type SimulationRun = {
   id: string;
-  status: "success" | "failure";
+  status: "success" | "error";
   date: string;
-  logUrl: string;
-  summary: {
+  logUrl: string | null;
+  summary?: {
     totalTests: number;
     passed: number;
     failed: number;
   };
+  // Additional fields for expanded details section
+  log?: string;
+  return_code?: number;
+  stderr?: string;
+  stdout?: string;
 };
 
 // Component for Simulations tab
@@ -124,15 +129,21 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
               
               const status = run.status === "SUCCESS" ? "success" : 
                              run.status === "success" ? "success" :
-                             run.status === "FAILURE" ? "failure" : 
-                             run.status === "failure" ? "failure" :
-                             run.status?.toLowerCase() || "failure";
+                             run.status === "FAILURE" ? "error" : 
+                             run.status === "failure" ? "error" :
+                             run.status === "error" ? "error" :
+                             run.status?.toLowerCase() || "error";
               
               return {
                 id: run.simulation_id || run.run_id || run.id,
-                status: status as 'success' | 'failure',
+                status: status as 'success' | 'error',
                 date: run.created_at || run.date || new Date().toISOString(),
-                logUrl: run.log_url || run.logUrl || '#log',
+                logUrl: run.log_url || run.logUrl || null,
+                // Include all available fields for the expanded details section
+                log: run.log || null,
+                return_code: run.return_code || 0,
+                stderr: run.stderr || null,
+                stdout: run.stdout || null,
                 summary: run.summary || {
                   totalTests: run.total_tests || 0,
                   passed: run.passed_tests || 0,
@@ -144,9 +155,13 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             // Fallback for old format
             return {
               id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
-              status: run.status as 'success' | 'failure',
+              status: (run.status === "failure" ? "error" : run.status) as 'success' | 'error',
               date: run.date || new Date().toISOString(),
-              logUrl: run.logUrl || '#log',
+              logUrl: run.logUrl || null,
+              log: run.log || null,
+              return_code: run.return_code || 0,
+              stderr: run.stderr || null,
+              stdout: run.stdout || null,
               summary: run.summary || {
                 totalTests: 0,
                 passed: 0,
@@ -229,8 +244,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             body: JSON.stringify({
               submissionId,
               runId: simId,
-              status: isSuccess ? 'success' : 'failure',
-              logUrl: '#log',
+              status: isSuccess ? 'success' : 'error',
+              logUrl: null,
               summary: {
                 totalTests,
                 passed: passedTests,
@@ -440,45 +455,153 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             </div>
             
             <div className="divide-y divide-gray-800">
-              {simulationRuns.map((run) => (
-                <div key={run.id} className="p-4 hover:bg-gray-800/50 transition-colors">
-                  <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0">
-                    <div className="md:col-span-3 font-mono text-white">
-                      <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
-                      {run.id}
+              {simulationRuns.map((run) => {
+                // State to track if details section is expanded
+                const [isExpanded, setIsExpanded] = useState(false);
+                
+                return (
+                  <div key={run.id} className="hover:bg-gray-800/50 transition-colors">
+                    <div className="p-4">
+                      <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0">
+                        <div className="md:col-span-3 font-mono text-white">
+                          <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
+                          <div className="truncate max-w-[200px]">{run.id}</div>
+                        </div>
+                        <div className="md:col-span-3">
+                          <div className="md:hidden text-xs text-gray-400 mb-1">Status</div>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                            ${run.status === 'success' 
+                              ? 'bg-green-900/50 text-green-300' 
+                              : 'bg-red-900/50 text-red-300'
+                            }`}
+                          >
+                            {run.status === 'success' ? '✓ Success' : '✗ Failed'}
+                          </span>
+                        </div>
+                        <div className="md:col-span-3 text-gray-300">
+                          <div className="md:hidden text-xs text-gray-400 mb-1">Date</div>
+                          {new Date(run.date).toLocaleString()}
+                        </div>
+                        <div className="md:col-span-3 flex flex-wrap gap-2 md:space-x-2">
+                          <a 
+                            href={run.logUrl} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                          >
+                            <span className="mr-1">📝</span> View Log
+                          </a>
+                          <button 
+                            onClick={() => setIsExpanded(!isExpanded)} 
+                            className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                          >
+                            <span className="mr-1">{isExpanded ? '📉' : '📊'}</span> {isExpanded ? 'Hide Details' : 'Details'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="md:col-span-3">
-                      <div className="md:hidden text-xs text-gray-400 mb-1">Status</div>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                        ${run.status === 'success' 
-                          ? 'bg-green-900/50 text-green-300' 
-                          : 'bg-red-900/50 text-red-300'
-                        }`}
-                      >
-                        {run.status === 'success' ? '✓ Success' : '✗ Failed'}
-                      </span>
-                    </div>
-                    <div className="md:col-span-3 text-gray-300">
-                      <div className="md:hidden text-xs text-gray-400 mb-1">Date</div>
-                      {new Date(run.date).toLocaleString()}
-                    </div>
-                    <div className="md:col-span-3 flex flex-wrap gap-2 md:space-x-2">
-                      <a 
-                        href={run.logUrl} 
-                        className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
-                      >
-                        <span className="mr-1">📝</span> View Log
-                      </a>
-                      <a 
-                        href={`#details-${run.id}`} 
-                        className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
-                      >
-                        <span className="mr-1">📊</span> Details
-                      </a>
-                    </div>
+                    
+                    {/* Expandable details section */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 pt-0 bg-gray-900/50 border-t border-gray-800">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Summary section */}
+                          {run.summary && (
+                            <div className="bg-gray-800/50 p-3 rounded-md">
+                              <h4 className="text-sm font-medium text-blue-400 mb-2">Test Summary</h4>
+                              <div className="text-sm space-y-1">
+                                <div className="flex justify-between text-gray-300">
+                                  <span>Total Tests:</span>
+                                  <span className="font-mono">{run.summary.totalTests || 0}</span>
+                                </div>
+                                <div className="flex justify-between text-green-300">
+                                  <span>Passed:</span>
+                                  <span className="font-mono">{run.summary.passed || 0}</span>
+                                </div>
+                                <div className="flex justify-between text-red-300">
+                                  <span>Failed:</span>
+                                  <span className="font-mono">{run.summary.failed || 0}</span>
+                                </div>
+                                
+                                {/* Progress bar */}
+                                {run.summary.totalTests > 0 && (
+                                  <div className="mt-2">
+                                    <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-green-500" 
+                                        style={{ 
+                                          width: `${(run.summary.passed / run.summary.totalTests) * 100}%` 
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                      <span>0%</span>
+                                      <span>{Math.round((run.summary.passed / run.summary.totalTests) * 100)}% passed</span>
+                                      <span>100%</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Run metadata */}
+                          <div className="bg-gray-800/50 p-3 rounded-md">
+                            <h4 className="text-sm font-medium text-blue-400 mb-2">Run Details</h4>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between text-gray-300">
+                                <span>Simulation ID:</span>
+                                <span className="font-mono truncate max-w-[180px]">{run.id}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-300">
+                                <span>Return Code:</span>
+                                <span className="font-mono">{run.return_code || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-300">
+                                <span>Created:</span>
+                                <span>{new Date(run.date).toLocaleString()}</span>
+                              </div>
+                              {run.status === 'error' && run.log && (
+                                <div className="mt-2">
+                                  <div className="text-xs text-red-300 font-medium mb-1">Error Message:</div>
+                                  <div className="text-xs bg-red-900/30 p-2 rounded border border-red-900 text-gray-200 font-mono whitespace-pre-wrap max-h-20 overflow-y-auto">
+                                    {run.log.length > 300 ? run.log.substring(0, 300) + '...' : run.log}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* If there's stdout or stderr, show a collapsed version */}
+                          {(run.stdout || run.stderr) && (
+                            <div className="bg-gray-800/50 p-3 rounded-md md:col-span-2">
+                              <h4 className="text-sm font-medium text-blue-400 mb-2">Console Output</h4>
+                              
+                              {run.stdout && (
+                                <div className="mb-2">
+                                  <div className="text-xs text-green-300 font-medium mb-1">Standard Output:</div>
+                                  <div className="text-xs bg-gray-900 p-2 rounded border border-gray-700 text-gray-300 font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                    {run.stdout.length > 500 ? run.stdout.substring(0, 500) + '...' : run.stdout}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {run.stderr && (
+                                <div>
+                                  <div className="text-xs text-yellow-300 font-medium mb-1">Standard Error:</div>
+                                  <div className="text-xs bg-gray-900 p-2 rounded border border-gray-700 text-gray-300 font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                    {run.stderr.length > 500 ? run.stderr.substring(0, 500) + '...' : run.stderr}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : (
