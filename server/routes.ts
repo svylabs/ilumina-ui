@@ -2636,6 +2636,49 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Endpoint to fetch available branches for a repository
+  app.get('/api/github/branches/:owner/:repo', async (req, res) => {
+    try {
+      const { owner, repo } = req.params;
+      
+      // Build GitHub API URL for branches
+      const url = `https://api.github.com/repos/${owner}/${repo}/branches`;
+      
+      // Make the API request
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Ilumina-App',
+          'Accept': 'application/vnd.github.v3+json',
+          ...(process.env.GITHUB_TOKEN ? { 'Authorization': `token ${process.env.GITHUB_TOKEN}` } : {})
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Format the branches into a simpler structure
+      const branches = data.map((branch: any) => ({
+        name: branch.name,
+        commit: branch.commit.sha,
+        isDefault: branch.name === 'main' || branch.name === 'master'
+      }));
+      
+      res.json({
+        branches,
+        default: branches.find((b: any) => b.isDefault) || branches[0] || { name: 'main' }
+      });
+    } catch (error) {
+      console.error('GitHub branches API error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch branches from GitHub',
+        message: error.message
+      });
+    }
+  });
+  
   // NOTE: No server-side proxy for logs - client fetches directly from GCS
   // The GCS bucket has been configured to allow CORS access
   
