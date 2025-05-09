@@ -432,11 +432,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             </div>
             <div className="text-right text-xs text-gray-400">{progress}% complete</div>
             <div className="mt-2 text-sm text-gray-300">
-              <p>• Preparing test environment</p>
-              {progress > 20 && <p>• Deploying contracts</p>}
-              {progress > 40 && <p>• Initializing actor agents</p>}
-              {progress > 60 && <p>• Running test scenarios</p>}
-              {progress > 80 && <p>• Analyzing results</p>}
+              <p>Simulation request sent. Processing on server...</p>
             </div>
           </div>
         )}
