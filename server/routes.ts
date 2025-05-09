@@ -2397,9 +2397,26 @@ export function registerRoutes(app: Express): Server {
           // Return the data from the external API
           const data = await response.json();
           // The data should already have simulation_runs property, but add it if not
-          const formattedData = data.simulation_runs ? data : { simulation_runs: data };
-          console.log(`Successfully fetched simulation runs from external API: ${formattedData.simulation_runs?.length || 0} runs`);
-          return res.json(formattedData);
+          const simRuns = data.simulation_runs || data;
+          
+          // Process each simulation run to ensure it has type and num_simulations fields
+          const processedRuns = simRuns.map((run: any) => {
+            // Determine if this is a batch run or single run
+            const isBatch = run.num_simulations && run.num_simulations > 1;
+            
+            return {
+              ...run,
+              // Set type to 'batch' if num_simulations > 1, otherwise 'run'
+              type: run.type || (isBatch ? 'batch' : 'run'),
+              // Ensure description is never undefined
+              description: run.description || "",
+              // Ensure branch has a default value if missing
+              branch: run.branch || "default"
+            };
+          });
+          
+          console.log(`Successfully fetched simulation runs from external API: ${processedRuns.length || 0} runs`);
+          return res.json({ simulation_runs: processedRuns });
         } else {
           // If the external API returns an error, log it
           try {
