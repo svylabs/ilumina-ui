@@ -44,8 +44,9 @@ function joinPath(base, path) {
 async function callExternalIluminaAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<Response> {
 
 
-  // Remove trailing /api if present in base URL to avoid double /api in paths
-  const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api').replace(/\/api$/, '');
+  // For the Ilumina API, we need to handle the URL differently
+  // Base URL should not include /api for external calls
+  const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app').replace(/\/api$/, '');
   const url = joinPath(baseUrl, '/api' + endpoint);
   
   console.log(`Calling external Ilumina API: ${method} ${url}`);
@@ -6230,7 +6231,7 @@ export function registerRoutes(app: Express): Server {
   const PORT = process.env.PORT || 3000;
   app.set('port', PORT);
 
-  // Run a simulation using the external API
+  // Run a simulation using the external API's analyze endpoint
   app.post('/api/run-simulation', async (req, res) => {
     try {
       const { submissionId } = req.body;
@@ -6239,13 +6240,26 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: 'Missing required parameter: submissionId' });
       }
       
-      // Call the external API to run a simulation
+      // Call the external API to run a simulation using the correct analyze endpoint
       console.log(`Calling external API to run a simulation for submission ${submissionId}`);
       
-      const apiResponse = await callExternalIluminaAPI(
-        '/submission/' + submissionId + '/simulations/run', 
-        'POST'
-      );
+      // Using direct fetch for this specific endpoint to avoid URL path issues
+      const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app';
+      const url = baseUrl.replace(/\/api$/, '') + '/api/analyze';
+      
+      console.log(`Direct API call to: ${url}`);
+      
+      const apiResponse = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.ILUMINA_API_KEY || 'my_secure_password'}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          submission_id: submissionId,
+          step: "run_simulation"
+        })
+      });
       
       if (!apiResponse.ok) {
         console.error(`External API returned status ${apiResponse.status}`);
