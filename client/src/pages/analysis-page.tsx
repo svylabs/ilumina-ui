@@ -38,6 +38,8 @@ type SimulationRun = {
   logUrl: string | null;
   branch?: string;
   description?: string;
+  type?: string;
+  num_simulations?: number;
   summary?: {
     totalTests: number;
     passed: number;
@@ -169,6 +171,10 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 status: status as 'success' | 'error',
                 date: run.created_at || run.date || new Date().toISOString(),
                 logUrl: run.log_url || run.logUrl || null,
+                branch: run.branch || "default",
+                description: run.description || "",
+                type: run.type || (run.num_simulations && run.num_simulations > 1 ? "batch" : "run"),
+                num_simulations: run.num_simulations || 1,
                 // Include all available fields for the expanded details section
                 log: run.log || null,
                 return_code: run.return_code || 0,
@@ -431,6 +437,10 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                   status: status as 'success' | 'error',
                   date: run.created_at || run.date || new Date().toISOString(),
                   logUrl: run.log_url || run.logUrl || null,
+                  branch: run.branch || "default",
+                  description: run.description || "",
+                  type: run.type || (run.num_simulations && run.num_simulations > 1 ? "batch" : "run"),
+                  num_simulations: run.num_simulations || 1,
                   log: run.log || null,
                   stderr: run.stderr || null,
                   stdout: run.stdout || null,
@@ -449,6 +459,10 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 status: (run.status === 'failure' ? 'error' : run.status) as 'success' | 'error',
                 date: run.date || new Date().toISOString(),
                 logUrl: run.logUrl || null,
+                branch: run.branch || "default",
+                description: run.description || "",
+                type: run.type || (run.num_simulations && run.num_simulations > 1 ? "batch" : "run"),
+                num_simulations: run.num_simulations || 1,
                 log: run.log || null,
                 stderr: run.stderr || null,
                 stdout: run.stdout || null,
