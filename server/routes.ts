@@ -6285,7 +6285,14 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      const { submissionId, branch, numSimulations, ...additionalParams } = req.body;
+      const { submissionId, branch, numSimulations, simulationType, ...additionalParams } = req.body;
+      
+      console.log("Run simulation request received:", { 
+        submissionId, 
+        branch: branch || "main", 
+        numSimulations: numSimulations || 1,
+        simulationType: simulationType || "run"
+      });
       
       if (!submissionId) {
         return res.status(400).json({ error: 'Missing required parameter: submissionId' });
