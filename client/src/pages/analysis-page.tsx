@@ -60,7 +60,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   // State for simulation runs
   const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [simulationMessage, setSimulationMessage] = useState<string | null>(null);
   const [simStatus, setSimStatus] = useState<{
     canRun: boolean;
@@ -212,7 +211,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     
     try {
       setIsRunningSimulation(true);
-      setProgress(0);
       
       // Extract the UUID submission ID from analysis data
       // The analysis data contains the UUID format submission ID which is needed by the external API
@@ -221,17 +219,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                               submissionId;
       
       console.log("Using submission UUID for simulation:", uuidSubmissionId);
-      
-      // Show progress animation
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 95) {
-            // Cap at 95% until we get confirmation
-            return 95;
-          }
-          return prev + 5;
-        });
-      }, 300);
       
       // Call the new API endpoint to trigger the simulation
       const response = await fetch('/api/run-simulation', {
@@ -256,9 +243,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           throw new Error(`Failed to start simulation. Server returned status ${response.status}`);
         }
       }
-      
-      // Complete the progress bar
-      setProgress(100);
       
       // Show a success toast notification
       toast({
@@ -349,7 +333,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           }
           
           setIsRunningSimulation(false);
-          clearInterval(interval);
         } catch (error) {
           console.error('Error completing simulation:', error);
           toast({
@@ -358,7 +341,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             variant: "destructive"
           });
           setIsRunningSimulation(false);
-          clearInterval(interval);
         }
       }, 8000); // 8 seconds total simulation time
     } catch (error) {
