@@ -885,14 +885,15 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
   return (
     <div className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={toggleDetails}>
       <div className="p-4">
-        <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0">
+        {/* First row with run ID, status and action buttons */}
+        <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0 mb-2">
           <div className="md:col-span-1 font-medium text-gray-300">
             <div className="md:hidden text-xs text-gray-400 mb-1">#</div>
             {number}
           </div>
           <div className="md:col-span-3 font-mono text-white">
             <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
-            <div className="truncate max-w-[200px]">{run.id}</div>
+            <div className="truncate max-w-[180px]">{run.id}</div>
           </div>
           <div className="md:col-span-3">
             <div className="md:hidden text-xs text-gray-400 mb-1">Status</div>
@@ -911,13 +912,13 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
                   : '✗ Failed'}
             </span>
           </div>
-          <div className="md:col-span-4 text-gray-300">
+          <div className="md:col-span-3 text-gray-300">
             <div className="md:hidden text-xs text-gray-400 mb-1">Date</div>
             {typeof run.date === 'string' && run.date.includes('GMT')
               ? new Date(run.date.replace('GMT', '+0000')).toLocaleString()
               : new Date(run.date).toLocaleString()}
           </div>
-          <div className="md:col-span-1 flex flex-wrap gap-2 md:space-x-2" onClick={(e) => e.stopPropagation()}>
+          <div className="md:col-span-2 flex flex-wrap gap-2 md:space-x-2" onClick={(e) => e.stopPropagation()}>
             {run.logUrl && (
               <div className="flex space-x-1">
                 <button 
@@ -943,6 +944,31 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
                 </button>
               </div>
             )}
+          </div>
+        </div>
+        
+        {/* Second row with branch and description */}
+        <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0 border-t border-gray-800/50 pt-2">
+          <div className="md:col-span-1">
+            {/* Empty space to align with top row */}
+          </div>
+          <div className="md:col-span-4 text-gray-300">
+            <div className="md:hidden text-xs text-gray-400 mb-1">Branch</div>
+            <div className="flex items-center">
+              <span className="text-xs text-gray-400 mr-2">Branch:</span>
+              <span className="px-2 py-0.5 bg-gray-700/50 rounded text-blue-200 text-sm">
+                {run.branch || "default"}
+              </span>
+            </div>
+          </div>
+          <div className="md:col-span-7 text-gray-300">
+            <div className="md:hidden text-xs text-gray-400 mb-1">Description</div>
+            <div className="flex items-center">
+              <span className="text-xs text-gray-400 mr-2">Description:</span>
+              <span className="text-sm">
+                {run.description || "run"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
