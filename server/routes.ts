@@ -2369,82 +2369,52 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
     
     try {
-      const id = req.params.id;
-      let submissionId: string | null = null;
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(req.params.id);
       
-      // First, check if this is a project ID
-      if (/^\d+$/.test(id)) {
-        // It's a number, probably a project ID
-        const projectSubmission = await db
-          .select()
-          .from(submissions)
-          .where(eq(submissions.projectId, parseInt(id)))
-          .orderBy(submissions.createdAt, "desc")
-          .limit(1);
-        
-        if (projectSubmission.length > 0) {
-          submissionId = projectSubmission[0].id;
-        }
-      } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-        // It's a UUID format, probably a submission ID
-        submissionId = id;
-      }
-      
-      if (!submissionId) {
-        return res.status(404).json({
-          success: false,
-          message: "No submission found for the given ID"
+      // If there was an error getting a valid submission ID, return the error
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details 
         });
       }
       
+      const submissionId = result.submissionId;
+      
+      // Only use the external API for simulation runs - no database fallback
+      console.log(`Fetching simulation runs from external API for submission: ${submissionId}`);
+      const externalApiUrl = `${process.env.EXTERNAL_API_URL}/api/submission/${submissionId}/simulations/list`;
+      console.log(`Calling external API: ${externalApiUrl}`);
+      
       try {
-        // First, try to fetch simulation runs from the external API
-        console.log(`Fetching simulation runs from external API for submission: ${submissionId}`);
-        const externalApiUrl = `${process.env.EXTERNAL_API_URL}/api/submission/${submissionId}/simulations/list`;
-        console.log(`Calling external API: ${externalApiUrl}`);
+        const response = await fetch(externalApiUrl);
         
-        try {
-          const response = await fetch(externalApiUrl);
-          
-          if (response.ok) {
-            // Return the data from the external API
-            const data = await response.json();
-            console.log(`Successfully fetched simulation runs from external API: ${data.length} runs`);
-            return res.json(data);
-          } else {
-            // Try to get error details from response
-            try {
-              const errorData = await response.json();
-              console.warn(`External API returned status ${response.status} when fetching simulation runs: ${JSON.stringify(errorData)}`);
-            } catch (parseError) {
-              console.warn(`External API returned status ${response.status} when fetching simulation runs`);
-            }
-            // If we get an error from the external API, fall back to local database
-            console.log("Falling back to local database due to external API error");
+        if (response.ok) {
+          // Return the data from the external API
+          const data = await response.json();
+          console.log(`Successfully fetched simulation runs from external API: ${data.length} runs`);
+          return res.json(data);
+        } else {
+          // If the external API returns an error, log it
+          try {
+            const errorData = await response.json();
+            console.error(`External API returned status ${response.status} when fetching simulation runs: ${JSON.stringify(errorData)}`);
+          } catch (parseError) {
+            console.error(`External API returned status ${response.status} when fetching simulation runs`);
           }
-        } catch (apiRequestError) {
-          console.error("Network error when calling external API:", apiRequestError);
-          console.log("Falling back to local database due to network error");
+          
+          // Return an empty array - no database fallback
+          return res.json([]);
         }
-      } catch (apiError) {
-        console.error("Error fetching simulation runs from external API:", apiError);
-        // If the external API call fails, fall back to using the local database
+      } catch (apiRequestError) {
+        console.error("Network error when calling external API:", apiRequestError);
+        // Return an empty array - no database fallback
+        return res.json([]);
       }
-      
-      // Fall back to the local database if the external API didn't return data
-      console.log(`Fetching simulation runs from local database for submission: ${submissionId}`);
-      const runs = await db.select()
-        .from(simulationRuns)
-        .where(eq(simulationRuns.submissionId, submissionId))
-        .orderBy(sql`${simulationRuns.date} DESC`);
-      
-      return res.json(runs);
     } catch (error) {
-      console.error("Error fetching simulation runs:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch simulation runs" 
-      });
+      console.error("Error in simulation runs endpoint:", error);
+      return res.status(500).json({ success: false, message: "Internal server error" });
     }
   });
 
