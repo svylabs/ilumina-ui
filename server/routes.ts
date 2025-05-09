@@ -6229,6 +6229,48 @@ export function registerRoutes(app: Express): Server {
   const PORT = process.env.PORT || 3000;
   app.set('port', PORT);
 
+  // Run a simulation using the external API
+  app.post('/api/run-simulation', async (req, res) => {
+    try {
+      const { submissionId } = req.body;
+      
+      if (!submissionId) {
+        return res.status(400).json({ error: 'Missing required parameter: submissionId' });
+      }
+      
+      // Call the external API to run a simulation
+      console.log(`Calling external API to run a simulation for submission ${submissionId}`);
+      
+      const apiResponse = await callExternalIluminaAPI(
+        '/api/submission/' + submissionId + '/simulations/run', 
+        'POST'
+      );
+      
+      if (!apiResponse.ok) {
+        console.error(`External API returned status ${apiResponse.status}`);
+        return res.status(500).json({ 
+          error: 'Failed to start simulation via external API',
+          status: apiResponse.status
+        });
+      }
+      
+      const responseData = await apiResponse.json();
+      console.log('Successfully started simulation via external API:', responseData);
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Simulation started successfully', 
+        data: responseData 
+      });
+    } catch (error) {
+      console.error('Error running simulation via external API:', error);
+      res.status(500).json({ 
+        error: 'Failed to run simulation', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   return httpServer;
 }
 

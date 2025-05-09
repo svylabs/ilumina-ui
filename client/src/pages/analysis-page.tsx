@@ -212,150 +212,105 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     try {
       setIsRunningSimulation(true);
       setProgress(0);
-      const simId = generateSimId();
       
-      // Mock progress updates
+      // Show progress animation
       const interval = setInterval(() => {
         setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
+          if (prev >= 95) {
+            // Cap at 95% until we get confirmation
+            return 95;
           }
           return prev + 5;
         });
       }, 300);
       
-      // Simulate a running time
+      // Call the new API endpoint to trigger the simulation
+      const response = await fetch('/api/run-simulation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          submissionId
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to start simulation');
+      }
+      
+      // Complete the progress bar
+      setProgress(100);
+      
+      // Set a timeout to refresh the simulation runs
       setTimeout(async () => {
         try {
-          // Generate random results
-          const isSuccess = Math.random() > 0.3; // 70% success rate
-          const totalTests = Math.floor(Math.random() * 20) + 30; // 30-50 tests
-          const passedTests = isSuccess 
-            ? totalTests 
-            : Math.floor(totalTests * (Math.random() * 0.4 + 0.5)); // 50-90% pass rate for failures
-          
-          // Log the simulation run
-          const logResponse = await fetch('/api/log-simulation', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              submissionId,
-              runId: simId,
-              status: isSuccess ? 'success' : 'error',
-              logUrl: null,
-              summary: {
-                totalTests,
-                passed: passedTests,
-                failed: totalTests - passedTests
+          // Refresh the simulation runs list
+          const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
+          if (runsResponse.ok) {
+            const responseData = await runsResponse.json();
+            console.log("Received simulation runs:", responseData);
+            
+            // Check if the response has a 'simulation_runs' property (from external API)
+            const runsData = responseData.simulation_runs || responseData || [];
+            
+            // Convert API data to our SimulationRun type
+            const formattedRuns: SimulationRun[] = runsData.map((run: any) => {
+              // Check if the response data is already in our expected format
+              if (run.id && run.status) {
+                return run;
               }
-            })
-          });
-          
-          if (!logResponse.ok) {
-            if (logResponse.status === 401) {
-              toast({
-                title: "Authentication Required",
-                description: "Please login to run simulations",
-                variant: "destructive"
-              });
-              setIsRunningSimulation(false);
-              clearInterval(interval);
-              return;
-            }
-            throw new Error('Failed to log simulation');
-          }
-          
-          const logData = await logResponse.json();
-          
-          // Update simulation runs with the new one from the server
-          if (logData.success && logData.simulationRun) {
-            // Fetch all runs to ensure consistency
-            const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
-            if (runsResponse.ok) {
-              const responseData = await runsResponse.json();
-              console.log("Received simulation runs:", responseData);
               
-              // Check if the response has a 'simulation_runs' property (from external API)
-              const runsData = responseData.simulation_runs || responseData || [];
-              
-              // Convert API data to our SimulationRun type
-              const formattedRuns: SimulationRun[] = runsData.map((run: any) => {
-                // Check if the response data is already in our expected format
-                if (run.id && run.status) {
-                  return run;
-                }
+              // Handle data from external API
+              if (run.simulation_id || run.run_id || run.id) {
+                // Log the raw run data to debug
+                console.log("Processing run data (from simulation):", run);
                 
-                // Handle data from external API
-                if (run.simulation_id || run.run_id || run.id) {
-                  // Log the raw run data to debug
-                  console.log("Processing run data (from simulation):", run);
-                  
-                  const status = run.status === "SUCCESS" ? "success" : 
-                                run.status === "success" ? "success" :
-                                run.status === "FAILURE" ? "error" : 
-                                run.status === "failure" ? "error" :
-                                run.status === "ERROR" ? "error" :
-                                run.status === "error" ? "error" :
-                                run.status?.toLowerCase() || "error";
-                  
-                  return {
-                    id: run.simulation_id || run.run_id || run.id,
-                    status: status as 'success' | 'error',
-                    date: run.created_at || run.date || new Date().toISOString(),
-                    logUrl: run.log_url || run.logUrl || null,
-                    log: run.log || null,
-                    stderr: run.stderr || null,
-                    stdout: run.stdout || null,
-                    return_code: run.return_code || 0,
-                    summary: run.summary || {
-                      totalTests: run.total_tests || 0,
-                      passed: run.passed_tests || 0,
-                      failed: run.failed_tests || (run.total_tests || 0) - (run.passed_tests || 0) || 0
-                    }
-                  };
-                }
+                const status = run.status === "SUCCESS" ? "success" : 
+                            run.status === "success" ? "success" :
+                            run.status === "FAILURE" ? "error" : 
+                            run.status === "failure" ? "error" :
+                            run.status === "ERROR" ? "error" :
+                            run.status === "error" ? "error" :
+                            run.status?.toLowerCase() || "error";
                 
-                // Fallback for old format
                 return {
-                  id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
-                  status: (run.status === 'failure' ? 'error' : run.status) as 'success' | 'error',
-                  date: run.date || new Date().toISOString(),
-                  logUrl: run.logUrl || null,
+                  id: run.simulation_id || run.run_id || run.id,
+                  status: status as 'success' | 'error',
+                  date: run.created_at || run.date || new Date().toISOString(),
+                  logUrl: run.log_url || run.logUrl || null,
                   log: run.log || null,
                   stderr: run.stderr || null,
                   stdout: run.stdout || null,
                   return_code: run.return_code || 0,
                   summary: run.summary || {
-                    totalTests: 0,
-                    passed: 0,
-                    failed: 0
+                    totalTests: run.total_tests || 0,
+                    passed: run.passed_tests || 0,
+                    failed: run.failed_tests || (run.total_tests || 0) - (run.passed_tests || 0) || 0
                   }
                 };
-              });
+              }
               
-              setSimulationRuns(formattedRuns);
-            } else {
-              // Fallback to just adding the new run as a formatted SimulationRun
-              const newRun: SimulationRun = {
-                id: logData.simulationRun.runId,
-                status: logData.simulationRun.status === 'failure' ? 'error' : logData.simulationRun.status,
-                date: logData.simulationRun.date,
-                logUrl: logData.simulationRun.logUrl || null,
-                log: logData.simulationRun.log || null,
-                stderr: logData.simulationRun.stderr || null,
-                stdout: logData.simulationRun.stdout || null,
-                return_code: logData.simulationRun.return_code || 0,
-                summary: logData.simulationRun.summary || {
+              // Fallback for old format
+              return {
+                id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
+                status: (run.status === 'failure' ? 'error' : run.status) as 'success' | 'error',
+                date: run.date || new Date().toISOString(),
+                logUrl: run.logUrl || null,
+                log: run.log || null,
+                stderr: run.stderr || null,
+                stdout: run.stdout || null,
+                return_code: run.return_code || 0,
+                summary: run.summary || {
                   totalTests: 0,
                   passed: 0,
                   failed: 0
                 }
               };
-              setSimulationRuns(prev => [newRun, ...prev]);
-            }
+            });
+            
+            setSimulationRuns(formattedRuns);
           }
           
           // Update simulation status with new counts
@@ -367,6 +322,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           }
           
           setIsRunningSimulation(false);
+          clearInterval(interval);
         } catch (error) {
           console.error('Error completing simulation:', error);
           toast({
@@ -375,6 +331,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             variant: "destructive"
           });
           setIsRunningSimulation(false);
+          clearInterval(interval);
         }
       }, 8000); // 8 seconds total simulation time
     } catch (error) {
