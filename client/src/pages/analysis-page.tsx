@@ -104,8 +104,11 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         // Fetch existing simulation runs
         const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
         if (runsResponse.ok) {
-          const runsData = await runsResponse.json();
-          console.log("Received simulation runs:", runsData);
+          const responseData = await runsResponse.json();
+          console.log("Received simulation runs:", responseData);
+          
+          // Check if the response has a 'simulation_runs' property (from external API)
+          const runsData = responseData.simulation_runs || responseData || [];
           
           // Convert API data to our SimulationRun type
           const formattedRuns: SimulationRun[] = runsData.map((run: any) => {
@@ -252,8 +255,11 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             // Fetch all runs to ensure consistency
             const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
             if (runsResponse.ok) {
-              const runsData = await runsResponse.json();
-              console.log("Received simulation runs:", runsData);
+              const responseData = await runsResponse.json();
+              console.log("Received simulation runs:", responseData);
+              
+              // Check if the response has a 'simulation_runs' property (from external API)
+              const runsData = responseData.simulation_runs || responseData || [];
               
               // Convert API data to our SimulationRun type
               const formattedRuns: SimulationRun[] = runsData.map((run: any) => {
