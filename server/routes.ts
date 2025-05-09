@@ -6285,7 +6285,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      const { submissionId } = req.body;
+      const { submissionId, branch, numSimulations, ...additionalParams } = req.body;
       
       if (!submissionId) {
         return res.status(400).json({ error: 'Missing required parameter: submissionId' });
@@ -6373,6 +6373,30 @@ export function registerRoutes(app: Express): Server {
       
       console.log(`Direct API call to: ${url} with submission_id=${actualSubmissionId}`);
       
+      // Parse number of simulations to run (default to 1 if not provided)
+      const parsedNumSimulations = numSimulations ? parseInt(String(numSimulations), 10) : 1;
+      
+      // Determine if this is a batch run based on number of simulations
+      const simulationType = parsedNumSimulations > 1 ? "batch_run" : "run";
+      
+      console.log(`Running simulation with type=${simulationType}, branch=${branch || 'main'}, numSimulations=${parsedNumSimulations}`);
+      
+      // Check if user has enough simulation runs remaining if not on teams plan
+      if (user.plan !== 'teams' && parsedNumSimulations > 1) {
+        const limit = user.plan === 'pro' ? 20 : 1;
+        if (user.simulationsUsed + parsedNumSimulations > limit) {
+          const remaining = Math.max(0, limit - user.simulationsUsed);
+          return res.status(403).json({
+            error: 'Insufficient simulation runs',
+            message: `You don't have enough simulation runs remaining. Requested: ${parsedNumSimulations}, Available: ${remaining}`,
+            limit,
+            used: user.simulationsUsed,
+            remaining,
+            requested: parsedNumSimulations
+          });
+        }
+      }
+      
       const apiResponse = await fetch(url, {
         method: 'POST',
         headers: {
@@ -6382,7 +6406,11 @@ export function registerRoutes(app: Express): Server {
         body: JSON.stringify({
           // The external API expects a UUID string for submission_id
           submission_id: String(actualSubmissionId),
-          step: "run_simulation"
+          step: "run_simulation",
+          simulation_type: simulationType,
+          branch: branch || "main",
+          num_simulations: parsedNumSimulations,
+          ...additionalParams
         })
       });
       
@@ -6409,9 +6437,27 @@ export function registerRoutes(app: Express): Server {
       const responseData = await apiResponse.json();
       console.log('Successfully started simulation via external API:', responseData);
       
+      // Update user's simulation count for accounting purposes
+      try {
+        await db.update(users)
+          .set({ 
+            simulationsUsed: user.simulationsUsed + parsedNumSimulations,
+            lastSimulationDate: today
+          })
+          .where(eq(users.id, user.id));
+      } catch (dbError) {
+        console.error('Error updating simulation count:', dbError);
+        // Continue even if DB update fails - it's not critical for the response
+      }
+        
       return res.status(200).json({ 
         success: true, 
-        message: 'Simulation has been started', 
+        message: simulationType === 'batch_run' 
+          ? `Batch simulation with ${parsedNumSimulations} runs has been started` 
+          : 'Simulation has been started',
+        simulationType,
+        branch: branch || 'main',
+        numSimulations: parsedNumSimulations,
         data: responseData 
       });
     } catch (error) {

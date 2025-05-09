@@ -61,6 +61,10 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState<string | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState("main");
+  const [numSimulations, setNumSimulations] = useState(1);
+  const [availableBranches, setAvailableBranches] = useState<{name: string; isDefault?: boolean}[]>([]);
+  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [simStatus, setSimStatus] = useState<{
     canRun: boolean;
     message: string;
