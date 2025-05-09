@@ -2634,70 +2634,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Proxy endpoint to fetch simulation logs to avoid CORS issues
-  app.get("/api/simulation-log-proxy", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
-    
-    try {
-      const logUrl = req.query.url as string;
-      
-      if (!logUrl) {
-        return res.status(400).json({ error: "Log URL is required" });
-      }
-      
-      console.log(`Proxying log content from: ${logUrl}`);
-      
-      // Support range headers for partial content requests
-      const rangeHeader = req.headers.range;
-      const headers: HeadersInit = {};
-      
-      if (rangeHeader) {
-        headers['Range'] = rangeHeader;
-        console.log(`Forwarding range header: ${rangeHeader}`);
-      }
-      
-      // Fetch the log content with range header if available
-      const response = await fetch(logUrl, { headers });
-      
-      // If there's a Content-Range header, forward it
-      if (response.headers.get('Content-Range')) {
-        res.setHeader('Content-Range', response.headers.get('Content-Range')!);
-      }
-      
-      // Set appropriate status code (206 for partial content)
-      res.status(response.status);
-      
-      // Forward content-type header
-      if (response.headers.get('Content-Type')) {
-        res.setHeader('Content-Type', response.headers.get('Content-Type')!);
-      } else {
-        res.setHeader('Content-Type', 'text/plain');
-      }
-      
-      // Forward Content-Length if available
-      if (response.headers.get('Content-Length')) {
-        res.setHeader('Content-Length', response.headers.get('Content-Length')!);
-      }
-      
-      if (!response.ok && response.status !== 206) { // 206 is Partial Content, which is ok
-        console.error(`Error fetching log content: ${response.status} ${response.statusText}`);
-        return res.status(response.status).json({ 
-          error: "Failed to fetch log content", 
-          details: response.statusText 
-        });
-      }
-      
-      // Stream the content back to the client
-      const logContent = await response.text();
-      res.send(logContent);
-    } catch (error) {
-      console.error("Error proxying log content:", error);
-      return res.status(500).json({ 
-        error: "Error fetching log content", 
-        details: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+  // NOTE: We removed the server-side proxy endpoint for simulation logs
+  // Instead, we're now directly fetching logs from the client side
   
   // Endpoint to get simulation repository information
   app.get('/api/simulation-repo/:submission_id', async (req, res) => {
