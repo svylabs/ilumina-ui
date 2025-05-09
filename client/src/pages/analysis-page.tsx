@@ -295,15 +295,21 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                   
                   const status = run.status === "SUCCESS" ? "success" : 
                                 run.status === "success" ? "success" :
-                                run.status === "FAILURE" ? "failure" : 
-                                run.status === "failure" ? "failure" :
-                                run.status?.toLowerCase() || "failure";
+                                run.status === "FAILURE" ? "error" : 
+                                run.status === "failure" ? "error" :
+                                run.status === "ERROR" ? "error" :
+                                run.status === "error" ? "error" :
+                                run.status?.toLowerCase() || "error";
                   
                   return {
                     id: run.simulation_id || run.run_id || run.id,
-                    status: status as 'success' | 'failure',
+                    status: status as 'success' | 'error',
                     date: run.created_at || run.date || new Date().toISOString(),
-                    logUrl: run.log_url || run.logUrl || '#log',
+                    logUrl: run.log_url || run.logUrl || null,
+                    log: run.log || null,
+                    stderr: run.stderr || null,
+                    stdout: run.stdout || null,
+                    return_code: run.return_code || 0,
                     summary: run.summary || {
                       totalTests: run.total_tests || 0,
                       passed: run.passed_tests || 0,
@@ -315,9 +321,13 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 // Fallback for old format
                 return {
                   id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
-                  status: run.status as 'success' | 'failure',
+                  status: (run.status === 'failure' ? 'error' : run.status) as 'success' | 'error',
                   date: run.date || new Date().toISOString(),
-                  logUrl: run.logUrl || '#log',
+                  logUrl: run.logUrl || null,
+                  log: run.log || null,
+                  stderr: run.stderr || null,
+                  stdout: run.stdout || null,
+                  return_code: run.return_code || 0,
                   summary: run.summary || {
                     totalTests: 0,
                     passed: 0,
@@ -331,9 +341,13 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
               // Fallback to just adding the new run as a formatted SimulationRun
               const newRun: SimulationRun = {
                 id: logData.simulationRun.runId,
-                status: logData.simulationRun.status,
+                status: logData.simulationRun.status === 'failure' ? 'error' : logData.simulationRun.status,
                 date: logData.simulationRun.date,
-                logUrl: logData.simulationRun.logUrl || '#log',
+                logUrl: logData.simulationRun.logUrl || null,
+                log: logData.simulationRun.log || null,
+                stderr: logData.simulationRun.stderr || null,
+                stdout: logData.simulationRun.stdout || null,
+                return_code: logData.simulationRun.return_code || 0,
                 summary: logData.simulationRun.summary || {
                   totalTests: 0,
                   passed: 0,
@@ -483,14 +497,23 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                           {new Date(run.date).toLocaleString()}
                         </div>
                         <div className="md:col-span-3 flex flex-wrap gap-2 md:space-x-2">
-                          <a 
-                            href={run.logUrl} 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
-                          >
-                            <span className="mr-1">📝</span> View Log
-                          </a>
+                          {run.logUrl ? (
+                            <a 
+                              href={run.logUrl} 
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                            >
+                              <span className="mr-1">📝</span> View Log
+                            </a>
+                          ) : (
+                            <button
+                              className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-400 cursor-not-allowed"
+                              disabled
+                            >
+                              <span className="mr-1">📝</span> No Log
+                            </button>
+                          )}
                           <button 
                             onClick={() => setIsExpanded(!isExpanded)} 
                             className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
