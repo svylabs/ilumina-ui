@@ -441,7 +441,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           <div className="bg-gray-900 rounded-md">
             <div className="border-b border-gray-800 p-4">
               <div className="hidden md:grid md:grid-cols-12 text-sm text-gray-400 font-medium">
-                <div className="col-span-4">Run ID</div>
+                <div className="col-span-1">#</div>
+                <div className="col-span-3">Run ID</div>
                 <div className="col-span-3">Status</div>
                 <div className="col-span-4">Date</div>
                 <div className="col-span-1">Log</div>
@@ -451,7 +452,12 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             <div className="divide-y divide-gray-800">
               {simulationRuns.map((run, index) => {
                 return (
-                  <SimulationRunItem key={run.id} run={run} index={index} />
+                  <SimulationRunItem 
+                    key={run.id} 
+                    run={run} 
+                    index={index} 
+                    number={simulationRuns.length - index} // Count from n to 1
+                  />
                 );
               })}
             </div>
@@ -469,7 +475,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
 };
 
 // Separate component for each simulation run to properly manage state
-function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }) {
+function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: number, number: number }) {
   // State to track if details section is expanded
   const [isExpanded, setIsExpanded] = useState(false);
   // State to track if log viewer is shown
@@ -680,7 +686,11 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
     <div className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={toggleDetails}>
       <div className="p-4">
         <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0">
-          <div className="md:col-span-4 font-mono text-white">
+          <div className="md:col-span-1 font-medium text-gray-300">
+            <div className="md:hidden text-xs text-gray-400 mb-1">#</div>
+            {number}
+          </div>
+          <div className="md:col-span-3 font-mono text-white">
             <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
             <div className="truncate max-w-[200px]">{run.id}</div>
           </div>
