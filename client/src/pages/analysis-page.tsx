@@ -709,15 +709,23 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
               ${run.status === 'success' 
                 ? 'bg-green-900/50 text-green-300' 
-                : 'bg-red-900/50 text-red-300'
+                : run.status === 'in_progress'
+                  ? 'bg-blue-900/50 text-blue-300'
+                  : 'bg-red-900/50 text-red-300'
               }`}
             >
-              {run.status === 'success' ? '✓ Success' : '✗ Failed'}
+              {run.status === 'success' 
+                ? '✓ Success' 
+                : run.status === 'in_progress'
+                  ? '⟳ Running'
+                  : '✗ Failed'}
             </span>
           </div>
           <div className="md:col-span-4 text-gray-300">
             <div className="md:hidden text-xs text-gray-400 mb-1">Date</div>
-            {new Date(run.date).toLocaleString()}
+            {typeof run.date === 'string' && run.date.includes('GMT')
+              ? new Date(run.date.replace('GMT', '+0000')).toLocaleString()
+              : new Date(run.date).toLocaleString()}
           </div>
           <div className="md:col-span-1 flex flex-wrap gap-2 md:space-x-2" onClick={(e) => e.stopPropagation()}>
             {run.logUrl && (
@@ -932,7 +940,11 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
                 </div>
                 <div className="flex justify-between text-gray-300">
                   <span>Created:</span>
-                  <span>{new Date(run.date).toLocaleString()}</span>
+                  <span>
+                    {typeof run.date === 'string' && run.date.includes('GMT')
+                      ? new Date(run.date.replace('GMT', '+0000')).toLocaleString()
+                      : new Date(run.date).toLocaleString()}
+                  </span>
                 </div>
                 {run.status === 'error' && run.log && (
                   <div className="mt-2">
