@@ -563,22 +563,45 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
       let response;
       
       try {
-        // Direct fetch with CORS
-        response = await fetch(run.logUrl, {
-          headers: {
-            'Range': `bytes=${rangeStart}-${rangeEnd}`,
-            'Accept': 'text/plain, application/octet-stream, text/html'
-          },
-          // Make sure we include credentials
-          credentials: 'include',
-          // Ensure we send proper CORS headers
-          mode: 'cors',
-        });
-        
-        console.log('Direct fetch response status:', response.status);
-        
+        // Try fetch with no-cors mode first, but this will only work for downloading, not for displaying
+        // For display purposes, we'll use a fallback approach if needed
+        if (run.logUrl) {
+          console.log(`Fetching log from: ${run.logUrl}`);
+          
+          // For logs that are publicly accessible, we can try with regular CORS mode first
+          try {
+            response = await fetch(run.logUrl, {
+              headers: {
+                'Range': `bytes=${rangeStart}-${rangeEnd}`,
+                'Accept': 'text/plain, application/octet-stream, text/html'
+              },
+              mode: 'cors',
+            });
+            console.log('Standard fetch response status:', response.status);
+          } catch (corsErr) {
+            console.warn('CORS fetch failed, falling back to no-cors mode:', corsErr);
+            
+            // If direct fetch fails, we'll try no-cors mode, but this won't give us access to the response data
+            // We'll just use this to check if the URL is accessible at all
+            const noCorsFetch = await fetch(run.logUrl, { 
+              mode: 'no-cors',
+            });
+            
+            console.log('No-CORS fetch completed');
+            
+            // For displaying the log content, we'll need to provide alternative content
+            setLogContent("The log file can be downloaded but cannot be displayed directly due to CORS restrictions.\n\nClick the Download button to save the log file and view it locally.");
+            setHasMoreLogData(false);
+            setIsLoadingLog(false);
+            
+            // Return early since we can't display the content directly
+            return;
+          }
+        } else {
+          throw new Error("No log URL available");
+        }
       } catch (err) {
-        console.error('Direct fetch error:', err);
+        console.error('Log fetch error:', err);
         throw new Error(`Failed to fetch logs: ${err instanceof Error ? err.message : String(err)}`);
       }
       
@@ -698,12 +721,29 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
           </div>
           <div className="md:col-span-1 flex flex-wrap gap-2 md:space-x-2" onClick={(e) => e.stopPropagation()}>
             {run.logUrl && (
-              <button 
-                onClick={viewLogContent}
-                className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
-              >
-                <span className="mr-1">📝</span> Log
-              </button>
+              <div className="flex space-x-1">
+                <button 
+                  onClick={viewLogContent}
+                  className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                >
+                  <span className="mr-1">📝</span> Log
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(run.logUrl, '_blank');
+                  }}
+                  title="Open log in new tab"
+                  className="text-xs px-2 py-1 inline-flex items-center rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                  Open
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -716,35 +756,59 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
             <h4 className="text-sm font-medium text-blue-400">Simulation Log</h4>
             <div className="flex space-x-2">
               {logContent && (
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Create a blob from the log content
-                    const blob = new Blob([logContent], { type: 'text/plain' });
-                    // Create a URL for the blob
-                    const url = URL.createObjectURL(blob);
-                    // Create a temporary anchor element
-                    const a = document.createElement('a');
-                    a.href = url;
-                    // Generate a filename with the simulation ID and date
-                    const filename = `simulation-${run.id.substring(0, 8)}-${new Date().toISOString().split('T')[0]}.log`;
-                    a.download = filename;
-                    // Trigger the download
-                    document.body.appendChild(a);
-                    a.click();
-                    // Clean up
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="text-xs px-2 py-1 rounded bg-blue-900/50 text-blue-300 hover:bg-blue-800 hover:text-blue-200 flex items-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  Download
-                </button>
+                <div className="flex space-x-1">
+                  {/* Download from memory (will work if we could fetch the content) */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Create a blob from the log content
+                      const blob = new Blob([logContent], { type: 'text/plain' });
+                      // Create a URL for the blob
+                      const url = URL.createObjectURL(blob);
+                      // Create a temporary anchor element
+                      const a = document.createElement('a');
+                      a.href = url;
+                      // Generate a filename with the simulation ID and date
+                      const filename = `simulation-${run.id.substring(0, 8)}-${new Date().toISOString().split('T')[0]}.log`;
+                      a.download = filename;
+                      // Trigger the download
+                      document.body.appendChild(a);
+                      a.click();
+                      // Clean up
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="text-xs px-2 py-1 rounded bg-blue-900/50 text-blue-300 hover:bg-blue-800 hover:text-blue-200 flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download
+                  </button>
+                  
+                  {/* Direct download (will work even with CORS issues) */}
+                  {run.logUrl && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Open in new tab to download directly (bypasses CORS)
+                        window.open(run.logUrl, '_blank');
+                      }}
+                      title="Download directly from source"
+                      className="text-xs px-2 py-1 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        <line x1="16" y1="5" x2="22" y2="5"></line>
+                        <line x1="22" y1="10" x2="16" y2="10"></line>
+                        <line x1="22" y1="15" x2="16" y2="15"></line>
+                      </svg>
+                      Source
+                    </button>
+                  )}
+                </div>
               )}
               <button 
                 onClick={(e) => {

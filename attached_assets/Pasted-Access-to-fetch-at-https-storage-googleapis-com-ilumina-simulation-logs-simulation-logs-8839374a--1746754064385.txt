@@ -1,0 +1,53 @@
+Access to fetch at 'https://storage.googleapis.com/ilumina-simulation-logs/simulation_logs/8839374a-2f82-45cb-b93f-ab1c70f9906f.log?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=devaccount%40ilumina-451416.iam.gserviceaccount.com%2F20250509%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20250509T012638Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&response-content-disposition=inline&X-Goog-Signature=653702c45843557407b8ac44610dc6ee90d0dc0b3dbf6e6f2ebced320e87da0300ae9b758d9a6093cff67d0479688d9497aa49565a9cfeea826b7ce6b62df5f98f807bdcb7cda11f45beaa45aeff5e30ba57e4747ffc676d85cfea28d566e5a8aeb58cb9d4d255b74eee22ed81b6661fcb5038d3ca1af53eb77665d7ac589121228059a2024b8a0831651d35a2fd9f8d5e559b7e088e03801f5b229f296d7645277c341cb6ed5c170653a56ec16b7258cde628a9bdc975b8e758202aba8ad919ffe24a45aae819431db8bdf8657dc526f7720ac505959681a590109f7b37101ac2e4bdc280ecd7ce847f6b1346e03d92833f5743103b2a18f8cba1858163df20' from origin 'https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev' has been blocked by CORS policy: The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'.Understand this error
+storage.googleapis.com/ilumina-simulation-logs/simulation_logs/8839374a-2f82-45cb-b93f-ab1c70f9906f.log?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=devaccount%40ilumina-451416.iam.gserviceaccount.com%2F20250509%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20250509T012638Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&response-content-disposition=inline&X-Goog-Signature=653702c45843557407b8ac44610dc6ee90d0dc0b3dbf6e6f2ebced320e87da0300ae9b758d9a6093cff67d0479688d9497aa49565a9cfeea826b7ce6b62df5f98f807bdcb7cda11f45beaa45aeff5e30ba57e4747ffc676d85cfea28d566e5a8aeb58cb9d4d255b74eee22ed81b6661fcb5038d3ca1af53eb77665d7ac589121228059a2024b8a0831651d35a2fd9f8d5e559b7e088e03801f5b229f296d7645277c341cb6ed5c170653a56ec16b7258cde628a9bdc975b8e758202aba8ad919ffe24a45aae819431db8bdf8657dc526f7720ac505959681a590109f7b37101ac2e4bdc280ecd7ce847f6b1346e03d92833f5743103b2a18f8cba1858163df20:1 
+            
+            
+           Failed to load resource: net::ERR_FAILEDUnderstand this error
+Console.js:61 Direct fetch error: TypeError: Failed to fetch
+    at window.fetch (Network.js:219:37)
+    at loadNextLogChunk (analysis-page.tsx?t=1746753903443:564:26)
+    at viewLogContent (analysis-page.tsx?t=1746753903443:553:5)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=fd55e91b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=fd55e91b:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=fd55e91b:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-RPCDYKBN.js?v=fd55e91b:3736:33)
+    at executeDispatch (chunk-RPCDYKBN.js?v=fd55e91b:7014:11)
+    at processDispatchQueueItemsInOrder (chunk-RPCDYKBN.js?v=fd55e91b:7034:15)
+    at processDispatchQueue (chunk-RPCDYKBN.js?v=fd55e91b:7043:13)
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 Error fetching log content: Error: Failed to fetch logs: Failed to fetch
+    at loadNextLogChunk (analysis-page.tsx?t=1746753903443:577:15)
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Network.js:219 
+            
+            
+           
+        
+       Uncaught (in promise) TypeError: Failed to fetch
+    at window.fetch (Network.js:219:37)
+    at loadNextLogChunk (analysis-page.tsx?t=1746753903443:564:26)
+    at viewLogContent (analysis-page.tsx?t=1746753903443:553:5)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=fd55e91b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=fd55e91b:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=fd55e91b:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-RPCDYKBN.js?v=fd55e91b:3736:33)
+    at executeDispatch (chunk-RPCDYKBN.js?v=fd55e91b:7014:11)
+    at processDispatchQueueItemsInOrder (chunk-RPCDYKBN.js?v=fd55e91b:7034:15)
+    at processDispatchQueue (chunk-RPCDYKBN.js?v=fd55e91b:7043:13)Understand this error
+2
+                
+          
+          
+          
+         Chrome is moving towards a new experience that allows users to choose to browse without third-party cookies.Understand this warning
+Console.js:61 Project data received: {id: 43, name: 'stablebase', githubUrl: 'https://github.com/svylabs/stablebase', userId: 1, teamId: null, …}
+Console.js:61 Analysis data received: {status: 'success', steps: {…}, completedSteps: Array(6), submissionId: 'de71c43b-9ae9-462c-a97e-3b5c46498193'}
+Console.js:61 Found submission ID in analysis data: de71c43b-9ae9-462c-a97e-3b5c46498193
+Console.js:61 Submission ID already set to: de71c43b-9ae9-462c-a97e-3b5c46498193
+Console.js:61 Received simulation runs: {simulation_runs: Array(6)}
+Console.js:61 Processing run data: {created_at: 'Fri, 09 May 2025 01:45:47 GMT', log_url: 'https://storage.googleapis.com/ilumina-simulation-…d7738e266a452a124cf1c4db30a4a84de8276df0324e14b57', return_code: 0, simulation_id: '8839374a-2f82-45cb-b93f-ab1c70f9906f', status: 'success', …}
+Console.js:61 Processing run data: {created_at: 'Fri, 09 May 2025 01:41:52 GMT', log_url: 'https://storage.googleapis.com/ilumina-simulation-…7c12ba3f142833bb73b20f46b1df115762963db7aa7dae633', return_code: 0, simulation_id: '72c60c53-8041-46f5-a253-321aa12d44bb', status: 'success', …}
+Console.js:61 Processing run data: {created_at: 'Fri, 09 May 2025 01:36:54 GMT', log: "a bytes-like object is required, not 'str'", log_url: null, no_log: true, return_code: 0, …}
+Console.js:61 Processing run data: {created_at: 'Fri, 09 May 2025 01:30:48 GMT', log: '404 POST https://storage.googleapis.com/upload/sto… <HTTPStatus.OK: 200>, <HTTPStatus.CREATED: 201>)', log_url: null, no_log: true, return_code: 0, …}
+Console.js:61 Processing run data: {created_at: 'Fri, 09 May 2025 01:26:37 GMT', log: "Command '['/bin/bash', 'scripts/run_simulation.sh'…on-1746304145']' returned non-zero exit status 1.", log_url: null, no_log: true, simulation_id: '3a787b9f-7213-4487-8d10-1c2835163d3d', …}
+Console.js:61 Processing run data: {created_at: 'Fri, 09 May 2025 01:22:13 GMT', log: "Command '['/bin/bash', 'scripts/run_simulation.sh'…d2906063cde']' returned non-zero exit status 127.", log_url: null, no_log: true, simulation_id: '2f5f0740-9f23-499c-8193-3d2906063cde', …}
