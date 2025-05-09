@@ -36,6 +36,8 @@ type SimulationRun = {
   status: "success" | "error";
   date: string;
   logUrl: string | null;
+  branch?: string;
+  description?: string;
   summary?: {
     totalTests: number;
     passed: number;
@@ -62,6 +64,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState<string | null>(null);
   const [selectedBranch, setSelectedBranch] = useState("main");
+  const [simulationDescription, setSimulationDescription] = useState("");
   const [numSimulations, setNumSimulations] = useState(1);
   const [availableBranches, setAvailableBranches] = useState<{name: string; isDefault?: boolean}[]>([]);
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
@@ -324,6 +327,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         body: JSON.stringify({
           submissionId: uuidSubmissionId, // Send the UUID format submission ID
           branch: selectedBranch, // Include selected branch
+          description: simulationDescription, // Include description
           numSimulations: numSimulations, // Include number of simulations
           simulationType: simulationType // Include simulation type (run or batch_run)
         })
@@ -539,6 +543,22 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                   className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
+            </div>
+            
+            {/* Description */}
+            <div className="flex flex-col gap-1 md:col-span-3">
+              <label htmlFor="sim-description" className="text-sm text-gray-300">
+                Description (optional)
+              </label>
+              <input
+                id="sim-description"
+                type="text"
+                placeholder="e.g., Test with increased gas price"
+                value={simulationDescription}
+                onChange={(e) => setSimulationDescription(e.target.value)}
+                disabled={isRunningSimulation}
+                className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
             </div>
             
             {/* Run Button */}
