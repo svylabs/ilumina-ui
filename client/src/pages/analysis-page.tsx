@@ -445,93 +445,98 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             </p>
           </div>
         )}
-        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
-          <div>
-            <h3 className="text-xl font-semibold text-blue-400">Simulations</h3>
-            {simStatus && (
-              <p className="text-sm text-gray-400 mt-1">
-                {simStatus.canRun 
-                  ? "You have unlimited simulation runs available."
-                  : simStatus.message
-                }
-              </p>
-            )}
-          </div>
-          
-          <div className="flex flex-col gap-3">
-            {/* Simulation Parameters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-800 p-3 rounded-md">
-              {/* Branch Selection */}
-              <div className="flex flex-col gap-1">
-                <label htmlFor="branch-select" className="text-sm text-gray-300">
-                  Branch
-                </label>
-                <select
-                  id="branch-select"
-                  value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value)}
-                  disabled={isLoadingBranches || isRunningSimulation || availableBranches.length === 0}
-                  className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {isLoadingBranches ? (
-                    <option>Loading branches...</option>
-                  ) : availableBranches.length === 0 ? (
-                    <option>No branches available</option>
-                  ) : (
-                    availableBranches.map((branch) => (
-                      <option key={branch.name} value={branch.name}>
-                        {branch.name} {branch.isDefault ? "(default)" : ""}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-              
-              {/* Number of Simulations */}
-              <div className="flex flex-col gap-1">
-                <label htmlFor="sim-count" className="text-sm text-gray-300">
-                  Number of Simulations
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="sim-count"
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={numSimulations}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      if (!isNaN(val) && val >= 1 && val <= 10) {
-                        setNumSimulations(val);
-                        setSimulationType(val > 1 ? 'batch_run' : 'run');
-                      }
-                    }}
-                    disabled={isRunningSimulation}
-                    className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+        <div className="mb-4">
+          <h3 className="text-xl font-semibold text-blue-400">Simulations</h3>
+          {simStatus && (
+            <p className="text-sm text-gray-400 mt-1">
+              {simStatus.canRun 
+                ? "You have unlimited simulation runs available."
+                : simStatus.message
+              }
+            </p>
+          )}
+        </div>
+        
+        {/* Simulation Parameters - Moved to center */}
+        <div className="bg-gray-800 p-4 rounded-lg mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Branch Selection */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="branch-select" className="text-sm text-gray-300">
+                Branch
+              </label>
+              <select
+                id="branch-select"
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                disabled={isLoadingBranches || isRunningSimulation || availableBranches.length === 0}
+                className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {isLoadingBranches ? (
+                  <option>Loading branches...</option>
+                ) : availableBranches.length === 0 ? (
+                  <option>No branches available</option>
+                ) : (
+                  availableBranches.map((branch) => (
+                    <option key={branch.name} value={branch.name}>
+                      {branch.name} {branch.isDefault ? "(default)" : ""}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            
+            {/* Number of Simulations */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="sim-count" className="text-sm text-gray-300">
+                Number of Simulations
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="sim-count"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={numSimulations}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val) && val >= 1 && val <= 10) {
+                      setNumSimulations(val);
+                      setSimulationType(val > 1 ? 'batch_run' : 'run');
+                    }
+                  }}
+                  disabled={isRunningSimulation}
+                  className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
               </div>
             </div>
             
-            <div className="flex justify-end items-center gap-3">
-              {showUpgradeMessage && (
-                <Link href="/pricing" className="text-sm text-yellow-400 hover:text-yellow-300 underline">
-                  Upgrade Plan
-                </Link>
-              )}
-              <button
-                onClick={startSimulation}
-                disabled={isRunningSimulation || !simStatus?.canRun}
-                className={`px-4 py-2 rounded-md font-medium ${
-                  isRunningSimulation || !simStatus?.canRun
-                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-              >
-                {isRunningSimulation ? 'Running...' : numSimulations > 1 ? `Run ${numSimulations} Simulations` : 'Run Simulation'}
-              </button>
+            {/* Run Button */}
+            <div className="flex items-end">
+              <div className="flex flex-col w-full">
+                <div className="flex-grow"></div>
+                <button
+                  onClick={startSimulation}
+                  disabled={isRunningSimulation || !simStatus?.canRun}
+                  className={`px-4 py-2 rounded-md font-medium w-full ${
+                    isRunningSimulation || !simStatus?.canRun
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {isRunningSimulation ? 'Running...' : numSimulations > 1 ? `Run ${numSimulations} Simulations` : 'Run Simulation'}
+                </button>
+              </div>
             </div>
           </div>
+          
+          {showUpgradeMessage && (
+            <div className="mt-2 text-center">
+              <Link href="/pricing" className="text-sm text-yellow-400 hover:text-yellow-300 underline">
+                Upgrade Plan to Run More Simulations
+              </Link>
+            </div>
+          )}
         </div>
         
         {isRunningSimulation && (
