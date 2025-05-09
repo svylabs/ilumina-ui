@@ -714,15 +714,48 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
         <div className="px-4 pb-4 pt-0 bg-gray-900/30 border-t border-gray-800" onClick={(e) => e.stopPropagation()}>
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-sm font-medium text-blue-400">Simulation Log</h4>
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowLogViewer(false);
-              }}
-              className="text-xs px-2 py-1 rounded text-gray-400 hover:bg-gray-800 hover:text-gray-200"
-            >
-              Close
-            </button>
+            <div className="flex space-x-2">
+              {logContent && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Create a blob from the log content
+                    const blob = new Blob([logContent], { type: 'text/plain' });
+                    // Create a URL for the blob
+                    const url = URL.createObjectURL(blob);
+                    // Create a temporary anchor element
+                    const a = document.createElement('a');
+                    a.href = url;
+                    // Generate a filename with the simulation ID and date
+                    const filename = `simulation-${run.id.substring(0, 8)}-${new Date().toISOString().split('T')[0]}.log`;
+                    a.download = filename;
+                    // Trigger the download
+                    document.body.appendChild(a);
+                    a.click();
+                    // Clean up
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="text-xs px-2 py-1 rounded bg-blue-900/50 text-blue-300 hover:bg-blue-800 hover:text-blue-200 flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download
+                </button>
+              )}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLogViewer(false);
+                }}
+                className="text-xs px-2 py-1 rounded text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+              >
+                Close
+              </button>
+            </div>
           </div>
           
           <div className="bg-black rounded border border-gray-800 h-96">
