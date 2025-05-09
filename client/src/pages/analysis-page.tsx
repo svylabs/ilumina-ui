@@ -236,8 +236,16 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to start simulation');
+        try {
+          const errorData = await response.json();
+          console.error('Error data from server:', errorData);
+          // Show detailed error information
+          throw new Error(errorData.message || errorData.error || errorData.details || `Failed to start simulation (${response.status})`);
+        } catch (parseError) {
+          // If we can't parse the JSON, just use the status
+          console.error('Error parsing error response:', parseError);
+          throw new Error(`Failed to start simulation. Server returned status ${response.status}`);
+        }
       }
       
       // Complete the progress bar

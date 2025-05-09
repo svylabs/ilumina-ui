@@ -6288,10 +6288,11 @@ export function registerRoutes(app: Express): Server {
       console.log(`Calling external API to run a simulation for submission ${submissionId}`);
       
       // Using direct fetch for this specific endpoint to avoid URL path issues
-      const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app';
-      const url = baseUrl.replace(/\/api$/, '') + '/api/analyze';
+      // Make sure we're using the correct URL format without duplicate '/api' segments
+      const baseUrl = process.env.EXTERNAL_API_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app';
+      const url = `${baseUrl}/api/analyze`;
       
-      console.log(`Direct API call to: ${url}`);
+      console.log(`Direct API call to: ${url} with submission_id=${submissionId}`);
       
       const apiResponse = await fetch(url, {
         method: 'POST',
@@ -6300,16 +6301,29 @@ export function registerRoutes(app: Express): Server {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          submission_id: submissionId,
+          // The external API expects a UUID string for submission_id
+          submission_id: String(submissionId),
           step: "run_simulation"
         })
       });
       
       if (!apiResponse.ok) {
         console.error(`External API returned status ${apiResponse.status}`);
+        
+        // Try to get more detailed error information
+        let errorDetails = '';
+        try {
+          const errorText = await apiResponse.text();
+          errorDetails = errorText;
+          console.error('Error response from external API:', errorText);
+        } catch (textError) {
+          console.error('Could not parse error response:', textError);
+        }
+        
         return res.status(500).json({ 
           error: 'Failed to start simulation via external API',
-          status: apiResponse.status
+          status: apiResponse.status,
+          details: errorDetails
         });
       }
       
