@@ -2715,20 +2715,70 @@ export function registerRoutes(app: Express): Server {
   });
   
   // Endpoint to fetch available branches for a project's original repository
-  app.get('/api/project/branches/:projectId', async (req, res) => {
+  app.get('/api/project/branches/:submissionId', async (req, res) => {
     try {
-      const projectId = req.params.projectId;
-      console.log(`Fetching branches for original project repository: ${projectId}`);
+      const submissionIdParam = req.params.submissionId;
+      console.log(`Fetching branches for original project repository from parameter: ${submissionIdParam}`);
+      
+      // Check if this is a submission ID (UUID) or a project ID (numeric)
+      let projectId;
+      if (/^\d+$/.test(submissionIdParam)) {
+        // This is a project ID (numeric)
+        projectId = parseInt(submissionIdParam);
+        console.log(`Parameter is a project ID: ${projectId}`);
+      } else {
+        // This is a submission ID (UUID format), need to find the corresponding project
+        console.log(`Parameter appears to be a submission ID (UUID): ${submissionIdParam}`);
+        
+        try {
+          const submission = await db
+            .select()
+            .from(submissions)
+            .where(eq(submissions.id, submissionIdParam))
+            .limit(1);
+          
+          if (submission.length > 0) {
+            projectId = submission[0].projectId;
+            console.log(`Found project ID ${projectId} for submission ID ${submissionIdParam}`);
+          } else {
+            // Try to treat it as a submissionUuid
+            const submissionByUuid = await db
+              .select()
+              .from(submissions)
+              .where(eq(submissions.submissionUuid, submissionIdParam))
+              .limit(1);
+              
+            if (submissionByUuid.length > 0) {
+              projectId = submissionByUuid[0].projectId;
+              console.log(`Found project ID ${projectId} for submission UUID ${submissionIdParam}`);
+            } else {
+              console.error(`No submission found for ID: ${submissionIdParam}`);
+              return res.status(404).json({
+                error: `No submission found for ID: ${submissionIdParam}`,
+                branches: [{ name: 'main', isDefault: true }],
+                default: { name: 'main', isDefault: true }
+              });
+            }
+          }
+        } catch (dbError) {
+          console.error('Database error looking up submission:', dbError);
+          return res.status(500).json({
+            error: 'Database error looking up submission',
+            branches: [{ name: 'main', isDefault: true }],
+            default: { name: 'main', isDefault: true }
+          });
+        }
+      }
       
       // Get project details to find the original GitHub URL
       const project = await db
         .select()
         .from(projects)
-        .where(eq(projects.id, parseInt(projectId)))
+        .where(eq(projects.id, projectId))
         .limit(1);
       
       if (!project.length || !project[0].githubUrl) {
-        console.error('Project not found or no GitHub URL available');
+        console.error(`Project ID ${projectId} not found or no GitHub URL available`);
         return res.status(404).json({ 
           error: 'Project not found or no GitHub URL available',
           branches: [{ name: 'main', isDefault: true }],
