@@ -2714,6 +2714,136 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Endpoint to fetch available branches for a project's original repository
+  app.get('/api/project/branches/:projectId', async (req, res) => {
+    try {
+      const projectId = req.params.projectId;
+      console.log(`Fetching branches for original project repository: ${projectId}`);
+      
+      // Get project details to find the original GitHub URL
+      const project = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, parseInt(projectId)))
+        .limit(1);
+      
+      if (!project.length || !project[0].githubUrl) {
+        console.error('Project not found or no GitHub URL available');
+        return res.status(404).json({ 
+          error: 'Project not found or no GitHub URL available',
+          branches: [{ name: 'main', isDefault: true }],
+          default: { name: 'main', isDefault: true }
+        });
+      }
+      
+      // Parse GitHub URL to get owner and repo
+      const githubUrl = project[0].githubUrl;
+      console.log(`Found GitHub URL for project: ${githubUrl}`);
+      
+      // Parse GitHub URL to extract owner and repo
+      // Support formats like:
+      // https://github.com/owner/repo
+      // https://github.com/owner/repo.git
+      // git@github.com:owner/repo.git
+      let owner, repo;
+      
+      if (githubUrl.includes('github.com')) {
+        // Handle HTTPS URLs
+        if (githubUrl.startsWith('https://')) {
+          const parts = githubUrl.replace('https://github.com/', '').split('/');
+          owner = parts[0];
+          repo = parts[1]?.replace('.git', '');
+        } 
+        // Handle SSH URLs
+        else if (githubUrl.startsWith('git@')) {
+          const parts = githubUrl.replace('git@github.com:', '').split('/');
+          owner = parts[0];
+          repo = parts[1]?.replace('.git', '');
+        }
+      }
+      
+      if (!owner || !repo) {
+        console.error(`Could not parse GitHub URL: ${githubUrl}`);
+        return res.status(400).json({ 
+          error: 'Invalid GitHub URL format',
+          branches: [{ name: 'main', isDefault: true }],
+          default: { name: 'main', isDefault: true }
+        });
+      }
+      
+      console.log(`Parsed GitHub URL: owner=${owner}, repo=${repo}`);
+      
+      // Build GitHub API URL for branches
+      const url = `https://api.github.com/repos/${owner}/${repo}/branches`;
+      console.log(`GitHub API URL: ${url}`);
+      
+      // Make the API request
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Ilumina-App',
+          'Accept': 'application/vnd.github.v3+json',
+          ...(process.env.GITHUB_TOKEN ? { 'Authorization': `token ${process.env.GITHUB_TOKEN}` } : {})
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`GitHub API error: ${response.status} ${response.statusText}`);
+        console.error(`Response body: ${errorText}`);
+        
+        // If the repository doesn't exist or is private without proper token, return a fallback
+        if (response.status === 404 || response.status === 403) {
+          console.log('Repository not found or access denied. Returning fallback branch data.');
+          return res.json({
+            branches: [{ name: 'main', isDefault: true }],
+            default: { name: 'main', isDefault: true }
+          });
+        }
+        
+        throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Format the branches data
+      const branches = data.map((branch: any) => ({
+        name: branch.name,
+        commit: branch.commit.sha,
+        isDefault: branch.name === 'main' || branch.name === 'master'
+      }));
+      
+      console.log(`Received ${branches.length} branches from GitHub API`);
+      
+      if (branches.length === 0) {
+        console.log('No branches found. Returning fallback branch data.');
+        branches.push({ name: 'main', isDefault: true });
+      }
+      
+      const result = {
+        branches,
+        default: branches.find((b: any) => b.isDefault) || branches[0],
+        repoInfo: {
+          owner,
+          repo
+        }
+      };
+      
+      console.log(`Returning branch data for original project repo:`, result);
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching branches for project repository:', error);
+      
+      // Return fallback data on error
+      const fallbackData = {
+        branches: [{ name: 'main', isDefault: true }],
+        default: { name: 'main', isDefault: true }
+      };
+      
+      console.log('Error occurred. Returning fallback branch data.');
+      res.json(fallbackData);
+    }
+  });
+  
   // NOTE: No server-side proxy for logs - client fetches directly from GCS
   // The GCS bucket has been configured to allow CORS access
   
