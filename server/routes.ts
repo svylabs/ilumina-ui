@@ -2634,8 +2634,94 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // NOTE: We removed the server-side proxy endpoint for simulation logs
-  // Instead, we're now directly fetching logs from the client side
+  // Proxy endpoint to fetch simulation logs with streaming support
+  app.get("/api/simulation-log-proxy", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
+    
+    try {
+      const logUrl = req.query.url as string;
+      
+      if (!logUrl) {
+        return res.status(400).json({ error: "Log URL is required" });
+      }
+      
+      console.log(`Proxying log content from: ${logUrl}`);
+      
+      // Support range headers for partial content requests
+      const rangeHeader = req.headers.range;
+      const headers: HeadersInit = {
+        // Add explicit accept header to ensure we get text content
+        'Accept': 'text/plain, text/html, application/octet-stream'
+      };
+      
+      if (rangeHeader) {
+        headers['Range'] = rangeHeader;
+        console.log(`Forwarding range header: ${rangeHeader}`);
+      }
+      
+      // Fetch the log content with range header if available
+      const response = await fetch(logUrl, { headers });
+      
+      // Log response for debugging
+      console.log(`Log API response: ${response.status} ${response.statusText}`);
+      console.log(`Content-Type: ${response.headers.get('Content-Type')}`);
+      
+      // If there's a Content-Range header, forward it
+      if (response.headers.get('Content-Range')) {
+        res.setHeader('Content-Range', response.headers.get('Content-Range')!);
+      }
+      
+      // Set appropriate status code (206 for partial content)
+      res.status(response.status);
+      
+      // Forward content-type header but ensure it's text/plain
+      res.setHeader('Content-Type', 'text/plain');
+      
+      // Forward Content-Length if available
+      if (response.headers.get('Content-Length')) {
+        res.setHeader('Content-Length', response.headers.get('Content-Length')!);
+      }
+      
+      if (!response.ok && response.status !== 206) { // 206 is Partial Content, which is ok
+        console.error(`Error fetching log content: ${response.status} ${response.statusText}`);
+        return res.status(response.status).json({ 
+          error: "Failed to fetch log content", 
+          details: response.statusText 
+        });
+      }
+      
+      // Get response as text
+      const contentType = response.headers.get('Content-Type') || '';
+      
+      // Handle HTML responses by extracting text content
+      if (contentType.includes('html')) {
+        console.log('Received HTML response, extracting text content');
+        // For HTML content, extract text from the pre tag or body
+        const html = await response.text();
+        
+        // Simple HTML parsing to extract content from <pre> tags if present
+        const preMatch = /<pre[^>]*>([\s\S]*?)<\/pre>/i.exec(html);
+        if (preMatch && preMatch[1]) {
+          // Send the contents of the pre tag
+          res.send(preMatch[1]);
+        } else {
+          // If no pre tag found, strip all HTML tags
+          const textContent = html.replace(/<[^>]*>/g, '');
+          res.send(textContent);
+        }
+      } else {
+        // For regular text content, just pipe it through
+        const text = await response.text();
+        res.send(text);
+      }
+    } catch (error) {
+      console.error("Error proxying log content:", error);
+      return res.status(500).json({ 
+        error: "Error fetching log content", 
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   // Endpoint to get simulation repository information
   app.get('/api/simulation-repo/:submission_id', async (req, res) => {

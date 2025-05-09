@@ -557,9 +557,9 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
       const rangeStart = logOffset;
       const rangeEnd = logOffset + logChunkSize - 1;
       
-      // Fetch log content directly from Google Cloud Storage
-      // GCS automatically handles CORS when using signed URLs
-      const response = await fetch(run.logUrl, {
+      // Fetch log content through our proxy endpoint to avoid CORS issues
+      const proxyUrl = `/api/simulation-log-proxy?url=${encodeURIComponent(run.logUrl)}`;
+      const response = await fetch(proxyUrl, {
         headers: {
           'Range': `bytes=${rangeStart}-${rangeEnd}`
         }
