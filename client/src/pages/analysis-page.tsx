@@ -118,13 +118,18 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             }
             
             // Handle data from external API
-            if (run.run_id || run.id) {
+            if (run.simulation_id || run.run_id || run.id) {
+              // Log the raw run data to debug
+              console.log("Processing run data:", run);
+              
               const status = run.status === "SUCCESS" ? "success" : 
+                             run.status === "success" ? "success" :
                              run.status === "FAILURE" ? "failure" : 
+                             run.status === "failure" ? "failure" :
                              run.status?.toLowerCase() || "failure";
               
               return {
-                id: run.run_id || run.id,
+                id: run.simulation_id || run.run_id || run.id,
                 status: status as 'success' | 'failure',
                 date: run.created_at || run.date || new Date().toISOString(),
                 logUrl: run.log_url || run.logUrl || '#log',
@@ -269,13 +274,18 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 }
                 
                 // Handle data from external API
-                if (run.run_id || run.id) {
+                if (run.simulation_id || run.run_id || run.id) {
+                  // Log the raw run data to debug
+                  console.log("Processing run data (from simulation):", run);
+                  
                   const status = run.status === "SUCCESS" ? "success" : 
+                                run.status === "success" ? "success" :
                                 run.status === "FAILURE" ? "failure" : 
+                                run.status === "failure" ? "failure" :
                                 run.status?.toLowerCase() || "failure";
                   
                   return {
-                    id: run.run_id || run.id,
+                    id: run.simulation_id || run.run_id || run.id,
                     status: status as 'success' | 'failure',
                     date: run.created_at || run.date || new Date().toISOString(),
                     logUrl: run.log_url || run.logUrl || '#log',

@@ -2394,8 +2394,10 @@ export function registerRoutes(app: Express): Server {
         if (response.ok) {
           // Return the data from the external API
           const data = await response.json();
-          console.log(`Successfully fetched simulation runs from external API: ${data.length} runs`);
-          return res.json(data);
+          // The data should already have simulation_runs property, but add it if not
+          const formattedData = data.simulation_runs ? data : { simulation_runs: data };
+          console.log(`Successfully fetched simulation runs from external API: ${formattedData.simulation_runs?.length || 0} runs`);
+          return res.json(formattedData);
         } else {
           // If the external API returns an error, log it
           try {
@@ -2405,13 +2407,13 @@ export function registerRoutes(app: Express): Server {
             console.error(`External API returned status ${response.status} when fetching simulation runs`);
           }
           
-          // Return an empty array - no database fallback
-          return res.json([]);
+          // Return empty simulation_runs array - no database fallback
+          return res.json({ simulation_runs: [] });
         }
       } catch (apiRequestError) {
         console.error("Network error when calling external API:", apiRequestError);
-        // Return an empty array - no database fallback
-        return res.json([]);
+        // Return empty simulation_runs array - no database fallback
+        return res.json({ simulation_runs: [] });
       }
     } catch (error) {
       console.error("Error in simulation runs endpoint:", error);
