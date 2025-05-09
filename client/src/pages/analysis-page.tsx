@@ -557,11 +557,13 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
       const rangeStart = logOffset;
       const rangeEnd = logOffset + logChunkSize - 1;
       
-      // Fetch log content through our proxy endpoint to avoid CORS issues
-      const proxyUrl = `/api/simulation-log-proxy?url=${encodeURIComponent(run.logUrl)}`;
-      const response = await fetch(proxyUrl, {
+      // Fetch log content directly from Google Cloud Storage now that CORS is enabled
+      console.log(`Fetching log range: bytes=${rangeStart}-${rangeEnd} from ${run.logUrl}`);
+      
+      const response = await fetch(run.logUrl, {
         headers: {
-          'Range': `bytes=${rangeStart}-${rangeEnd}`
+          'Range': `bytes=${rangeStart}-${rangeEnd}`,
+          'Accept': 'text/plain, application/octet-stream, text/html'
         }
       });
       
@@ -603,7 +605,28 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
         setHasMoreLogData(false);
       }
       
-      const chunk = await response.text();
+      // Check content type for HTML
+      const contentType = response.headers.get('Content-Type') || '';
+      let chunk;
+      
+      if (contentType.includes('html')) {
+        console.log('Received HTML response, extracting text content');
+        // For HTML content, extract text from the pre tag or body
+        const html = await response.text();
+        
+        // Simple HTML parsing to extract content from <pre> tags if present
+        const preMatch = /<pre[^>]*>([\s\S]*?)<\/pre>/i.exec(html);
+        if (preMatch && preMatch[1]) {
+          // Use the contents of the pre tag
+          chunk = preMatch[1];
+        } else {
+          // If no pre tag found, strip all HTML tags
+          chunk = html.replace(/<[^>]*>/g, '');
+        }
+      } else {
+        // For regular text content
+        chunk = await response.text();
+      }
       
       // Append new chunk to existing content
       setLogContent(prev => prev + chunk);
