@@ -6234,10 +6234,54 @@ export function registerRoutes(app: Express): Server {
   // Run a simulation using the external API's analyze endpoint
   app.post('/api/run-simulation', async (req, res) => {
     try {
+      // Check if the user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'You must be logged in to run simulations'
+        });
+      }
+      
       const { submissionId } = req.body;
       
       if (!submissionId) {
         return res.status(400).json({ error: 'Missing required parameter: submissionId' });
+      }
+      
+      // Check if the user can run a simulation based on their plan
+      const user = req.user;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      let canRun = true;
+      let message = '';
+      
+      if (user.plan !== 'teams') {
+        // Check daily limits for non-teams plans
+        let limit = user.plan === 'pro' ? 20 : 1; // 20 for pro, 1 for free
+        
+        // If it's a new day, reset the simulation counter
+        if (user.lastSimulationDate) {
+          const lastSimDate = new Date(user.lastSimulationDate);
+          lastSimDate.setHours(0, 0, 0, 0);
+          
+          if (lastSimDate < today) {
+            await db.update(users)
+              .set({ simulationsUsed: 0, lastSimulationDate: today })
+              .where(eq(users.id, user.id));
+          }
+        }
+        
+        // Check if the user has exceeded their daily limit
+        if (user.simulationsUsed >= limit) {
+          canRun = false;
+          message = `You have reached your daily simulation limit (${limit}). Please upgrade your plan or try again tomorrow.`;
+          return res.status(403).json({ 
+            error: 'Simulation limit reached',
+            message,
+            requiresUpgrade: user.plan === 'free'
+          });
+        }
       }
       
       // Call the external API to run a simulation using the correct analyze endpoint
