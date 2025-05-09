@@ -557,19 +557,53 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
       const rangeStart = logOffset;
       const rangeEnd = logOffset + logChunkSize - 1;
       
-      // Fetch log content directly from Google Cloud Storage now that CORS is enabled
+      // Direct fetch from Google Cloud Storage
       console.log(`Fetching log range: bytes=${rangeStart}-${rangeEnd} from ${run.logUrl}`);
       
-      const response = await fetch(run.logUrl, {
-        headers: {
-          'Range': `bytes=${rangeStart}-${rangeEnd}`,
-          'Accept': 'text/plain, application/octet-stream, text/html'
-        }
-      });
+      let response;
+      
+      try {
+        // Direct fetch with CORS
+        response = await fetch(run.logUrl, {
+          headers: {
+            'Range': `bytes=${rangeStart}-${rangeEnd}`,
+            'Accept': 'text/plain, application/octet-stream, text/html'
+          },
+          // Make sure we include credentials
+          credentials: 'include',
+          // Ensure we send proper CORS headers
+          mode: 'cors',
+        });
+        
+        console.log('Direct fetch response status:', response.status);
+        
+      } catch (err) {
+        console.error('Direct fetch error:', err);
+        throw new Error(`Failed to fetch logs: ${err instanceof Error ? err.message : String(err)}`);
+      }
       
       // Check for partial content success (206) or regular success (200)
       if (response.status !== 206 && response.status !== 200) {
-        throw new Error(`Error fetching log: ${response.status} ${response.statusText}`);
+        // For error responses, try to extract more detailed error info if available
+        try {
+          const contentType = response.headers.get('Content-Type') || '';
+          if (contentType.includes('application/json')) {
+            // Try to parse as JSON error
+            const errorData = await response.json();
+            throw new Error(errorData.error || errorData.details || `Error fetching log: ${response.status} ${response.statusText}`);
+          } else {
+            // Try to get error text
+            const errorText = await response.text();
+            if (errorText && errorText.length < 200) {
+              throw new Error(`Error fetching log: ${errorText}`);
+            } else {
+              throw new Error(`Error fetching log: ${response.status} ${response.statusText}`);
+            }
+          }
+        } catch (parseError) {
+          // If parsing the error fails, use the original error
+          throw new Error(`Error fetching log: ${response.status} ${response.statusText}`);
+        }
       }
       
       // Get content length if available
