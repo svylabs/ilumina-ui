@@ -44,8 +44,9 @@ function joinPath(base, path) {
 async function callExternalIluminaAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<Response> {
 
 
-  const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
-  const url = joinPath(baseUrl, endpoint);
+  // Remove trailing /api if present in base URL to avoid double /api in paths
+  const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api').replace(/\/api$/, '');
+  const url = joinPath(baseUrl, '/api' + endpoint);
   
   console.log(`Calling external Ilumina API: ${method} ${url}`);
   
@@ -6242,7 +6243,7 @@ export function registerRoutes(app: Express): Server {
       console.log(`Calling external API to run a simulation for submission ${submissionId}`);
       
       const apiResponse = await callExternalIluminaAPI(
-        '/api/submission/' + submissionId + '/simulations/run', 
+        '/submission/' + submissionId + '/simulations/run', 
         'POST'
       );
       
