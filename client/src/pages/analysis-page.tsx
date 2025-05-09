@@ -961,12 +961,12 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
           </div>
         </div>
         
-        {/* Second row with branch and description */}
+        {/* Second row with branch, type and description */}
         <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0 border-t border-gray-800/50 pt-2">
           <div className="md:col-span-1">
             {/* Empty space to align with top row */}
           </div>
-          <div className="md:col-span-4 text-gray-300">
+          <div className="md:col-span-3 text-gray-300">
             <div className="md:hidden text-xs text-gray-400 mb-1">Branch</div>
             <div className="flex items-center">
               <span className="text-xs text-gray-400 mr-2">Branch:</span>
@@ -975,12 +975,25 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
               </span>
             </div>
           </div>
-          <div className="md:col-span-7 text-gray-300">
+          <div className="md:col-span-2 text-gray-300">
+            <div className="md:hidden text-xs text-gray-400 mb-1">Type</div>
+            <div className="flex items-center">
+              <span className="text-xs text-gray-400 mr-2">Type:</span>
+              <span className={`px-2 py-0.5 rounded text-sm ${
+                run.type === 'batch' || (run.num_simulations && run.num_simulations > 1) 
+                  ? 'bg-purple-800/50 text-purple-200' 
+                  : 'bg-gray-700/50 text-gray-300'
+              }`}>
+                {run.type === 'batch' || (run.num_simulations && run.num_simulations > 1) ? 'batch' : 'run'}
+              </span>
+            </div>
+          </div>
+          <div className="md:col-span-6 text-gray-300">
             <div className="md:hidden text-xs text-gray-400 mb-1">Description</div>
             <div className="flex items-center">
               <span className="text-xs text-gray-400 mr-2">Description:</span>
-              <span className="text-sm">
-                {run.description || "run"}
+              <span className="text-sm truncate max-w-[300px]">
+                {run.description || ""}
               </span>
             </div>
           </div>
@@ -1167,6 +1180,14 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
                 <div className="flex justify-between text-gray-300">
                   <span>Return Code:</span>
                   <span className="font-mono">{run.return_code || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-gray-300">
+                  <span>Type:</span>
+                  <span>
+                    {run.type === 'batch' || (run.num_simulations && run.num_simulations > 1) 
+                      ? `Batch (${run.num_simulations || '?'} simulations)` 
+                      : 'Single Run'}
+                  </span>
                 </div>
                 <div className="flex justify-between text-gray-300">
                   <span>Created:</span>
