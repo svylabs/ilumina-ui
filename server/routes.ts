@@ -6368,7 +6368,7 @@ export function registerRoutes(app: Express): Server {
       
       return res.status(200).json({ 
         success: true, 
-        message: 'Simulation started successfully', 
+        message: 'Simulation has been started', 
         data: responseData 
       });
     } catch (error) {

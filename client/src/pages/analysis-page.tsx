@@ -259,6 +259,13 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
       // Complete the progress bar
       setProgress(100);
       
+      // Show a success toast notification
+      toast({
+        title: "Success",
+        description: "Simulation has been started",
+        variant: "default"
+      });
+      
       // Set a timeout to refresh the simulation runs
       setTimeout(async () => {
         try {
