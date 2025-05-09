@@ -230,7 +230,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     }
   };
   
-  // Fetch available branches for the simulation repository
+  // Fetch available branches from the original project repository (not the simulation repo)
   useEffect(() => {
     if (!submissionId) return;
     
@@ -239,7 +239,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         setIsLoadingBranches(true);
         console.log("Attempting to fetch simulation repository information...");
         
-        // First, fetch the simulation repository information
+        // First, fetch the simulation repository information for the code viewer
         const repoResponse = await fetch(`/api/simulation-repo/${submissionId}`);
         
         if (!repoResponse.ok) {
@@ -253,23 +253,52 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           throw new Error("Invalid simulation repository data received");
         }
         
-        // Set the simulation repository information
+        // Set the simulation repository information for the code viewer
         setSimRepo({
           owner: repoData.owner,
           repo: repoData.repo,
           branch: repoData.branch || 'main'
         });
         
-        // Now fetch the branches using the repository information
-        console.log(`Fetching branches for ${repoData.owner}/${repoData.repo}`);
-        const branchesResponse = await fetch(`/api/github/branches/${repoData.owner}/${repoData.repo}`);
+        // Fetch branches from the ORIGINAL project repository instead of the simulation repo
+        console.log(`Fetching branches from original project repository for submissionId: ${submissionId}`);
+        
+        // Use our new endpoint that fetches branches from the original project repository
+        const branchesResponse = await fetch(`/api/project/branches/${submissionId}`);
         
         if (!branchesResponse.ok) {
-          throw new Error(`Failed to fetch branches: ${branchesResponse.status}`);
+          console.warn(`Failed to fetch branches from original repository (${branchesResponse.status}), falling back to simulation repo branches`);
+          
+          // Fallback to simulation repository branches if original repo fetch fails
+          const simBranchesResponse = await fetch(`/api/github/branches/${repoData.owner}/${repoData.repo}`);
+          
+          if (!simBranchesResponse.ok) {
+            throw new Error(`Failed to fetch any branches: ${simBranchesResponse.status}`);
+          }
+          
+          const fallbackBranchesData = await simBranchesResponse.json();
+          console.log("Fallback simulation repository branches data:", fallbackBranchesData);
+          
+          if (fallbackBranchesData.branches && Array.isArray(fallbackBranchesData.branches)) {
+            setAvailableBranches(fallbackBranchesData.branches);
+            
+            // If there's a default branch, select it
+            const defaultBranch = fallbackBranchesData.branches.find((b: any) => b.isDefault) || fallbackBranchesData.branches[0];
+            if (defaultBranch) {
+              setSelectedBranch(defaultBranch.name);
+            }
+          } else {
+            // If no branches are found, provide a fallback
+            console.log("No branches found in response, using fallback");
+            setAvailableBranches([{ name: 'main', isDefault: true }]);
+            setSelectedBranch('main');
+          }
+          return;
         }
         
+        // We successfully got branches from the original project repository
         const branchesData = await branchesResponse.json();
-        console.log("Branches data:", branchesData);
+        console.log("Original project repository branches data:", branchesData);
         
         if (branchesData.branches && Array.isArray(branchesData.branches)) {
           setAvailableBranches(branchesData.branches);
@@ -286,7 +315,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           setSelectedBranch('main');
         }
       } catch (error) {
-        console.error('Error fetching simulation repository or branches:', error);
+        console.error('Error fetching repository or branches:', error);
         // Fallback to main branch if there's an error
         setAvailableBranches([{ name: 'main', isDefault: true }]);
         setSelectedBranch('main');
@@ -296,7 +325,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     };
     
     fetchBranches();
-  }, [submissionId]);
+  }, [submissionId, analysis]);
   
   // Generate a new simulation ID
   const generateSimId = () => {
