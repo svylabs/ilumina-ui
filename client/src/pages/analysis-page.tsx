@@ -521,6 +521,15 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
       return;
     }
     
+    // Check if log URL exists
+    if (!run.logUrl) {
+      setShowLogViewer(true);
+      setLogError("No log URL available for this simulation run.");
+      setHasMoreLogData(false);
+      setIsLoadingLog(false);
+      return;
+    }
+    
     // Reset log state if reopening
     if (!showLogViewer) {
       setLogContent("");
@@ -548,8 +557,9 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
       const rangeStart = logOffset;
       const rangeEnd = logOffset + logChunkSize - 1;
       
-      // Fetch log content directly from GCS with range header
-      const response = await fetch(run.logUrl, {
+      // Fetch log content through our proxy endpoint to avoid CORS issues
+      const proxyUrl = `/api/simulation-log-proxy?url=${encodeURIComponent(run.logUrl)}`;
+      const response = await fetch(proxyUrl, {
         headers: {
           'Range': `bytes=${rangeStart}-${rangeEnd}`
         }
@@ -675,7 +685,55 @@ function SimulationRunItem({ run, index }: { run: SimulationRun, index: number }
             {logContent && (
               <div className="flex flex-col h-full">
                 <div className="text-xs text-gray-300 font-mono whitespace-pre-wrap p-4 flex-grow overflow-y-auto">
-                  {logContent}
+                  {/* Apply syntax highlighting for common log patterns */}
+                  {logContent.split('\n').map((line, index) => {
+                    // Highlight error and warning lines
+                    if (line.match(/error|Error|ERROR|exception|Exception|EXCEPTION|failed|Failed|FAILED/i)) {
+                      return <div key={index} className="text-red-400">{line}</div>;
+                    } 
+                    // Highlight warning lines
+                    else if (line.match(/warning|Warning|WARN|warn/i)) {
+                      return <div key={index} className="text-yellow-400">{line}</div>;
+                    }
+                    // Highlight success lines
+                    else if (line.match(/success|Success|SUCCESS|completed|Completed|deployed|Deployed/i)) {
+                      return <div key={index} className="text-green-400">{line}</div>;
+                    }
+                    // Highlight info lines
+                    else if (line.match(/info|Info|INFO|note|Note|NOTE/i)) {
+                      return <div key={index} className="text-blue-400">{line}</div>;
+                    }
+                    // Highlight addresses, contract names, and hashes
+                    else if (line.match(/0x[a-fA-F0-9]{40}|0x[a-fA-F0-9]{64}/)) {
+                      // Using a temporary element to process the line with React elements
+                      const parts = [];
+                      const regex = /(0x[a-fA-F0-9]{40,64})/g;
+                      let lastIndex = 0;
+                      let match;
+                      
+                      // Find all matches and build parts array with highlighted addresses
+                      while ((match = regex.exec(line)) !== null) {
+                        // Add text before match
+                        if (match.index > lastIndex) {
+                          parts.push(line.substring(lastIndex, match.index));
+                        }
+                        // Add highlighted match
+                        parts.push(<span key={`addr-${match.index}`} className="text-purple-400">{match[0]}</span>);
+                        lastIndex = match.index + match[0].length;
+                      }
+                      
+                      // Add any remaining text after the last match
+                      if (lastIndex < line.length) {
+                        parts.push(line.substring(lastIndex));
+                      }
+                      
+                      return <div key={index}>{parts}</div>;
+                    }
+                    // Default formatting
+                    else {
+                      return <div key={index}>{line}</div>;
+                    }
+                  })}
                 </div>
                 
                 {hasMoreLogData && (
