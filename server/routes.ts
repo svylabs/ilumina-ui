@@ -2403,16 +2403,28 @@ export function registerRoutes(app: Express): Server {
         const externalApiUrl = `${process.env.EXTERNAL_API_URL}/api/submission/${submissionId}/simulations/list`;
         console.log(`Calling external API: ${externalApiUrl}`);
         
-        const response = await fetch(externalApiUrl);
-        
-        if (response.ok) {
-          // Return the data from the external API
-          const data = await response.json();
-          console.log(`Successfully fetched simulation runs from external API: ${data.length} runs`);
-          return res.json(data);
-        } else {
-          console.warn(`External API returned status ${response.status} when fetching simulation runs`);
-          // If we get an error from the external API, fall back to local database
+        try {
+          const response = await fetch(externalApiUrl);
+          
+          if (response.ok) {
+            // Return the data from the external API
+            const data = await response.json();
+            console.log(`Successfully fetched simulation runs from external API: ${data.length} runs`);
+            return res.json(data);
+          } else {
+            // Try to get error details from response
+            try {
+              const errorData = await response.json();
+              console.warn(`External API returned status ${response.status} when fetching simulation runs: ${JSON.stringify(errorData)}`);
+            } catch (parseError) {
+              console.warn(`External API returned status ${response.status} when fetching simulation runs`);
+            }
+            // If we get an error from the external API, fall back to local database
+            console.log("Falling back to local database due to external API error");
+          }
+        } catch (apiRequestError) {
+          console.error("Network error when calling external API:", apiRequestError);
+          console.log("Falling back to local database due to network error");
         }
       } catch (apiError) {
         console.error("Error fetching simulation runs from external API:", apiError);
