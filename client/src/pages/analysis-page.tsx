@@ -229,41 +229,71 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   
   // Fetch available branches for the simulation repository
   useEffect(() => {
-    if (!submissionId || !simRepo) return;
+    if (!submissionId) return;
     
     const fetchBranches = async () => {
       try {
         setIsLoadingBranches(true);
+        console.log("Attempting to fetch simulation repository information...");
         
-        // Use the GitHub API endpoint we created to fetch branches
-        const response = await fetch(`/api/github/branches/${simRepo.owner}/${simRepo.repo}`);
+        // First, fetch the simulation repository information
+        const repoResponse = await fetch(`/api/simulation-repo/${submissionId}`);
         
-        if (!response.ok) {
-          throw new Error(`Failed to fetch branches: ${response.status}`);
+        if (!repoResponse.ok) {
+          throw new Error(`Failed to fetch simulation repository: ${repoResponse.status}`);
         }
         
-        const data = await response.json();
+        const repoData = await repoResponse.json();
+        console.log("Simulation repository data:", repoData);
         
-        if (data.branches && Array.isArray(data.branches)) {
-          setAvailableBranches(data.branches);
+        if (!repoData.owner || !repoData.repo) {
+          throw new Error("Invalid simulation repository data received");
+        }
+        
+        // Set the simulation repository information
+        setSimRepo({
+          owner: repoData.owner,
+          repo: repoData.repo,
+          branch: repoData.branch || 'main'
+        });
+        
+        // Now fetch the branches using the repository information
+        console.log(`Fetching branches for ${repoData.owner}/${repoData.repo}`);
+        const branchesResponse = await fetch(`/api/github/branches/${repoData.owner}/${repoData.repo}`);
+        
+        if (!branchesResponse.ok) {
+          throw new Error(`Failed to fetch branches: ${branchesResponse.status}`);
+        }
+        
+        const branchesData = await branchesResponse.json();
+        console.log("Branches data:", branchesData);
+        
+        if (branchesData.branches && Array.isArray(branchesData.branches)) {
+          setAvailableBranches(branchesData.branches);
           
           // If there's a default branch, select it
-          const defaultBranch = data.branches.find((b: any) => b.isDefault) || data.branches[0];
+          const defaultBranch = branchesData.branches.find((b: any) => b.isDefault) || branchesData.branches[0];
           if (defaultBranch) {
             setSelectedBranch(defaultBranch.name);
           }
+        } else {
+          // If no branches are found, provide a fallback
+          console.log("No branches found in response, using fallback");
+          setAvailableBranches([{ name: 'main', isDefault: true }]);
+          setSelectedBranch('main');
         }
       } catch (error) {
-        console.error('Error fetching branches:', error);
+        console.error('Error fetching simulation repository or branches:', error);
         // Fallback to main branch if there's an error
         setAvailableBranches([{ name: 'main', isDefault: true }]);
+        setSelectedBranch('main');
       } finally {
         setIsLoadingBranches(false);
       }
     };
     
     fetchBranches();
-  }, [submissionId, simRepo]);
+  }, [submissionId]);
   
   // Generate a new simulation ID
   const generateSimId = () => {
