@@ -245,6 +245,11 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   
   // Function to go back to main simulation list
   const goBackToMainList = async () => {
+    // If we have a currentBatch, remember its updated statistics before clearing
+    const previousBatchId = viewingBatchId;
+    const previousBatchData = currentBatch;
+    
+    // Clear batch viewing state
     setViewingBatchId(null);
     setCurrentBatch(null);
     
@@ -256,7 +261,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         console.log("Received simulation runs:", responseData);
         
         if (responseData.simulation_runs) {
-          const formattedRuns: SimulationRun[] = responseData.simulation_runs.map((run: any) => {
+          let formattedRuns: SimulationRun[] = responseData.simulation_runs.map((run: any) => {
             // Processing remains the same as in the original fetchData function
             if (run.id && run.status) {
               return run;
@@ -321,6 +326,23 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
               }
             };
           });
+          
+          // If we had a batch we were previously viewing, update its statistics in the list
+          if (previousBatchId && previousBatchData) {
+            formattedRuns = formattedRuns.map(run => {
+              if (run.id === previousBatchId) {
+                return {
+                  ...run,
+                  // Preserve our calculated statistics from the batch detail view
+                  success_count: previousBatchData.success_count,
+                  failed_count: previousBatchData.failed_count,
+                  total_count: previousBatchData.total_count,
+                  status: previousBatchData.status
+                };
+              }
+              return run;
+            });
+          }
           
           setSimulationRuns(formattedRuns);
         }
@@ -394,8 +416,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           // Check if the response has a 'simulation_runs' property (from external API)
           const runsData = responseData.simulation_runs || responseData || [];
           
-          // Convert API data to our SimulationRun type
-          const formattedRuns: SimulationRun[] = runsData.map((run: any) => {
+          // First pass: Convert API data to our SimulationRun type
+          let formattedRuns: SimulationRun[] = runsData.map((run: any) => {
             // Check if the response data is already in our expected format
             if (run.id && run.status) {
               return run;
@@ -426,6 +448,12 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 description: run.description || "",
                 type: run.type || (run.num_simulations && run.num_simulations > 1 ? "batch" : "run"),
                 num_simulations: run.num_simulations || 1,
+                batch_id: run.batch_id,
+                // Batch-specific fields
+                success_count: run.success_count || 0,
+                failed_count: run.failed_count || 0,
+                total_count: run.total_count || (run.num_simulations || 0),
+                is_batch: run.type === 'batch' || (run.num_simulations && run.num_simulations > 1) || false,
                 // Include all available fields for the expanded details section
                 log: run.log || null,
                 return_code: run.return_code || 0,
@@ -455,6 +483,57 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 failed: 0
               }
             };
+          });
+          
+          // Second pass: Process batch statistics for each batch
+          // Find all batch runs
+          const batchRuns = formattedRuns.filter(run => run.is_batch || run.type === 'batch');
+          
+          // Process each batch run to calculate accurate statistics
+          batchRuns.forEach(batchRun => {
+            // Get all runs that belong to this batch
+            const batchId = batchRun.id;
+            const batchMembers = formattedRuns.filter(run => 
+              run.batch_id === batchId || 
+              (runsData.find((r: any) => 
+                r.id === run.id && r.batch_id === batchId
+              ))
+            );
+            
+            if (batchMembers.length > 0) {
+              // Calculate batch statistics
+              const totalCount = batchRun.total_count || batchMembers.length || batchRun.num_simulations || 1;
+              const successCount = batchMembers.filter(run => run.status === 'success').length;
+              const failedCount = batchMembers.filter(run => run.status === 'error').length;
+              const inProgressCount = batchMembers.filter(run => 
+                run.status === 'in_progress' || run.status === 'scheduled'
+              ).length;
+              
+              // Determine batch status based on contained runs
+              let batchStatus: 'success' | 'error' | 'in_progress' | 'scheduled' = 'success';
+              if (inProgressCount > 0) {
+                batchStatus = 'in_progress';
+              } else if (successCount === 0 && failedCount > 0) {
+                batchStatus = 'error';
+              } else if (successCount > 0 && failedCount > 0) {
+                batchStatus = 'success'; // Partial success still shows as success
+              }
+              
+              // Update the batch run with calculated statistics
+              formattedRuns = formattedRuns.map(run => {
+                if (run.id === batchId) {
+                  return {
+                    ...run,
+                    success_count: successCount,
+                    failed_count: failedCount,
+                    total_count: totalCount,
+                    status: batchStatus,
+                    description: run.description || `Batch with ${totalCount} simulations`
+                  };
+                }
+                return run;
+              });
+            }
           });
           
           setSimulationRuns(formattedRuns);
