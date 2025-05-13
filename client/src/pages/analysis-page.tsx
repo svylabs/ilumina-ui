@@ -1052,7 +1052,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                       
                       // If valid number, update state with clamped value
                       if (!isNaN(val)) {
-                        const clampedVal = Math.min(Math.max(val, 1), 10);
+                        const clampedVal = Math.min(Math.max(val, 1), 100);
                         setNumSimulations(clampedVal);
                         setSimulationType(clampedVal > 1 ? 'batch_run' : 'run');
                         
@@ -1072,6 +1072,16 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                         setSimulationType('run');
                         e.target.value = '1'; // Explicitly update the input value
                       } else {
+                        // Apply limits to make sure value is between 1 and 100
+                        const val = parseInt(inputValue, 10);
+                        const clampedVal = Math.min(Math.max(val, 1), 100);
+                        
+                        // Only update if the value needed clamping
+                        if (val !== clampedVal) {
+                          setNumSimulations(clampedVal);
+                          setSimulationType(clampedVal > 1 ? 'batch_run' : 'run');
+                        }
+                        
                         // Make sure field shows the actual state value
                         e.target.value = numSimulations.toString();
                       }
@@ -1082,13 +1092,13 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                   <button 
                     type="button"
                     onClick={() => {
-                      if (numSimulations < 10 && !isRunningSimulation) {
+                      if (numSimulations < 100 && !isRunningSimulation) {
                         const newVal = numSimulations + 1;
                         setNumSimulations(newVal);
                         setSimulationType(newVal > 1 ? 'batch_run' : 'run');
                       }
                     }}
-                    disabled={numSimulations >= 10 || isRunningSimulation}
+                    disabled={numSimulations >= 100 || isRunningSimulation}
                     className="bg-gray-800 border border-gray-700 rounded-r-md px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +
