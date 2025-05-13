@@ -2377,12 +2377,38 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: 'Missing batch ID' });
       }
       
-      console.log(`Fetching simulation runs for batch ID: ${batchId}`);
+      // Need to get the submission ID associated with this batch run
+      // First check if it's in the query parameters
+      let submissionId = req.query.submissionId as string;
+      
+      // If not provided in query, try to look it up by project ID from the database
+      if (!submissionId) {
+        try {
+          // Get project ID from user session or a default ID
+          const projId = req.query.projectId || req.user.currentProjectId;
+          if (projId) {
+            // Look up the submission ID for this project
+            const result = await getValidSubmissionId(String(projId));
+            if (result.submissionId) {
+              submissionId = result.submissionId;
+            }
+          }
+        } catch (lookupError) {
+          console.error("Error getting submission ID for batch runs:", lookupError);
+          // Continue anyway, the external API might handle missing submission ID
+        }
+      }
+      
+      if (!submissionId) {
+        return res.status(400).json({ error: 'Missing submission ID for batch runs lookup' });
+      }
+      
+      console.log(`Fetching simulation runs for batch ID: ${batchId} in submission ${submissionId}`);
       
       try {
-        // Use a direct fetch with explicit URL construction
+        // Use a direct fetch with explicit URL construction using the correct endpoint format
         const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app').replace(/\/api$/, '');
-        const url = `${baseUrl}/api/batch/${batchId}/runs`;
+        const url = `${baseUrl}/api/submission/${submissionId}/simulations/batch/${batchId}/list`;
         
         console.log(`Direct API call to: ${url}`);
         
