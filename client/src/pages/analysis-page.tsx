@@ -450,10 +450,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   const fetchSimulationRuns = useCallback(async (showLoadingState = true) => {
     if (!user || !submissionId) return;
     
-    if (showLoadingState) {
-      console.log("Setting refresh loading state to true");
-      setIsRefreshingSimulations(true);
-    }
+    // We'll set the loading state in the button click handler now,
+    // so we don't need to set it here anymore (avoids React state batching issues)
+    console.log("fetchSimulationRuns called, loading state:", isRefreshingSimulations);
     
     try {
       // Fetch simulation status
@@ -654,10 +653,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           });
         }
       } finally {
-        if (showLoadingState) {
-          console.log("Setting refresh loading state back to false");
-          setIsRefreshingSimulations(false);
-        }
+        // Always reset the loading state, regardless of the showLoadingState parameter
+        console.log("Setting refresh loading state back to false");
+        setIsRefreshingSimulations(false);
       }
   }, [user, submissionId, deploymentVerified, toast, analysis, setIsRefreshingSimulations, setSimStatus, setShowUpgradeMessage, setSimRepo, setSimulationRuns]);
   
@@ -848,7 +846,11 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         `${messagePrefix} on branch "${selectedBranch}". Results will appear in the list below shortly.`
       );
       
-      // Set a timeout to refresh the simulation runs
+      console.log("Refreshing simulation runs after starting a new simulation...");
+      // Immediately call fetchSimulationRuns with a short delay to ensure UI updates
+      setTimeout(() => fetchSimulationRuns(true), 1000);
+      
+      // Set a timeout to refresh the simulation runs again after some time
       setTimeout(async () => {
         try {
           // Refresh the simulation runs list
@@ -1274,7 +1276,13 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => fetchSimulationRuns(true)}
+                  onClick={() => {
+                    // Set loading state first, then fetch
+                    setIsRefreshingSimulations(true);
+                    console.log("Refresh button clicked, setting loading state");
+                    // Use a small delay to ensure state updates before fetch starts
+                    setTimeout(() => fetchSimulationRuns(true), 50);
+                  }}
                   disabled={isRefreshingSimulations}
                   className="text-xs bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-300 hover:text-white"
                 >
