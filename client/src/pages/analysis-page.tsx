@@ -40,6 +40,11 @@ type SimulationRun = {
   description?: string;
   type?: string;
   num_simulations?: number;
+  // Batch-specific fields
+  success_count?: number;
+  failed_count?: number;
+  total_count?: number;
+  is_batch?: boolean;
   summary?: {
     totalTests: number;
     passed: number;
@@ -82,9 +87,205 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   const [simulationType, setSimulationType] = useState<'run' | 'batch_run'>('run');
   const [simRepo, setSimRepo] = useState<{ owner: string; repo: string } | null>(null);
   
+  // Batch view state
+  const [viewingBatchId, setViewingBatchId] = useState<string | null>(null);
+  const [currentBatch, setCurrentBatch] = useState<SimulationRun | null>(null);
+  const [isLoadingBatch, setIsLoadingBatch] = useState(false);
+  
   const { user } = useAuth();
   const { toast } = useToast();
   
+  // Function to fetch batch simulations
+  const fetchBatchSimulations = async (batchId: string) => {
+    if (!submissionId || !batchId) return;
+    
+    setIsLoadingBatch(true);
+    try {
+      // Find the batch run in current simulations to set as current batch
+      const batchRun = simulationRuns.find(run => run.id === batchId);
+      if (batchRun) {
+        setCurrentBatch(batchRun);
+      }
+      
+      // Fetch batch simulations from the API
+      const response = await fetch(`/api/simulation-runs/${submissionId}/batch/${batchId}`);
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log("Received batch simulations:", responseData);
+        
+        if (responseData.simulation_runs) {
+          // Process the batch simulation runs the same way we process regular runs
+          const formattedRuns: SimulationRun[] = responseData.simulation_runs.map((run: any) => {
+            // Check if the response data is already in our expected format
+            if (run.id && run.status) {
+              return run;
+            }
+            
+            // Handle data from external API
+            if (run.simulation_id || run.run_id || run.id) {
+              // Log the raw run data to debug
+              console.log("Processing run data (from batch):", run);
+              
+              const status = run.status === "SUCCESS" ? "success" : 
+                          run.status === "success" ? "success" :
+                          run.status === "FAILURE" ? "error" : 
+                          run.status === "failure" ? "error" :
+                          run.status === "ERROR" ? "error" :
+                          run.status === "error" ? "error" :
+                          run.status === "SCHEDULED" ? "scheduled" :
+                          run.status === "scheduled" ? "scheduled" :
+                          run.status === "IN_PROGRESS" ? "in_progress" :
+                          run.status === "in_progress" ? "in_progress" :
+                          run.status?.toLowerCase() || "error";
+              
+              return {
+                id: run.simulation_id || run.run_id || run.id,
+                status: status as 'success' | 'error' | 'in_progress' | 'scheduled',
+                date: run.created_at || run.date || new Date().toISOString(),
+                logUrl: run.log_url || run.logUrl || null,
+                branch: run.branch || "default",
+                description: run.description || "",
+                type: run.type || "run",
+                // Include all available fields for the expanded details section
+                log: run.log || null,
+                return_code: run.return_code || 0,
+                stderr: run.stderr || null,
+                stdout: run.stdout || null,
+                summary: run.summary || {
+                  totalTests: run.total_tests || 0,
+                  passed: run.passed_tests || 0,
+                  failed: run.failed_tests || (run.total_tests || 0) - (run.passed_tests || 0) || 0
+                }
+              };
+            }
+            
+            // Fallback for old format
+            return {
+              id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
+              status: (run.status === "failure" ? "error" : run.status) as 'success' | 'error',
+              date: run.date || new Date().toISOString(),
+              logUrl: run.logUrl || null,
+              log: run.log || null,
+              return_code: run.return_code || 0,
+              stderr: run.stderr || null,
+              stdout: run.stdout || null,
+              summary: run.summary || {
+                totalTests: 0,
+                passed: 0,
+                failed: 0
+              }
+            };
+          });
+          
+          setSimulationRuns(formattedRuns);
+        }
+      } else {
+        console.error('Error fetching batch simulations:', response.status);
+        toast({
+          title: "Error",
+          description: "Could not load batch simulation data. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching batch simulation data:', error);
+      toast({
+        title: "Error",
+        description: "Could not load batch simulation data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingBatch(false);
+    }
+  };
+  
+  // Function to go back to main simulation list
+  const goBackToMainList = async () => {
+    setViewingBatchId(null);
+    setCurrentBatch(null);
+    
+    // Refetch the main simulation runs list
+    try {
+      const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
+      if (runsResponse.ok) {
+        const responseData = await runsResponse.json();
+        console.log("Received simulation runs:", responseData);
+        
+        if (responseData.simulation_runs) {
+          const formattedRuns: SimulationRun[] = responseData.simulation_runs.map((run: any) => {
+            // Processing remains the same as in the original fetchData function
+            if (run.id && run.status) {
+              return run;
+            }
+            
+            if (run.simulation_id || run.run_id || run.id) {
+              console.log("Processing run data (from simulation):", run);
+              
+              const status = run.status === "SUCCESS" ? "success" : 
+                          run.status === "success" ? "success" :
+                          run.status === "FAILURE" ? "error" : 
+                          run.status === "failure" ? "error" :
+                          run.status === "ERROR" ? "error" :
+                          run.status === "error" ? "error" :
+                          run.status === "SCHEDULED" ? "scheduled" :
+                          run.status === "scheduled" ? "scheduled" :
+                          run.status === "IN_PROGRESS" ? "in_progress" :
+                          run.status === "in_progress" ? "in_progress" :
+                          run.status?.toLowerCase() || "error";
+              
+              return {
+                id: run.simulation_id || run.run_id || run.id,
+                status: status as 'success' | 'error' | 'in_progress' | 'scheduled',
+                date: run.created_at || run.date || new Date().toISOString(),
+                logUrl: run.log_url || run.logUrl || null,
+                branch: run.branch || "default",
+                description: run.description || "",
+                type: run.type || (run.num_simulations && run.num_simulations > 1 ? "batch" : "run"),
+                num_simulations: run.num_simulations || 1,
+                // Batch-specific fields
+                success_count: run.success_count || 0,
+                failed_count: run.failed_count || 0,
+                total_count: run.total_count || (run.num_simulations || 0),
+                is_batch: run.type === 'batch' || (run.num_simulations && run.num_simulations > 1) || false,
+                // Include all available fields for the expanded details section
+                log: run.log || null,
+                return_code: run.return_code || 0,
+                stderr: run.stderr || null,
+                stdout: run.stdout || null,
+                summary: run.summary || {
+                  totalTests: run.total_tests || 0,
+                  passed: run.passed_tests || 0,
+                  failed: run.failed_tests || (run.total_tests || 0) - (run.passed_tests || 0) || 0
+                }
+              };
+            }
+            
+            // Fallback for old format
+            return {
+              id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
+              status: (run.status === "failure" ? "error" : run.status) as 'success' | 'error',
+              date: run.date || new Date().toISOString(),
+              logUrl: run.logUrl || null,
+              log: run.log || null,
+              return_code: run.return_code || 0,
+              stderr: run.stderr || null,
+              stdout: run.stdout || null,
+              summary: run.summary || {
+                totalTests: 0,
+                passed: 0,
+                failed: 0
+              }
+            };
+          });
+          
+          setSimulationRuns(formattedRuns);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching simulation data:', error);
+    }
+  };
+
   // Fetch simulation runs and status on component mount
   useEffect(() => {
     if (!user || !submissionId) return;
