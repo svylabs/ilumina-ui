@@ -6637,21 +6637,32 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Fix data format to ensure proper type conversion for the external API
+      // The issue was likely with the additional params or number format
+      const apiPayload = {
+        // Make sure submission_id is always a string
+        submission_id: String(actualSubmissionId),
+        step: "run_simulation",
+        simulation_type: finalSimulationType,
+        branch: branch || "main",
+        // Ensure num_simulations is a number, not a string
+        num_simulations: Number(parsedNumSimulations)
+      };
+      
+      // Add description if provided, but only if it's a non-empty string
+      if (additionalParams.description && typeof additionalParams.description === 'string' && additionalParams.description.trim() !== '') {
+        apiPayload.description = additionalParams.description.trim();
+      }
+      
+      console.log('Sending API payload:', JSON.stringify(apiPayload, null, 2));
+      
       const apiResponse = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.ILUMINA_API_KEY || 'my_secure_password'}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          // The external API expects a UUID string for submission_id
-          submission_id: String(actualSubmissionId),
-          step: "run_simulation",
-          simulation_type: finalSimulationType,
-          branch: branch || "main",
-          num_simulations: parsedNumSimulations,
-          ...additionalParams
-        })
+        body: JSON.stringify(apiPayload)
       });
       
       if (!apiResponse.ok) {
