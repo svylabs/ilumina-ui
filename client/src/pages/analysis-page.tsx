@@ -113,6 +113,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         const responseData = await response.json();
         console.log("Received batch simulations:", responseData);
         
+        // Get batch metadata from the API response if available
+        const batchMetadata = responseData.batch_metadata || {};
+        
         if (responseData.simulation_runs) {
           // Process the batch simulation runs the same way we process regular runs
           const formattedRuns: SimulationRun[] = responseData.simulation_runs.map((run: any) => {
@@ -177,33 +180,55 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             };
           });
           
-          // Calculate batch statistics from individual simulation runs
-          const totalCount = formattedRuns.length;
-          const successCount = formattedRuns.filter(run => run.status === 'success').length;
-          const failedCount = formattedRuns.filter(run => run.status === 'error').length;
-          const inProgressCount = formattedRuns.filter(run => 
-            run.status === 'in_progress' || run.status === 'scheduled'
-          ).length;
+          // Use statistics from batch_metadata if available, otherwise calculate from runs
+          // This ensures we use pre-calculated stats when they exist
+          let totalCount, successCount, failedCount, batchStatus;
           
-          // Determine overall batch status based on individual runs
-          let batchStatus: 'success' | 'error' | 'in_progress' | 'scheduled' = 'success';
-          if (inProgressCount > 0) {
-            batchStatus = 'in_progress';
-          } else if (successCount === 0 && failedCount > 0) {
-            batchStatus = 'error';
-          } else if (successCount > 0 && failedCount > 0) {
-            batchStatus = 'success'; // Partial success still shows as success
+          // First try to get stats from the batch metadata
+          if (batchMetadata && (batchMetadata.success_count !== undefined || batchMetadata.failed_count !== undefined)) {
+            // Use stats directly from the metadata
+            totalCount = batchMetadata.total_count || formattedRuns.length;
+            successCount = batchMetadata.success_count || 0;
+            failedCount = batchMetadata.failed_count || 0;
+            batchStatus = batchMetadata.status as 'success' | 'error' | 'in_progress' | 'scheduled' || 'success';
+          } 
+          // Then try to use stats from the existing batch run (as they might come from the previous API call)
+          else if (batchRun && (batchRun.success_count !== undefined || batchRun.failed_count !== undefined)) {
+            totalCount = batchRun.total_count || formattedRuns.length;
+            successCount = batchRun.success_count || 0;
+            failedCount = batchRun.failed_count || 0;
+            batchStatus = batchRun.status || 'success';
+          } 
+          // If no pre-calculated stats are available, calculate them from the runs
+          else {
+            // Calculate batch statistics from individual simulation runs
+            totalCount = formattedRuns.length;
+            successCount = formattedRuns.filter(run => run.status === 'success').length;
+            failedCount = formattedRuns.filter(run => run.status === 'error').length;
+            const inProgressCount = formattedRuns.filter(run => 
+              run.status === 'in_progress' || run.status === 'scheduled'
+            ).length;
+            
+            // Determine overall batch status based on individual runs
+            batchStatus = 'success';
+            if (inProgressCount > 0) {
+              batchStatus = 'in_progress';
+            } else if (successCount === 0 && failedCount > 0) {
+              batchStatus = 'error';
+            } else if (successCount > 0 && failedCount > 0) {
+              batchStatus = 'success'; // Partial success still shows as success
+            }
           }
           
-          // Update the batch run with calculated statistics
+          // Update the batch run with statistics (from API or calculated)
           const updatedBatchRun: SimulationRun = {
             ...(batchRun || {}),
             id: batchId,
             status: batchStatus,
             date: batchRun?.date || formattedRuns[0]?.date || new Date().toISOString(),
             logUrl: batchRun?.logUrl || null,
-            branch: batchRun?.branch || 'main',
-            description: batchRun?.description || `Batch with ${totalCount} simulations`,
+            branch: batchRun?.branch || batchMetadata?.branch || 'main',
+            description: batchRun?.description || batchMetadata?.description || `Batch with ${totalCount} simulations`,
             type: 'batch',
             num_simulations: totalCount,
             success_count: successCount,
@@ -261,6 +286,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         console.log("Received simulation runs:", responseData);
         
         if (responseData.simulation_runs) {
+          // Get batch metadata from the API response if available
+          const batchMetadata = responseData.batch_metadata || {};
+          
           let formattedRuns: SimulationRun[] = responseData.simulation_runs.map((run: any) => {
             // Processing remains the same as in the original fetchData function
             if (run.id && run.status) {
@@ -282,6 +310,27 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                           run.status === "in_progress" ? "in_progress" :
                           run.status?.toLowerCase() || "error";
               
+              // Get batch stats if available
+              let batchStats = {};
+              if (run.type === 'batch' || (run.num_simulations && run.num_simulations > 1)) {
+                // Check if the API provided success_count and failed_count
+                if (run.success_count !== undefined && run.failed_count !== undefined) {
+                  batchStats = {
+                    success_count: run.success_count,
+                    failed_count: run.failed_count,
+                    total_count: run.total_count || run.num_simulations || 0
+                  };
+                }
+                // If not, set default values
+                else {
+                  batchStats = {
+                    success_count: 0,
+                    failed_count: 0,
+                    total_count: run.num_simulations || 0
+                  };
+                }
+              }
+              
               return {
                 id: run.simulation_id || run.run_id || run.id,
                 status: status as 'success' | 'error' | 'in_progress' | 'scheduled',
@@ -292,9 +341,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 type: run.type || (run.num_simulations && run.num_simulations > 1 ? "batch" : "run"),
                 num_simulations: run.num_simulations || 1,
                 // Batch-specific fields
-                success_count: run.success_count || 0,
-                failed_count: run.failed_count || 0,
-                total_count: run.total_count || (run.num_simulations || 0),
+                ...batchStats,
                 is_batch: run.type === 'batch' || (run.num_simulations && run.num_simulations > 1) || false,
                 // Include all available fields for the expanded details section
                 log: run.log || null,
@@ -331,16 +378,56 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           if (previousBatchId && previousBatchData) {
             formattedRuns = formattedRuns.map(run => {
               if (run.id === previousBatchId) {
+                // Use our previously calculated statistics rather than the API values
+                // This ensures consistent display between batch detail view and main list
                 return {
                   ...run,
-                  // Preserve our calculated statistics from the batch detail view
                   success_count: previousBatchData.success_count,
                   failed_count: previousBatchData.failed_count,
                   total_count: previousBatchData.total_count,
-                  status: previousBatchData.status
+                  status: previousBatchData.status,
+                  description: previousBatchData.description || run.description
                 };
               }
               return run;
+            });
+          } else {
+            // Process all batch runs to ensure stats are calculated properly
+            const batchRuns = formattedRuns.filter(run => run.is_batch || run.type === 'batch');
+            
+            // Calculate statistics for each batch if not already provided
+            batchRuns.forEach(batchRun => {
+              // Only calculate if we don't have both success_count and failed_count
+              if (batchRun.success_count === undefined || batchRun.failed_count === undefined) {
+                // Find all runs in this batch
+                const batchId = batchRun.id;
+                const batchMembers = formattedRuns.filter(run => 
+                  run.batch_id === batchId || 
+                  (responseData.simulation_runs.find((r: any) => 
+                    r.id === run.id && r.batch_id === batchId
+                  ))
+                );
+                
+                if (batchMembers.length > 0) {
+                  // Calculate batch statistics
+                  const totalCount = batchMembers.length;
+                  const successCount = batchMembers.filter(run => run.status === 'success').length;
+                  const failedCount = batchMembers.filter(run => run.status === 'error').length;
+                  
+                  // Update the batch run with calculated statistics
+                  formattedRuns = formattedRuns.map(run => {
+                    if (run.id === batchId) {
+                      return {
+                        ...run,
+                        success_count: successCount,
+                        failed_count: failedCount,
+                        total_count: totalCount
+                      };
+                    }
+                    return run;
+                  });
+                }
+              }
             });
           }
           
@@ -501,38 +588,46 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             );
             
             if (batchMembers.length > 0) {
-              // Calculate batch statistics
-              const totalCount = batchRun.total_count || batchMembers.length || batchRun.num_simulations || 1;
-              const successCount = batchMembers.filter(run => run.status === 'success').length;
-              const failedCount = batchMembers.filter(run => run.status === 'error').length;
-              const inProgressCount = batchMembers.filter(run => 
-                run.status === 'in_progress' || run.status === 'scheduled'
-              ).length;
-              
-              // Determine batch status based on contained runs
-              let batchStatus: 'success' | 'error' | 'in_progress' | 'scheduled' = 'success';
-              if (inProgressCount > 0) {
-                batchStatus = 'in_progress';
-              } else if (successCount === 0 && failedCount > 0) {
-                batchStatus = 'error';
-              } else if (successCount > 0 && failedCount > 0) {
-                batchStatus = 'success'; // Partial success still shows as success
-              }
-              
-              // Update the batch run with calculated statistics
-              formattedRuns = formattedRuns.map(run => {
-                if (run.id === batchId) {
-                  return {
-                    ...run,
-                    success_count: successCount,
-                    failed_count: failedCount,
-                    total_count: totalCount,
-                    status: batchStatus,
-                    description: run.description || `Batch with ${totalCount} simulations`
-                  };
+              // First check if we already have stats from the API
+              if (batchRun.success_count !== undefined && 
+                  batchRun.failed_count !== undefined && 
+                  batchRun.total_count !== undefined) {
+                // Use stats directly from API
+                // No need to update, already have valid stats
+              } else {
+                // Calculate batch statistics from individual runs
+                const totalCount = batchRun.total_count || batchMembers.length || batchRun.num_simulations || 1;
+                const successCount = batchMembers.filter(run => run.status === 'success').length;
+                const failedCount = batchMembers.filter(run => run.status === 'error').length;
+                const inProgressCount = batchMembers.filter(run => 
+                  run.status === 'in_progress' || run.status === 'scheduled'
+                ).length;
+                
+                // Determine batch status based on contained runs
+                let batchStatus: 'success' | 'error' | 'in_progress' | 'scheduled' = 'success';
+                if (inProgressCount > 0) {
+                  batchStatus = 'in_progress';
+                } else if (successCount === 0 && failedCount > 0) {
+                  batchStatus = 'error';
+                } else if (successCount > 0 && failedCount > 0) {
+                  batchStatus = 'success'; // Partial success still shows as success
                 }
-                return run;
-              });
+                
+                // Update the batch run with calculated statistics
+                formattedRuns = formattedRuns.map(run => {
+                  if (run.id === batchId) {
+                    return {
+                      ...run,
+                      success_count: successCount,
+                      failed_count: failedCount,
+                      total_count: totalCount,
+                      status: batchStatus,
+                      description: run.description || `Batch with ${totalCount} simulations`
+                    };
+                  }
+                  return run;
+                });
+              }
             }
           });
           
