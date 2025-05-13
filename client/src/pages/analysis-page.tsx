@@ -137,6 +137,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                           run.status === "error" ? "error" :
                           run.status === "SCHEDULED" ? "scheduled" :
                           run.status === "scheduled" ? "scheduled" :
+                          run.status === "CREATED" ? "scheduled" :
+                          run.status === "created" ? "scheduled" :
                           run.status === "IN_PROGRESS" ? "in_progress" :
                           run.status === "in_progress" ? "in_progress" :
                           run.status?.toLowerCase() || "error";
@@ -861,6 +863,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                             run.status === "error" ? "error" :
                             run.status === "SCHEDULED" ? "scheduled" :
                             run.status === "scheduled" ? "scheduled" :
+                            run.status === "CREATED" ? "scheduled" :
+                            run.status === "created" ? "scheduled" :
                             run.status === "IN_PROGRESS" ? "in_progress" :
                             run.status === "in_progress" ? "in_progress" :
                             run.status?.toLowerCase() || "error";
@@ -889,7 +893,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
               // Fallback for old format
               return {
                 id: run.runId || run.id || `sim-${Math.random().toString(36).substring(7)}`,
-                status: (run.status === 'failure' ? 'error' : run.status) as 'success' | 'error',
+                status: (run.status === 'failure' ? 'error' : 
+                        run.status === 'CREATED' || run.status === 'created' ? 'scheduled' : 
+                        run.status) as 'success' | 'error' | 'in_progress' | 'scheduled',
                 date: run.date || new Date().toISOString(),
                 logUrl: run.logUrl || null,
                 branch: run.branch || "default",
