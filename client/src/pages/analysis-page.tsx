@@ -657,7 +657,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           setIsRefreshingSimulations(false);
         }
       }
-  }, [user, submissionId, deploymentVerified, toast, analysis, selectedBatchId, setSimStatus, setShowUpgradeMessage, setSimRepo, setSimulationRuns, setBatchRuns, setSelectedBatchRuns]);
+  }, [user, submissionId, deploymentVerified, toast, analysis, setIsRefreshingSimulations, setSimStatus, setShowUpgradeMessage, setSimRepo, setSimulationRuns]);
   
   // Fetch simulation runs and status on component mount
   useEffect(() => {
