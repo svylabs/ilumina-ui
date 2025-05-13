@@ -451,6 +451,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     if (!user || !submissionId) return;
     
     if (showLoadingState) {
+      console.log("Setting refresh loading state to true");
       setIsRefreshingSimulations(true);
     }
     
@@ -654,6 +655,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         }
       } finally {
         if (showLoadingState) {
+          console.log("Setting refresh loading state back to false");
           setIsRefreshingSimulations(false);
         }
       }
