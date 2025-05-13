@@ -2493,6 +2493,13 @@ export function registerRoutes(app: Express): Server {
           
           // Process each simulation run to ensure it has consistent field names
           const processedRuns = simRuns.map((run: any) => {
+            // Calculate success_rate and failure_rate for UI display if we have the data
+            let success_rate, failure_rate;
+            if (run.success_count !== undefined && run.total_count && run.total_count > 0) {
+              success_rate = Math.round((run.success_count / run.total_count) * 100);
+              failure_rate = Math.round((run.failed_count || 0) / run.total_count * 100);
+            }
+            
             return {
               ...run,
               // Ensure description is never undefined
@@ -2500,7 +2507,10 @@ export function registerRoutes(app: Express): Server {
               // Ensure branch has a default value if missing
               branch: run.branch || "default",
               // For batch member runs, add the batch_id
-              batch_id: batchId
+              batch_id: batchId,
+              // Add calculated rates if available
+              success_rate: success_rate,
+              failure_rate: failure_rate
             };
           });
           

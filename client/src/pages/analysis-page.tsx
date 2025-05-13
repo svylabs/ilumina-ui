@@ -1175,10 +1175,11 @@ function SimulationRunItem({
     <div 
       className={`hover:bg-gray-800/50 transition-colors cursor-pointer ${
         isBatch && onBatchClick 
-          ? 'border-l-4 border-purple-700 hover:bg-purple-900/30' 
+          ? 'border-l-4 border-purple-700 hover:bg-purple-900/30 group' 
           : ''
       }`} 
       onClick={toggleDetails}
+      title={isBatch && onBatchClick ? "Click to view individual simulations in this batch" : "Click to view details"}
     >
       <div className={`p-4 ${isBatch && onBatchClick ? 'pl-3' : ''}`}>
         {/* First row with run ID, status and action buttons */}
@@ -1190,6 +1191,17 @@ function SimulationRunItem({
           <div className="md:col-span-3 font-mono text-white">
             <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
             <div className="truncate max-w-[180px]">{run.id}</div>
+            {isBatch && (
+              <div className="flex items-center mt-1 text-xs text-purple-300">
+                <Box className="h-3 w-3 mr-1" />
+                <span>{run.num_simulations || 0} simulation{(run.num_simulations || 0) !== 1 ? 's' : ''}</span>
+                {onBatchClick && (
+                  <span className="ml-2 text-purple-400 group-hover:text-purple-300 transition-colors">
+                    (Click to view)
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="md:col-span-3">
             <div className="md:hidden text-xs text-gray-400 mb-1">Status</div>
