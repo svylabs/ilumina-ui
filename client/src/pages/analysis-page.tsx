@@ -69,6 +69,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   // State for simulation runs
   const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
+  const [isRefreshingSimulations, setIsRefreshingSimulations] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState<string | null>(null);
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [simulationDescription, setSimulationDescription] = useState("");
