@@ -904,7 +904,19 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
 };
 
 // Separate component for each simulation run to properly manage state
-function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: number, number: number }) {
+function SimulationRunItem({ 
+  run, 
+  index, 
+  number, 
+  isBatch, 
+  onBatchClick 
+}: { 
+  run: SimulationRun, 
+  index: number, 
+  number: number,
+  isBatch?: boolean,
+  onBatchClick?: (batchId: string) => void
+}) {
   // State to track if details section is expanded
   const [isExpanded, setIsExpanded] = useState(false);
   // State to track if log viewer is shown
@@ -918,6 +930,11 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
   
   // Toggle details when clicking on the row
   const toggleDetails = () => {
+    // If this is a batch and has a batch click handler, don't toggle details
+    if (isBatch && onBatchClick) {
+      onBatchClick(run.id);
+      return;
+    }
     setIsExpanded(!isExpanded);
   };
   
@@ -1112,8 +1129,15 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
   };
   
   return (
-    <div className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={toggleDetails}>
-      <div className="p-4">
+    <div 
+      className={`hover:bg-gray-800/50 transition-colors cursor-pointer ${
+        isBatch && onBatchClick 
+          ? 'border-l-4 border-purple-700 hover:bg-purple-900/30' 
+          : ''
+      }`} 
+      onClick={toggleDetails}
+    >
+      <div className={`p-4 ${isBatch && onBatchClick ? 'pl-3' : ''}`}>
         {/* First row with run ID, status and action buttons */}
         <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center gap-2 md:gap-0 mb-2">
           <div className="md:col-span-1 font-medium text-gray-300">
