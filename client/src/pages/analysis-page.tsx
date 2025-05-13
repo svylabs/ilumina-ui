@@ -306,6 +306,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                           run.status === "error" ? "error" :
                           run.status === "SCHEDULED" ? "scheduled" :
                           run.status === "scheduled" ? "scheduled" :
+                          run.status === "CREATED" ? "scheduled" :
+                          run.status === "created" ? "scheduled" :
                           run.status === "IN_PROGRESS" ? "in_progress" :
                           run.status === "in_progress" ? "in_progress" :
                           run.status?.toLowerCase() || "error";
@@ -522,6 +524,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                              run.status === "error" ? "error" :
                              run.status === "SCHEDULED" ? "scheduled" :
                              run.status === "scheduled" ? "scheduled" :
+                             run.status === "CREATED" ? "scheduled" :
+                             run.status === "created" ? "scheduled" :
                              run.status === "IN_PROGRESS" ? "in_progress" :
                              run.status === "in_progress" ? "in_progress" :
                              run.status?.toLowerCase() || "error";
