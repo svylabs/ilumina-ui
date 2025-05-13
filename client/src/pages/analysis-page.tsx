@@ -1015,16 +1015,23 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                   </button>
                   <input
                     id="sim-count"
-                    type="number" 
+                    type="text" 
                     inputMode="numeric"
-                    min="1"
-                    max="10"
                     value={numSimulations}
+                    onClick={(e) => {
+                      // Select all text when clicked for easier replacement
+                      e.currentTarget.select();
+                    }}
                     onChange={(e) => {
-                      const inputValue = e.target.value;
-                      // Handle empty input
+                      const inputValue = e.target.value.trim();
+                      
+                      // Allow empty input temporarily during typing
                       if (inputValue === '') {
-                        // Don't update state for empty input
+                        return;
+                      }
+                      
+                      // Only allow numbers
+                      if (!/^\d+$/.test(inputValue)) {
                         return;
                       }
                       
@@ -1036,14 +1043,14 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                       }
                     }}
                     onBlur={(e) => {
-                      // On blur, ensure we have a valid value
-                      if (e.target.value === '' || isNaN(parseInt(e.target.value))) {
+                      // Restore default value if empty or invalid
+                      if (e.target.value.trim() === '' || !/^\d+$/.test(e.target.value) || isNaN(parseInt(e.target.value))) {
                         setNumSimulations(1);
                         setSimulationType('run');
                       }
                     }}
                     disabled={isRunningSimulation}
-                    className="bg-gray-900 border-y border-gray-700 px-3 py-1 text-sm w-full text-center focus:outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="bg-gray-900 border-y border-gray-700 px-3 py-1 text-sm w-full text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                   <button 
                     type="button"
