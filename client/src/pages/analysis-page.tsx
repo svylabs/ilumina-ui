@@ -780,22 +780,63 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                 Number of Simulations
               </label>
               <div className="flex items-center gap-2">
-                <input
-                  id="sim-count"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={numSimulations}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (!isNaN(val) && val >= 1 && val <= 10) {
-                      setNumSimulations(val);
-                      setSimulationType(val > 1 ? 'batch_run' : 'run');
-                    }
-                  }}
-                  disabled={isRunningSimulation}
-                  className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+                <div className="flex w-full">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (numSimulations > 1 && !isRunningSimulation) {
+                        const newVal = numSimulations - 1;
+                        setNumSimulations(newVal);
+                        setSimulationType(newVal > 1 ? 'batch_run' : 'run');
+                      }
+                    }}
+                    disabled={numSimulations <= 1 || isRunningSimulation}
+                    className="bg-gray-800 border border-gray-700 rounded-l-md px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    -
+                  </button>
+                  <input
+                    id="sim-count"
+                    type="text" 
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    min="1"
+                    max="10"
+                    value={numSimulations}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      // Allow empty input temporarily
+                      if (inputValue === '') {
+                        setNumSimulations(1);
+                        setSimulationType('run');
+                        return;
+                      }
+                      
+                      const val = parseInt(inputValue);
+                      if (!isNaN(val)) {
+                        const clampedVal = Math.min(Math.max(val, 1), 10);
+                        setNumSimulations(clampedVal);
+                        setSimulationType(clampedVal > 1 ? 'batch_run' : 'run');
+                      }
+                    }}
+                    disabled={isRunningSimulation}
+                    className="bg-gray-900 border-y border-gray-700 px-3 py-1 text-sm w-full text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (numSimulations < 10 && !isRunningSimulation) {
+                        const newVal = numSimulations + 1;
+                        setNumSimulations(newVal);
+                        setSimulationType(newVal > 1 ? 'batch_run' : 'run');
+                      }
+                    }}
+                    disabled={numSimulations >= 10 || isRunningSimulation}
+                    className="bg-gray-800 border border-gray-700 rounded-r-md px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
             
