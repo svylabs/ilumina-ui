@@ -880,6 +880,12 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                     run={run} 
                     index={index} 
                     number={simulationRuns.length - index} // Count from n to 1
+                    isBatch={(run.type === 'batch' || (run.num_simulations && run.num_simulations > 1))}
+                    onBatchClick={viewingBatchId ? undefined : (batchId) => {
+                      console.log(`Viewing batch simulations for batch ID: ${batchId}`);
+                      setViewingBatchId(batchId);
+                      fetchBatchSimulations(batchId);
+                    }}
                   />
                 );
               })}
