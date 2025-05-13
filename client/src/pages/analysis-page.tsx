@@ -447,7 +447,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
 
 
   // Function to fetch and refresh simulation runs data
-  const fetchSimulationRuns = async (showLoadingState = true) => {
+  const fetchSimulationRuns = useCallback(async (showLoadingState = true) => {
     if (!user || !submissionId) return;
     
     if (showLoadingState) {
@@ -657,7 +657,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           setIsRefreshingSimulations(false);
         }
       }
-  };
+  }, [user, submissionId, deploymentVerified, toast, analysis, selectedBatchId, setSimStatus, setShowUpgradeMessage, setSimRepo, setSimulationRuns, setBatchRuns, setSelectedBatchRuns]);
   
   // Fetch simulation runs and status on component mount
   useEffect(() => {
@@ -665,7 +665,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     
     // Initial fetch without showing loading state
     fetchSimulationRuns(false);
-  }, [user, submissionId, deploymentVerified]);
+  }, [user, submissionId, deploymentVerified, fetchSimulationRuns]);
   
   // Helper function to check if deployment is completed
   const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
