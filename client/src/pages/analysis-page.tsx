@@ -102,7 +102,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     setIsLoadingBatch(true);
     try {
       // Find the batch run in current simulations to set as current batch
-      const batchRun = simulationRuns.find(run => run.id === batchId);
+      let batchRun = simulationRuns.find(run => run.id === batchId);
       if (batchRun) {
         setCurrentBatch(batchRun);
       }
@@ -177,7 +177,51 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
             };
           });
           
-          setSimulationRuns(formattedRuns);
+          // Calculate batch statistics from individual simulation runs
+          const totalCount = formattedRuns.length;
+          const successCount = formattedRuns.filter(run => run.status === 'success').length;
+          const failedCount = formattedRuns.filter(run => run.status === 'error').length;
+          const inProgressCount = formattedRuns.filter(run => 
+            run.status === 'in_progress' || run.status === 'scheduled'
+          ).length;
+          
+          // Determine overall batch status based on individual runs
+          let batchStatus: 'success' | 'error' | 'in_progress' | 'scheduled' = 'success';
+          if (inProgressCount > 0) {
+            batchStatus = 'in_progress';
+          } else if (successCount === 0 && failedCount > 0) {
+            batchStatus = 'error';
+          } else if (successCount > 0 && failedCount > 0) {
+            batchStatus = 'success'; // Partial success still shows as success
+          }
+          
+          // Update the batch run with calculated statistics
+          const updatedBatchRun: SimulationRun = {
+            ...(batchRun || {}),
+            id: batchId,
+            status: batchStatus,
+            date: batchRun?.date || formattedRuns[0]?.date || new Date().toISOString(),
+            logUrl: batchRun?.logUrl || null,
+            branch: batchRun?.branch || 'main',
+            description: batchRun?.description || `Batch with ${totalCount} simulations`,
+            type: 'batch',
+            num_simulations: totalCount,
+            success_count: successCount,
+            failed_count: failedCount,
+            total_count: totalCount,
+            is_batch: true
+          };
+          
+          // Update the current batch in state with correct counts
+          setCurrentBatch(updatedBatchRun);
+          
+          // Add batch ID to each run for reference
+          const runsWithBatchId = formattedRuns.map(run => ({
+            ...run,
+            batch_id: batchId
+          }));
+          
+          setSimulationRuns(runsWithBatchId);
         }
       } else {
         console.error('Error fetching batch simulations:', response.status);
