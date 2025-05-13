@@ -446,12 +446,15 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
 
 
 
-  // Fetch simulation runs and status on component mount
-  useEffect(() => {
+  // Function to fetch and refresh simulation runs data
+  const fetchSimulationRuns = async (showLoadingState = true) => {
     if (!user || !submissionId) return;
     
-    const fetchData = async () => {
-      try {
+    if (showLoadingState) {
+      setIsRefreshingSimulations(true);
+    }
+    
+    try {
         // Fetch simulation status
         const statusResponse = await fetch('/api/can-run-simulation');
         if (statusResponse.ok) {
@@ -642,16 +645,27 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         }
       } catch (error) {
         console.error('Error fetching simulation data:', error);
-        toast({
-          title: "Error",
-          description: "Could not load simulation data. Please try again.",
-          variant: "destructive"
-        });
+        if (showLoadingState) {
+          toast({
+            title: "Error",
+            description: "Could not load simulation data. Please try again.",
+            variant: "destructive"
+          });
+        }
+      } finally {
+        if (showLoadingState) {
+          setIsRefreshingSimulations(false);
+        }
       }
-    };
+  };
+  
+  // Fetch simulation runs and status on component mount
+  useEffect(() => {
+    if (!user || !submissionId) return;
     
-    fetchData();
-  }, [user, submissionId, toast, deploymentVerified]);
+    // Initial fetch without showing loading state
+    fetchSimulationRuns(false);
+  }, [user, submissionId, deploymentVerified]);
   
   // Helper function to check if deployment is completed
   const checkDeploymentCompletion = async (submissionId: string): Promise<boolean> => {
@@ -1253,6 +1267,26 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         {simulationRuns.length > 0 ? (
           <div className="bg-gray-900 rounded-md">
             <div className="border-b border-gray-800 p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-medium text-gray-300">Simulation Runs</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => fetchSimulationRuns(true)}
+                  disabled={isRefreshingSimulations}
+                  className="text-xs bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-300 hover:text-white"
+                >
+                  {isRefreshingSimulations ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3 w-3 mr-1" /> Refresh
+                    </>
+                  )}
+                </Button>
+              </div>
               <div className="hidden md:grid md:grid-cols-12 text-sm text-gray-400 font-medium">
                 <div className="col-span-1">#</div>
                 <div className="col-span-3">Run ID</div>
