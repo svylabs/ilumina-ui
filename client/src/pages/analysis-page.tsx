@@ -106,7 +106,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     // First API call to get simulation status
     async function fetchSimulationStatus() {
       try {
-        const response = await apiRequest("GET", `/api/submission/${submissionId}/simulation/status`);
+        const response = await fetch(`/api/submission/${submissionId}/simulation/status`, {
+          credentials: "include"
+        });
         if (response.ok) {
           const data = await response.json();
           setSimStatus({
@@ -124,7 +126,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     // Second API call to get available branches
     async function fetchBranches() {
       try {
-        const response = await apiRequest("GET", `/api/submission/${submissionId}/branches`);
+        const response = await fetch(`/api/submission/${submissionId}/branches`, {
+          credentials: "include"
+        });
         if (response.ok) {
           const data = await response.json();
           setAvailableBranches(data.branches || []);
@@ -191,7 +195,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         if (viewingBatchId) {
           // Fetch batch runs
           setIsLoadingBatchRuns(true);
-          const response = await apiRequest("GET", `/api/submission/${submissionId}/simulations/batch/${viewingBatchId}/list`);
+          const response = await fetch(`/api/submission/${submissionId}/simulations/batch/${viewingBatchId}/list`, {
+            credentials: "include"
+          });
           if (response.ok) {
             const data = await response.json();
             console.log("Batch runs data:", data);
@@ -211,7 +217,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
           setIsLoadingBatchRuns(false);
         } else {
           // Fetch all simulation runs
-          const response = await apiRequest("GET", `/api/submission/${submissionId}/simulations/list`);
+          const response = await fetch(`/api/submission/${submissionId}/simulations/list`, {
+            credentials: "include"
+          });
           if (response.ok) {
             const data = await response.json();
             console.log("Simulation runs data:", data);
@@ -251,6 +259,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
   };
   
   // Function to start a simulation
+  const { toast } = useToast();
+  
   const startSimulation = async () => {
     if (!submissionId || isRunningSimulation || !simStatus?.canRun) return;
     
@@ -265,28 +275,32 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
       
       console.log("Starting simulation with payload:", payload);
       
-      const response = await apiRequest("POST", `/api/submission/${submissionId}/simulation/run`, payload);
+      const response = await fetch(`/api/submission/${submissionId}/simulation/run`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload),
+        credentials: "include"
+      });
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Simulation started:", data);
+      if (!response.ok) {
+        throw new Error(`Failed to start simulation: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Simulation started:", data);
+      
+      if (data.run_id) {
+        setSimulationMessage(`Simulation started successfully. Run ID: ${data.run_id}`);
         
-        if (data.run_id) {
-          setSimulationMessage(`Simulation started successfully. Run ID: ${data.run_id}`);
-          
-          // Fetch updated simulation runs after a short delay
-          setTimeout(() => {
-            setIsRunningSimulation(false);
-          }, 2000);
-        } else {
-          setSimulationMessage("Simulation request was accepted.");
+        // Fetch updated simulation runs after a short delay
+        setTimeout(() => {
           setIsRunningSimulation(false);
-        }
+        }, 2000);
       } else {
-        const errorData = await response.json();
-        setSimulationMessage(null);
-        console.error("Simulation error:", errorData);
-        throw new Error(errorData.message || "Failed to start simulation");
+        setSimulationMessage("Simulation request was accepted.");
+        setIsRunningSimulation(false);
       }
     } catch (error) {
       console.error('Error starting simulation:', error);
@@ -909,8 +923,28 @@ export default function AnalysisPage() {
   // Fetch analysis status
   const { data: analysis, error, isLoading, refetch } = useQuery<AnalysisResponse>({ 
     queryKey: [`/api/submission/${submissionId}/analysis`],
-    queryFn: getQueryFn(),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include",
+        });
+        
+        if (response.status === 401) {
+          return null;
+        }
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching analysis:", error);
+        throw error;
+      }
+    },
     refetchInterval: 5000,  // Poll every 5 seconds
+    retry: 3
   });
   
   useEffect(() => {
@@ -1342,7 +1376,7 @@ export default function AnalysisPage() {
         </div>
       )}
       
-      <ChatAssistant projectId={id} currentSection={currentStep.id} submissionId={submissionId} />
+      <ChatAssistant projectId={submissionId} currentSection={currentStep.id} submissionId={submissionId} />
     </div>
   );
 }
