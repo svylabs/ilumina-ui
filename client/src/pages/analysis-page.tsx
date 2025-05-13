@@ -1033,10 +1033,12 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                       e.currentTarget.select();
                     }}
                     onChange={(e) => {
-                      const inputValue = e.target.value.trim();
+                      let inputValue = e.target.value.trim();
                       
-                      // Allow empty input temporarily during typing
+                      // Handle empty input by maintaining the current text field value
+                      // but don't update the actual state yet (do that on blur)
                       if (inputValue === '') {
+                        e.target.value = '';
                         return;
                       }
                       
@@ -1045,18 +1047,33 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                         return;
                       }
                       
-                      const val = parseInt(inputValue);
+                      // Parse the input value
+                      const val = parseInt(inputValue, 10);
+                      
+                      // If valid number, update state with clamped value
                       if (!isNaN(val)) {
                         const clampedVal = Math.min(Math.max(val, 1), 10);
                         setNumSimulations(clampedVal);
                         setSimulationType(clampedVal > 1 ? 'batch_run' : 'run');
+                        
+                        // Update input field if we had to clamp the value
+                        if (val !== clampedVal) {
+                          e.target.value = clampedVal.toString();
+                        }
                       }
                     }}
                     onBlur={(e) => {
+                      // Get the current displayed value
+                      const inputValue = e.target.value.trim();
+                      
                       // Restore default value if empty or invalid
-                      if (e.target.value.trim() === '' || !/^\d+$/.test(e.target.value) || isNaN(parseInt(e.target.value))) {
+                      if (inputValue === '' || !/^\d+$/.test(inputValue) || isNaN(parseInt(inputValue, 10))) {
                         setNumSimulations(1);
                         setSimulationType('run');
+                        e.target.value = '1'; // Explicitly update the input value
+                      } else {
+                        // Make sure field shows the actual state value
+                        e.target.value = numSimulations.toString();
                       }
                     }}
                     disabled={isRunningSimulation}
