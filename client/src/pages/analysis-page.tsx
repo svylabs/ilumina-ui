@@ -937,9 +937,13 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                   <div className="mt-3 w-full max-w-md">
                     <div className="text-xs text-gray-300 mb-1 flex justify-between">
                       <span>Success Rate: {Math.round((currentBatch.success_count || 0) / currentBatch.total_count * 100)}%</span>
-                      {currentBatch.status === 'in_progress' || currentBatch.status === 'scheduled' ? (
+                      {currentBatch.status === 'in_progress' ? (
                         <span className="text-blue-300 flex items-center">
                           <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> In Progress
+                        </span>
+                      ) : currentBatch.status === 'scheduled' ? (
+                        <span className="text-gray-300 flex items-center">
+                          <AlertCircle className="h-3 w-3 mr-1" /> Scheduled
                         </span>
                       ) : (
                         <span className={`${
