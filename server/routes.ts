@@ -2440,6 +2440,95 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get batch simulation runs
+  app.get("/api/simulation-runs/:id/batch/:batchId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
+    
+    try {
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(req.params.id);
+      
+      // If there was an error getting a valid submission ID, return the error
+      if (!result.submissionId) {
+        return res.status(result.statusCode || 400).json({ 
+          error: result.error,
+          details: result.details 
+        });
+      }
+      
+      const submissionId = result.submissionId;
+      const batchId = req.params.batchId;
+      
+      if (!batchId) {
+        return res.status(400).json({ 
+          error: "Missing batch ID",
+          details: "A batch ID is required to fetch batch simulation runs"
+        });
+      }
+      
+      // Only use the external API for simulation runs - no database fallback
+      console.log(`Fetching batch simulation runs from external API for batch: ${batchId}`);
+      
+      try {
+        // Update the way we call the external API to avoid query parameter issues
+        // Use a direct fetch with explicit URL construction to avoid path joining issues
+        const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app').replace(/\/api$/, '');
+        const url = `${baseUrl}/api/submission/${submissionId}/simulations/batch/${batchId}/list`;
+        
+        console.log(`Direct API call to batch simulations: ${url}`);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${process.env.ILUMINA_API_KEY || 'my_secure_password'}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          // Return the data from the external API
+          const data = await response.json();
+          // The data should already have simulation_runs property, but add it if not
+          const simRuns = data.simulation_runs || data;
+          
+          // Process each simulation run to ensure it has consistent field names
+          const processedRuns = simRuns.map((run: any) => {
+            return {
+              ...run,
+              // Ensure description is never undefined
+              description: run.description || "",
+              // Ensure branch has a default value if missing
+              branch: run.branch || "default",
+              // For batch member runs, add the batch_id
+              batch_id: batchId
+            };
+          });
+          
+          console.log(`Successfully fetched batch simulation runs: ${processedRuns.length || 0} runs`);
+          return res.json({ simulation_runs: processedRuns });
+        } else {
+          // If the external API returns an error, log it
+          try {
+            const errorData = await response.json();
+            console.error(`External API returned status ${response.status} when fetching batch runs: ${JSON.stringify(errorData)}`);
+          } catch (parseError) {
+            console.error(`External API returned status ${response.status} when fetching batch runs`);
+          }
+          
+          // Return empty simulation_runs array - no database fallback
+          return res.json({ simulation_runs: [] });
+        }
+      } catch (apiRequestError) {
+        console.error("Network error when calling external API for batch simulations:", apiRequestError);
+        // Return empty simulation_runs array - no database fallback
+        return res.json({ simulation_runs: [] });
+      }
+    } catch (error) {
+      console.error("Error in batch simulation runs endpoint:", error);
+      return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+
   // Get simulation runs for a submission or project ID
   app.get("/api/simulation-runs/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });

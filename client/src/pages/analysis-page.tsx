@@ -286,6 +286,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     }
   };
 
+
+
   // Fetch simulation runs and status on component mount
   useEffect(() => {
     if (!user || !submissionId) return;
@@ -857,6 +859,47 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
               <span className="font-medium text-green-300">Success</span>
             </div>
             <p className="text-gray-300 text-sm">{simulationMessage}</p>
+          </div>
+        )}
+        
+        {/* Batch Information Panel */}
+        {viewingBatchId && currentBatch && (
+          <div className="bg-purple-900/30 border border-purple-800 p-4 rounded-md mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-medium mb-1 flex items-center">
+                  <Box className="h-4 w-4 mr-2 text-purple-400" />
+                  Batch Simulation: {currentBatch.description || currentBatch.id.substring(0, 8)}
+                </h3>
+                <div className="flex flex-wrap gap-3 text-sm">
+                  <div className="flex items-center text-green-300">
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    <span>Success: {currentBatch.success_count || 0}</span>
+                  </div>
+                  <div className="flex items-center text-red-300">
+                    <XCircle className="h-4 w-4 mr-1" />
+                    <span>Failed: {currentBatch.failed_count || 0}</span>
+                  </div>
+                  <div className="flex items-center text-blue-300">
+                    <CircleDot className="h-4 w-4 mr-1" />
+                    <span>Total: {currentBatch.total_count || currentBatch.num_simulations || 0}</span>
+                  </div>
+                  <div className="flex items-center text-gray-300">
+                    <span className="text-xs bg-gray-700 px-2 py-0.5 rounded">
+                      {format(new Date(currentBatch.date), 'MMM dd, yyyy HH:mm')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goBackToMainList}
+                className="text-xs bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-300 hover:text-white"
+              >
+                <ChevronRight className="h-4 w-4 mr-1" /> Back to Simulations
+              </Button>
+            </div>
           </div>
         )}
         
