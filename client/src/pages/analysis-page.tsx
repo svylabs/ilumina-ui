@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 // Simulation run type definition
 type SimulationRun = {
   id: string;
-  status: "success" | "error";
+  status: "success" | "error" | "in_progress" | "scheduled";
   date: string;
   logUrl: string | null;
   branch?: string;
@@ -164,11 +164,15 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                              run.status === "FAILURE" ? "error" : 
                              run.status === "failure" ? "error" :
                              run.status === "error" ? "error" :
+                             run.status === "SCHEDULED" ? "scheduled" :
+                             run.status === "scheduled" ? "scheduled" :
+                             run.status === "IN_PROGRESS" ? "in_progress" :
+                             run.status === "in_progress" ? "in_progress" :
                              run.status?.toLowerCase() || "error";
               
               return {
                 id: run.simulation_id || run.run_id || run.id,
-                status: status as 'success' | 'error',
+                status: status as 'success' | 'error' | 'in_progress' | 'scheduled',
                 date: run.created_at || run.date || new Date().toISOString(),
                 logUrl: run.log_url || run.logUrl || null,
                 branch: run.branch || "default",
@@ -430,11 +434,15 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                             run.status === "failure" ? "error" :
                             run.status === "ERROR" ? "error" :
                             run.status === "error" ? "error" :
+                            run.status === "SCHEDULED" ? "scheduled" :
+                            run.status === "scheduled" ? "scheduled" :
+                            run.status === "IN_PROGRESS" ? "in_progress" :
+                            run.status === "in_progress" ? "in_progress" :
                             run.status?.toLowerCase() || "error";
                 
                 return {
                   id: run.simulation_id || run.run_id || run.id,
-                  status: status as 'success' | 'error',
+                  status: status as 'success' | 'error' | 'in_progress' | 'scheduled',
                   date: run.created_at || run.date || new Date().toISOString(),
                   logUrl: run.log_url || run.logUrl || null,
                   branch: run.branch || "default",
@@ -921,7 +929,7 @@ function SimulationRunItem({ run, index, number }: { run: SimulationRun, index: 
             >
               {run.status === 'success' 
                 ? '✓ Success' 
-                : run.status === 'in_progress'
+                : run.status === 'in_progress' || run.status === 'scheduled'
                   ? '⟳ Running'
                   : '✗ Failed'}
             </span>
