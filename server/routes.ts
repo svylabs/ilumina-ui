@@ -2366,6 +2366,80 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Get batch simulation runs for a specific batch ID
+  app.get("/api/batch-runs/:batchId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
+    
+    try {
+      const batchId = req.params.batchId;
+      
+      if (!batchId) {
+        return res.status(400).json({ error: 'Missing batch ID' });
+      }
+      
+      console.log(`Fetching simulation runs for batch ID: ${batchId}`);
+      
+      try {
+        // Use a direct fetch with explicit URL construction
+        const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app').replace(/\/api$/, '');
+        const url = `${baseUrl}/api/batch/${batchId}/runs`;
+        
+        console.log(`Direct API call to: ${url}`);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${process.env.ILUMINA_API_KEY || 'my_secure_password'}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          // Return the data from the external API
+          const data = await response.json();
+          // The data should already have batch_runs property, but handle either format
+          const batchRuns = data.batch_runs || data.runs || data || [];
+          
+          // Process each run to standardize format
+          const processedRuns = batchRuns.map((run: any) => {
+            return {
+              ...run,
+              // Set type to batch_run for consistent UI handling
+              type: 'batch_run',
+              // Ensure description is never undefined
+              description: run.description || "",
+              // Ensure branch has a default value if missing
+              branch: run.branch || "default",
+              // Include the batch_id reference
+              batch_id: batchId
+            };
+          });
+          
+          console.log(`Successfully fetched batch runs: ${processedRuns.length || 0} runs`);
+          return res.json({ batch_runs: processedRuns });
+        } else {
+          // If the external API returns an error, log it
+          try {
+            const errorData = await response.json();
+            console.error(`External API returned status ${response.status} when fetching batch runs: ${JSON.stringify(errorData)}`);
+          } catch (parseError) {
+            console.error(`External API returned status ${response.status} when fetching batch runs`);
+          }
+          
+          // Return empty batch_runs array
+          return res.json({ batch_runs: [] });
+        }
+      } catch (apiRequestError) {
+        console.error("Network error when calling external API:", apiRequestError);
+        // Return empty batch_runs array
+        return res.json({ batch_runs: [] });
+      }
+    } catch (error) {
+      console.error("Error in batch runs endpoint:", error);
+      return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+
   // Get simulation runs for a submission or project ID
   app.get("/api/simulation-runs/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
@@ -2414,14 +2488,22 @@ export function registerRoutes(app: Express): Server {
             // Determine if this is a batch run or single run
             const isBatch = run.num_simulations && run.num_simulations > 1;
             
+            // Check if this run has a batch_id, meaning it belongs to a batch
+            const isBatchRun = !!run.batch_id;
+            
             return {
               ...run,
-              // Set type to 'batch' if num_simulations > 1, otherwise 'run'
-              type: run.type || (isBatch ? 'batch' : 'run'),
+              // Set type based on available data:
+              // - If it has a batch_id, it's a run within a batch
+              // - If it has num_simulations > 1, it's a batch itself
+              // - Otherwise it's a regular run
+              type: isBatchRun ? 'batch_run' : (run.type || (isBatch ? 'batch' : 'run')),
               // Ensure description is never undefined
               description: run.description || "",
               // Ensure branch has a default value if missing
-              branch: run.branch || "default"
+              branch: run.branch || "default",
+              // Add a flag for batch_parent for easier filtering
+              is_batch_parent: isBatch && !isBatchRun
             };
           });
           
