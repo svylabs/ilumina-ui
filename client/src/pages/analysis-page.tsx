@@ -455,64 +455,64 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
     }
     
     try {
-        // Fetch simulation status
-        const statusResponse = await fetch('/api/can-run-simulation');
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-          
-          // Check if deployment was verified to enable early access
-          if (deploymentVerified && !statusData.canRun) {
-            console.log("Deployment verified, enabling early access to simulations");
-            setSimStatus({
-              ...statusData,
-              canRun: true,
-              earlyAccess: true,
-              message: "Early access enabled through deployment verification"
-            });
-            setShowUpgradeMessage(false);
-          } else {
-            setSimStatus(statusData);
-            setShowUpgradeMessage(!statusData.canRun);
-          }
-        } else if (statusResponse.status === 401) {
+      // Fetch simulation status
+      const statusResponse = await fetch('/api/can-run-simulation');
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        
+        // Check if deployment was verified to enable early access
+        if (deploymentVerified && !statusData.canRun) {
+          console.log("Deployment verified, enabling early access to simulations");
           setSimStatus({
-            canRun: false,
-            message: "Please login to run simulations"
+            ...statusData,
+            canRun: true,
+            earlyAccess: true,
+            message: "Early access enabled through deployment verification"
           });
+          setShowUpgradeMessage(false);
+        } else {
+          setSimStatus(statusData);
+          setShowUpgradeMessage(!statusData.canRun);
         }
-        
-        // Extract GitHub repo info from the project data if available
-        if (analysis?.steps?.files?.jsonData) {
-          const projectData = analysis.steps.files.jsonData;
-          if (projectData.repo_url) {
-            try {
-              // Parse GitHub URL to extract owner and repo
-              const url = new URL(projectData.repo_url);
-              const pathParts = url.pathname.split('/').filter(Boolean);
-              
-              if (pathParts.length >= 2 && url.hostname.includes('github.com')) {
-                const owner = pathParts[0];
-                const repo = pathParts[1];
-                console.log(`Extracted GitHub repo info: ${owner}/${repo}`);
-                setSimRepo({ owner, repo });
-              }
-            } catch (parseError) {
-              console.error('Error parsing GitHub URL:', parseError);
+      } else if (statusResponse.status === 401) {
+        setSimStatus({
+          canRun: false,
+          message: "Please login to run simulations"
+        });
+      }
+      
+      // Extract GitHub repo info from the project data if available
+      if (analysis?.steps?.files?.jsonData) {
+        const projectData = analysis.steps.files.jsonData;
+        if (projectData.repo_url) {
+          try {
+            // Parse GitHub URL to extract owner and repo
+            const url = new URL(projectData.repo_url);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            
+            if (pathParts.length >= 2 && url.hostname.includes('github.com')) {
+              const owner = pathParts[0];
+              const repo = pathParts[1];
+              console.log(`Extracted GitHub repo info: ${owner}/${repo}`);
+              setSimRepo({ owner, repo });
             }
+          } catch (parseError) {
+            console.error('Error parsing GitHub URL:', parseError);
           }
         }
+      }
         
-        // Fetch existing simulation runs
-        const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
-        if (runsResponse.ok) {
-          const responseData = await runsResponse.json();
-          console.log("Received simulation runs:", responseData);
+      // Fetch existing simulation runs
+      const runsResponse = await fetch(`/api/simulation-runs/${submissionId}`);
+      if (runsResponse.ok) {
+        const responseData = await runsResponse.json();
+        console.log("Received simulation runs:", responseData);
           
-          // Check if the response has a 'simulation_runs' property (from external API)
-          const runsData = responseData.simulation_runs || responseData || [];
-          
-          // First pass: Convert API data to our SimulationRun type
-          let formattedRuns: SimulationRun[] = runsData.map((run: any) => {
+        // Check if the response has a 'simulation_runs' property (from external API)
+        const runsData = responseData.simulation_runs || responseData || [];
+        
+        // First pass: Convert API data to our SimulationRun type
+        let formattedRuns: SimulationRun[] = runsData.map((run: any) => {
             // Check if the response data is already in our expected format
             if (run.id && run.status) {
               return run;
