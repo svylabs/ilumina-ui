@@ -2386,12 +2386,22 @@ export function registerRoutes(app: Express): Server {
       
       // Only use the external API for simulation runs - no database fallback
       console.log(`Fetching simulation runs from external API for submission: ${submissionId}`);
-      const externalApiUrl = `${process.env.EXTERNAL_API_URL}/api/submission/${submissionId}/simulations/list`;
-      console.log(`Calling external API: ${externalApiUrl}`);
       
       try {
-        // Use the same authentication method as other external API calls
-        const response = await callExternalIluminaAPI(`/submission/${submissionId}/simulations/list`);
+        // Update the way we call the external API to avoid query parameter issues
+        // Use a direct fetch with explicit URL construction to avoid path joining issues
+        const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app').replace(/\/api$/, '');
+        const url = `${baseUrl}/api/submission/${submissionId}/simulations/list`;
+        
+        console.log(`Direct API call to: ${url}`);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${process.env.ILUMINA_API_KEY || 'my_secure_password'}`,
+            'Content-Type': 'application/json'
+          }
+        });
         
         if (response.ok) {
           // Return the data from the external API
