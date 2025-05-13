@@ -906,7 +906,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
         {/* Batch Information Panel */}
         {viewingBatchId && currentBatch && (
           <div className="bg-purple-900/30 border border-purple-800 p-4 rounded-md mb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h3 className="text-white font-medium mb-1 flex items-center">
                   <Box className="h-4 w-4 mr-2 text-purple-400" />
@@ -931,6 +931,40 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                     </span>
                   </div>
                 </div>
+                
+                {/* Status bar showing success percentage */}
+                {currentBatch.total_count && currentBatch.total_count > 0 && (
+                  <div className="mt-3 w-full max-w-md">
+                    <div className="text-xs text-gray-300 mb-1 flex justify-between">
+                      <span>Success Rate: {Math.round((currentBatch.success_count || 0) / currentBatch.total_count * 100)}%</span>
+                      {currentBatch.status === 'in_progress' || currentBatch.status === 'scheduled' ? (
+                        <span className="text-blue-300 flex items-center">
+                          <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> In Progress
+                        </span>
+                      ) : (
+                        <span className={`${
+                          currentBatch.success_count === currentBatch.total_count 
+                            ? 'text-green-300' 
+                            : currentBatch.failed_count === currentBatch.total_count 
+                              ? 'text-red-300' 
+                              : 'text-amber-300'
+                        }`}>
+                          {currentBatch.success_count === currentBatch.total_count 
+                            ? 'Complete' 
+                            : currentBatch.failed_count === currentBatch.total_count 
+                              ? 'Failed' 
+                              : 'Partial Success'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-green-500 rounded-full" 
+                        style={{ width: `${Math.round((currentBatch.success_count || 0) / currentBatch.total_count * 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
               </div>
               <Button
                 variant="outline"
@@ -1233,33 +1267,95 @@ function SimulationRunItem({
             <div className="md:hidden text-xs text-gray-400 mb-1">Run ID</div>
             <div className="truncate max-w-[180px]">{run.id}</div>
             {isBatch && (
-              <div className="flex items-center mt-1 text-xs text-purple-300">
-                <Box className="h-3 w-3 mr-1" />
-                <span>{run.num_simulations || 0} simulation{(run.num_simulations || 0) !== 1 ? 's' : ''}</span>
-                {onBatchClick && (
-                  <span className="ml-2 text-purple-400 group-hover:text-purple-300 transition-colors">
-                    (Click to view)
-                  </span>
+              <div className="flex flex-col space-y-1 mt-1 text-xs">
+                <div className="flex items-center text-purple-300">
+                  <Box className="h-3 w-3 mr-1" />
+                  <span>{run.num_simulations || run.total_count || 0} simulation{(run.num_simulations || run.total_count || 0) !== 1 ? 's' : ''}</span>
+                  {onBatchClick && (
+                    <span className="ml-2 text-purple-400 group-hover:text-purple-300 transition-colors">
+                      (Click to view)
+                    </span>
+                  )}
+                </div>
+                
+                {/* Show batch statistics when available */}
+                {(run.success_count !== undefined || run.failed_count !== undefined) && (
+                  <div className="flex items-center space-x-2 pl-4 text-xs">
+                    {run.success_count !== undefined && (
+                      <span className="text-green-300 flex items-center">
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> 
+                        {run.success_count}
+                      </span>
+                    )}
+                    {run.failed_count !== undefined && (
+                      <span className="text-red-300 flex items-center">
+                        <XCircle className="h-3 w-3 mr-1" /> 
+                        {run.failed_count}
+                      </span>
+                    )}
+                    {run.total_count !== undefined && run.total_count > 0 && (
+                      <span className="text-gray-300 flex items-center">
+                        <CircleDot className="h-3 w-3 mr-1" /> 
+                        {Math.round((run.success_count || 0) / run.total_count * 100)}%
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             )}
           </div>
           <div className="md:col-span-3">
             <div className="md:hidden text-xs text-gray-400 mb-1">Status</div>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-              ${run.status === 'success' 
-                ? 'bg-green-900/50 text-green-300' 
-                : run.status === 'in_progress'
+            {isBatch ? (
+              // Custom status display for batches
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                ${run.status === 'in_progress'
                   ? 'bg-blue-900/50 text-blue-300'
-                  : 'bg-red-900/50 text-red-300'
-              }`}
-            >
-              {run.status === 'success' 
-                ? '✓ Success' 
-                : run.status === 'in_progress' || run.status === 'scheduled'
-                  ? '⟳ Running'
-                  : '✗ Failed'}
-            </span>
+                  : run.status === 'scheduled'
+                    ? 'bg-gray-700/50 text-gray-300'
+                    : (run.success_count !== undefined && run.total_count !== undefined) && 
+                      (run.success_count === run.total_count)
+                      ? 'bg-green-900/50 text-green-300'
+                      : (run.failed_count !== undefined && run.total_count !== undefined) && 
+                        (run.failed_count === run.total_count)
+                        ? 'bg-red-900/50 text-red-300'
+                        : 'bg-amber-900/50 text-amber-300' // Partial success
+                }`}
+              >
+                {run.status === 'in_progress'
+                  ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Running</>
+                  : run.status === 'scheduled'
+                    ? <><AlertCircle className="h-3 w-3 mr-1" /> Scheduled</>
+                    : (run.success_count !== undefined && run.total_count !== undefined) && 
+                      (run.success_count === run.total_count)
+                      ? <><CheckCircle2 className="h-3 w-3 mr-1" /> Complete</>
+                      : (run.failed_count !== undefined && run.total_count !== undefined) && 
+                        (run.failed_count === run.total_count)
+                        ? <><XCircle className="h-3 w-3 mr-1" /> Failed</>
+                        : <><AlertCircle className="h-3 w-3 mr-1" /> Partial</>
+                }
+              </span>
+            ) : (
+              // Regular status display for individual runs
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                ${run.status === 'success' 
+                  ? 'bg-green-900/50 text-green-300' 
+                  : run.status === 'in_progress'
+                    ? 'bg-blue-900/50 text-blue-300'
+                    : run.status === 'scheduled'
+                      ? 'bg-gray-700/50 text-gray-300'
+                      : 'bg-red-900/50 text-red-300'
+                }`}
+              >
+                {run.status === 'success' 
+                  ? <><CheckCircle2 className="h-3 w-3 mr-1" /> Success</> 
+                  : run.status === 'in_progress'
+                    ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Running</>
+                    : run.status === 'scheduled'
+                      ? <><AlertCircle className="h-3 w-3 mr-1" /> Scheduled</>
+                      : <><XCircle className="h-3 w-3 mr-1" /> Failed</>}
+              </span>
+            )}
           </div>
           <div className="md:col-span-3 text-gray-300">
             <div className="md:hidden text-xs text-gray-400 mb-1">Date</div>
