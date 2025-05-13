@@ -1015,18 +1015,16 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                   </button>
                   <input
                     id="sim-count"
-                    type="text" 
+                    type="number" 
                     inputMode="numeric"
-                    pattern="[0-9]*"
                     min="1"
                     max="10"
                     value={numSimulations}
                     onChange={(e) => {
                       const inputValue = e.target.value;
-                      // Allow empty input temporarily
+                      // Handle empty input
                       if (inputValue === '') {
-                        setNumSimulations(1);
-                        setSimulationType('run');
+                        // Don't update state for empty input
                         return;
                       }
                       
@@ -1037,8 +1035,15 @@ function SimulationsComponent({ analysis, deploymentVerified = false }: Simulati
                         setSimulationType(clampedVal > 1 ? 'batch_run' : 'run');
                       }
                     }}
+                    onBlur={(e) => {
+                      // On blur, ensure we have a valid value
+                      if (e.target.value === '' || isNaN(parseInt(e.target.value))) {
+                        setNumSimulations(1);
+                        setSimulationType('run');
+                      }
+                    }}
                     disabled={isRunningSimulation}
-                    className="bg-gray-900 border-y border-gray-700 px-3 py-1 text-sm w-full text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-900 border-y border-gray-700 px-3 py-1 text-sm w-full text-center focus:outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button 
                     type="button"
