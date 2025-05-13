@@ -2493,11 +2493,40 @@ export function registerRoutes(app: Express): Server {
           
           // Process each simulation run to ensure it has consistent field names
           const processedRuns = simRuns.map((run: any) => {
-            // Calculate success_rate and failure_rate for UI display if we have the data
+            // Handle batch statistics consistently
+            let batchStats = {};
+            
+            // If API provided stats directly with total/success/failed names
+            if (run.total !== undefined && run.success !== undefined && run.failed !== undefined) {
+              batchStats = {
+                total_count: run.total,
+                success_count: run.success,
+                failed_count: run.failed
+              };
+            } 
+            // If API provided stats in _count format
+            else if (run.total_count !== undefined && run.success_count !== undefined && run.failed_count !== undefined) {
+              batchStats = {
+                total_count: run.total_count,
+                success_count: run.success_count,
+                failed_count: run.failed_count
+              };
+            } 
+            // Default statistics based on what's available
+            else {
+              // For batch member runs, they don't have their own statistics
+              batchStats = {
+                total_count: 1, // Each individual run is 1 count
+                success_count: run.status === 'success' ? 1 : 0,
+                failed_count: run.status === 'error' ? 1 : 0
+              };
+            }
+            
+            // Calculate success_rate and failure_rate for UI display
             let success_rate, failure_rate;
-            if (run.success_count !== undefined && run.total_count && run.total_count > 0) {
-              success_rate = Math.round((run.success_count / run.total_count) * 100);
-              failure_rate = Math.round((run.failed_count || 0) / run.total_count * 100);
+            if (batchStats.total_count && batchStats.total_count > 0) {
+              success_rate = Math.round((batchStats.success_count / batchStats.total_count) * 100);
+              failure_rate = Math.round((batchStats.failed_count / batchStats.total_count) * 100);
             }
             
             return {
@@ -2508,7 +2537,9 @@ export function registerRoutes(app: Express): Server {
               branch: run.branch || "default",
               // For batch member runs, add the batch_id
               batch_id: batchId,
-              // Add calculated rates if available
+              // Add batch statistics
+              ...batchStats,
+              // Add rate information for display when available
               success_rate: success_rate,
               failure_rate: failure_rate
             };
@@ -2590,6 +2621,45 @@ export function registerRoutes(app: Express): Server {
             // Check if this run has a batch_id, meaning it belongs to a batch
             const isBatchRun = !!run.batch_id;
             
+            // Handle batch statistics consistently
+            let batchStats = {};
+            if (isBatch || run.type === 'batch') {
+              // If API provided stats directly, use them
+              if (run.total !== undefined && run.success !== undefined && run.failed !== undefined) {
+                batchStats = {
+                  total_count: run.total,
+                  success_count: run.success,
+                  failed_count: run.failed
+                };
+              } 
+              // If API provided stats in different format
+              else if (run.total_count !== undefined && run.success_count !== undefined && run.failed_count !== undefined) {
+                batchStats = {
+                  total_count: run.total_count,
+                  success_count: run.success_count,
+                  failed_count: run.failed_count
+                };
+              } 
+              // Default statistics based on num_simulations
+              else {
+                const totalCount = run.num_simulations || 0;
+                batchStats = {
+                  total_count: totalCount,
+                  success_count: 0,
+                  failed_count: 0
+                };
+              }
+              
+              // Add rate information for display
+              if (batchStats.total_count && batchStats.total_count > 0) {
+                batchStats = {
+                  ...batchStats,
+                  success_rate: Math.round((batchStats.success_count / batchStats.total_count) * 100),
+                  failure_rate: Math.round((batchStats.failed_count / batchStats.total_count) * 100)
+                };
+              }
+            }
+            
             return {
               ...run,
               // Set type based on available data:
@@ -2602,7 +2672,9 @@ export function registerRoutes(app: Express): Server {
               // Ensure branch has a default value if missing
               branch: run.branch || "default",
               // Add a flag for batch_parent for easier filtering
-              is_batch_parent: isBatch && !isBatchRun
+              is_batch_parent: isBatch && !isBatchRun,
+              // Add batch statistics consistently
+              ...batchStats
             };
           });
           
