@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Loader2, RefreshCcw, Globe, FileBadge, Copy, GitCommit, ExternalLink } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, RefreshCcw, Globe, FileBadge, Copy, GitCommit, ExternalLink, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
@@ -35,6 +35,14 @@ type GitHubCodeViewerProps = {
   onFileSelect?: (file: GitHubFile) => void;
   showCommits?: boolean;
 };
+
+// Special styling for scrollbars in this component
+const scrollableStyles = `
+  position: relative;
+  border: 3px solid #4338ca;
+  outline: 1px solid #6366f1;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+`;
 
 export default function GitHubCodeViewer({
   owner,
@@ -210,8 +218,8 @@ export default function GitHubCodeViewer({
             {showCommits && <TabsTrigger value="commits">Commits</TabsTrigger>}
           </TabsList>
           
-          {/* Files Tab - Scrollable content */}
-          <TabsContent value="files" className="flex-grow overflow-auto min-h-0 custom-scrollbar scroll-visible">
+          {/* Files Tab - Scrollable content with obvious scrollbar */}
+          <TabsContent value="files" className="flex-grow overflow-auto min-h-0" style={{ border: '3px solid #4338ca', position: 'relative' }}>
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -269,10 +277,43 @@ export default function GitHubCodeViewer({
                     Copy
                   </Button>
                 </div>
-                <div className="flex-grow min-h-0 custom-scrollbar scroll-visible">
-                  <pre className="p-4 text-sm font-mono text-green-400 whitespace-pre-wrap">
-                    {fileContent || "No content available"}
-                  </pre>
+                <div className="flex-grow min-h-0 relative" style={{ border: '3px solid #4338ca' }}>
+                  {/* Scroll navigation buttons */}
+                  <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
+                    <Button 
+                      size="icon" 
+                      variant="default" 
+                      className="bg-indigo-700 hover:bg-indigo-600"
+                      onClick={() => {
+                        const codeContainer = document.getElementById('code-content');
+                        if (codeContainer) {
+                          codeContainer.scrollTop -= 100;
+                        }
+                      }}
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="default" 
+                      className="bg-indigo-700 hover:bg-indigo-600"
+                      onClick={() => {
+                        const codeContainer = document.getElementById('code-content');
+                        if (codeContainer) {
+                          codeContainer.scrollTop += 100;
+                        }
+                      }}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-indigo-600/50 to-transparent z-0 pointer-events-none"></div>
+                  <div id="code-content" className="overflow-auto h-full">
+                    <pre className="p-4 text-sm font-mono text-green-400 whitespace-pre-wrap">
+                      {fileContent || "No content available"}
+                    </pre>
+                  </div>
                 </div>
               </>
             )}
