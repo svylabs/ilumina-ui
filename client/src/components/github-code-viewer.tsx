@@ -272,8 +272,8 @@ export default function GitHubCodeViewer({
         </TabsContent>
 
         {showCommits && (
-          <TabsContent value="commits" className="flex-grow overflow-auto">
-            <div className="p-3 bg-gray-900/30 border-b border-gray-800 flex items-center">
+          <TabsContent value="commits" className="flex-grow flex flex-col overflow-hidden">
+            <div className="p-3 bg-gray-900/30 border-b border-gray-800 flex items-center sticky top-0 z-10">
               <GitCommit className="h-4 w-4 mr-2 text-blue-400" />
               <span className="text-sm text-white font-medium">Recent Commits</span>
               {currentFile && (
@@ -290,7 +290,7 @@ export default function GitHubCodeViewer({
             ) : commits.length === 0 ? (
               <div className="p-4 text-gray-400 text-center">No commit history available</div>
             ) : (
-              <div className="divide-y divide-gray-800">
+              <div className="divide-y divide-gray-800 overflow-y-auto flex-grow">
                 {commits.map((commit) => (
                   <div key={commit.sha} className="p-3 hover:bg-gray-800/30">
                     <div className="flex items-start justify-between">
@@ -298,7 +298,7 @@ export default function GitHubCodeViewer({
                         <p className="text-sm text-white font-medium line-clamp-2">
                           {commit.message}
                         </p>
-                        <div className="flex items-center mt-1 text-xs text-gray-400">
+                        <div className="flex flex-wrap items-center mt-1 text-xs text-gray-400">
                           <span className="mr-2">
                             {commit.author.name}
                           </span>
@@ -311,7 +311,7 @@ export default function GitHubCodeViewer({
                         href={commit.html_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="ml-2 text-blue-400 hover:text-blue-300"
+                        className="ml-2 text-blue-400 hover:text-blue-300 shrink-0"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
