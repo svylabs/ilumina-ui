@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Loader2, RefreshCcw, Globe, FileBadge, Copy, GitCommit, ExternalLink, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, RefreshCcw, Globe, FileBadge, Copy, GitCommit, ExternalLink, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
@@ -35,14 +35,6 @@ type GitHubCodeViewerProps = {
   onFileSelect?: (file: GitHubFile) => void;
   showCommits?: boolean;
 };
-
-// Special styling for scrollbars in this component
-const scrollableStyles = `
-  position: relative;
-  border: 3px solid #4338ca;
-  outline: 1px solid #6366f1;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
-`;
 
 export default function GitHubCodeViewer({
   owner,
@@ -218,49 +210,93 @@ export default function GitHubCodeViewer({
             {showCommits && <TabsTrigger value="commits">Commits</TabsTrigger>}
           </TabsList>
           
-          {/* Files Tab - Scrollable content with obvious scrollbar */}
-          <TabsContent value="files" className="flex-grow overflow-auto min-h-0" style={{ border: '3px solid #4338ca', position: 'relative' }}>
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                <span className="ml-2 text-gray-400">Loading...</span>
-              </div>
-            ) : error ? (
-              <div className="p-4 text-red-400">{error}</div>
-            ) : contents.length === 0 ? (
-              <div className="p-4 text-gray-400">No files found</div>
-            ) : (
-              <div className="divide-y divide-gray-800">
-                {contents.map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => handleItemClick(item)}
-                    className="w-full text-left p-2 hover:bg-gray-800/50 flex items-center"
-                  >
-                    {item.type === "dir" ? (
-                      <svg
-                        className="h-4 w-4 mr-2 text-blue-400"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                      </svg>
-                    ) : (
-                      <FileBadge className="h-4 w-4 mr-2 text-gray-400" />
-                    )}
-                    <span className="text-sm text-gray-300">{item.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* Files Tab */}
+          <TabsContent value="files" className="flex-grow min-h-0 relative">
+            {/* Navigation buttons */}
+            <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
+              <Button 
+                size="icon" 
+                variant="default" 
+                className="bg-indigo-700 hover:bg-indigo-600"
+                onClick={() => {
+                  const filesContainer = document.getElementById('files-content');
+                  if (filesContainer) {
+                    filesContainer.scrollTop -= 100;
+                  }
+                }}
+              >
+                <ChevronUp className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="icon" 
+                variant="default" 
+                className="bg-indigo-700 hover:bg-indigo-600"
+                onClick={() => {
+                  const filesContainer = document.getElementById('files-content');
+                  if (filesContainer) {
+                    filesContainer.scrollTop += 100;
+                  }
+                }}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Visual indicator for scrollable area */}
+            <div className="absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-indigo-600/50 to-transparent z-0 pointer-events-none"></div>
+            
+            {/* Content area */}
+            <div 
+              id="files-content" 
+              className="overflow-auto h-full" 
+              style={{ 
+                border: '3px solid #4338ca',
+                outline: '1px solid #6366f1',
+                boxShadow: '0 0 8px rgba(99, 102, 241, 0.6)'
+              }}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                  <span className="ml-2 text-gray-400">Loading...</span>
+                </div>
+              ) : error ? (
+                <div className="p-4 text-red-400">{error}</div>
+              ) : contents.length === 0 ? (
+                <div className="p-4 text-gray-400">No files found</div>
+              ) : (
+                <div className="divide-y divide-gray-800">
+                  {contents.map((item) => (
+                    <button
+                      key={item.path}
+                      onClick={() => handleItemClick(item)}
+                      className="w-full text-left p-2 hover:bg-gray-800/50 flex items-center"
+                    >
+                      {item.type === "dir" ? (
+                        <svg
+                          className="h-4 w-4 mr-2 text-blue-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        </svg>
+                      ) : (
+                        <FileBadge className="h-4 w-4 mr-2 text-gray-400" />
+                      )}
+                      <span className="text-sm text-gray-300">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
           
-          {/* Code Tab - Scrollable content */}
+          {/* Code Tab */}
           <TabsContent value="code" className="flex-grow min-h-0 flex flex-col overflow-hidden">
             {currentFile && (
               <>
@@ -277,8 +313,9 @@ export default function GitHubCodeViewer({
                     Copy
                   </Button>
                 </div>
-                <div className="flex-grow min-h-0 relative" style={{ border: '3px solid #4338ca' }}>
-                  {/* Scroll navigation buttons */}
+                
+                <div className="flex-grow min-h-0 relative">
+                  {/* Code navigation buttons */}
                   <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
                     <Button 
                       size="icon" 
@@ -308,8 +345,19 @@ export default function GitHubCodeViewer({
                     </Button>
                   </div>
                   
+                  {/* Visual indicator for scrollable area */}
                   <div className="absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-indigo-600/50 to-transparent z-0 pointer-events-none"></div>
-                  <div id="code-content" className="overflow-auto h-full">
+                  
+                  {/* Code content area */}
+                  <div 
+                    id="code-content" 
+                    className="overflow-auto h-full"
+                    style={{ 
+                      border: '3px solid #4338ca',
+                      outline: '1px solid #6366f1',
+                      boxShadow: '0 0 8px rgba(99, 102, 241, 0.6)'
+                    }}
+                  >
                     <pre className="p-4 text-sm font-mono text-green-400 whitespace-pre-wrap">
                       {fileContent || "No content available"}
                     </pre>
@@ -319,7 +367,7 @@ export default function GitHubCodeViewer({
             )}
           </TabsContent>
 
-          {/* Commits Tab - Scrollable content */}
+          {/* Commits Tab */}
           {showCommits && (
             <TabsContent value="commits" className="flex-grow min-h-0 flex flex-col overflow-hidden">
               <div className="p-3 bg-gray-900/30 border-b border-gray-800 flex items-center sticky top-0 z-10 shrink-0">
@@ -340,39 +388,83 @@ export default function GitHubCodeViewer({
               ) : commits.length === 0 ? (
                 <div className="p-4 text-gray-400 text-center">No commit history available</div>
               ) : (
-                <div className="divide-y divide-gray-800 flex-grow min-h-0 custom-scrollbar scroll-visible">
-                  {commits.map((commit) => (
-                    <div key={commit.sha} className="p-3 hover:bg-gray-800/30">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm text-white font-medium line-clamp-2">
-                            {commit.message}
-                          </p>
-                          <div className="flex flex-wrap items-center mt-1 text-xs text-gray-400">
-                            <span className="mr-2">
-                              {commit.author.name}
-                            </span>
-                            <span>
-                              {format(new Date(commit.author.date), 'MMM d, yyyy h:mm a')}
-                            </span>
+                <div className="relative flex-grow min-h-0">
+                  {/* Commits navigation buttons */}
+                  <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
+                    <Button 
+                      size="icon" 
+                      variant="default" 
+                      className="bg-indigo-700 hover:bg-indigo-600"
+                      onClick={() => {
+                        const commitsContainer = document.getElementById('commits-content');
+                        if (commitsContainer) {
+                          commitsContainer.scrollTop -= 100;
+                        }
+                      }}
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="default" 
+                      className="bg-indigo-700 hover:bg-indigo-600"
+                      onClick={() => {
+                        const commitsContainer = document.getElementById('commits-content');
+                        if (commitsContainer) {
+                          commitsContainer.scrollTop += 100;
+                        }
+                      }}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Visual indicator for scrollable area */}
+                  <div className="absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-indigo-600/50 to-transparent z-0 pointer-events-none"></div>
+                  
+                  {/* Commits content area */}
+                  <div 
+                    id="commits-content" 
+                    className="divide-y divide-gray-800 overflow-auto h-full"
+                    style={{ 
+                      border: '3px solid #4338ca',
+                      outline: '1px solid #6366f1',
+                      boxShadow: '0 0 8px rgba(99, 102, 241, 0.6)'
+                    }}
+                  >
+                    {commits.map((commit) => (
+                      <div key={commit.sha} className="p-3 hover:bg-gray-800/30">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm text-white font-medium line-clamp-2">
+                              {commit.message}
+                            </p>
+                            <div className="flex flex-wrap items-center mt-1 text-xs text-gray-400">
+                              <span className="mr-2">
+                                {commit.author.name}
+                              </span>
+                              <span>
+                                {format(new Date(commit.author.date), 'MMM d, yyyy h:mm a')}
+                              </span>
+                            </div>
                           </div>
+                          <a 
+                            href={commit.html_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="ml-2 text-blue-400 hover:text-blue-300 shrink-0"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
                         </div>
-                        <a 
-                          href={commit.html_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="ml-2 text-blue-400 hover:text-blue-300 shrink-0"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
+                        <div className="mt-1 flex items-center">
+                          <Badge variant="secondary" className="text-xs bg-gray-800">
+                            {commit.sha.substring(0, 7)}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="mt-1 flex items-center">
-                        <Badge variant="secondary" className="text-xs bg-gray-800">
-                          {commit.sha.substring(0, 7)}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </TabsContent>
