@@ -211,7 +211,7 @@ export default function GitHubCodeViewer({
           </TabsList>
           
           {/* Files Tab - Scrollable content */}
-          <TabsContent value="files" className="flex-grow overflow-auto min-h-0 scrollbar scrollbar-force-visible">
+          <TabsContent value="files" className="flex-grow overflow-auto min-h-0 custom-scrollbar scroll-visible">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -269,7 +269,7 @@ export default function GitHubCodeViewer({
                     Copy
                   </Button>
                 </div>
-                <div className="overflow-auto flex-grow min-h-0 scrollbar scrollbar-force-visible">
+                <div className="flex-grow min-h-0 custom-scrollbar scroll-visible">
                   <pre className="p-4 text-sm font-mono text-green-400 whitespace-pre-wrap">
                     {fileContent || "No content available"}
                   </pre>
@@ -299,7 +299,7 @@ export default function GitHubCodeViewer({
               ) : commits.length === 0 ? (
                 <div className="p-4 text-gray-400 text-center">No commit history available</div>
               ) : (
-                <div className="divide-y divide-gray-800 overflow-y-auto overflow-x-hidden flex-grow min-h-0 scrollbar scrollbar-force-visible">
+                <div className="divide-y divide-gray-800 flex-grow min-h-0 custom-scrollbar scroll-visible">
                   {commits.map((commit) => (
                     <div key={commit.sha} className="p-3 hover:bg-gray-800/30">
                       <div className="flex items-start justify-between">
