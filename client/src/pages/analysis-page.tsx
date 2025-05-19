@@ -4667,10 +4667,15 @@ The deployment should initialize the contracts with test values and set me as th
                                       </div>
                                     </div>
                                     
-                                    {/* Code Viewer */}
+                                    {/* Code Viewer with Commit History */}
                                     <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
-                                      <h4 className="text-lg font-medium text-blue-400 mb-3">Simulation Code</h4>
-                                      <div className="w-full overflow-hidden">
+                                      <div className="flex justify-between items-center mb-3">
+                                        <h4 className="text-lg font-medium text-blue-400">Simulation Code</h4>
+                                        <Badge variant="outline" className="bg-blue-950/50 text-blue-300">
+                                          Latest Commit History
+                                        </Badge>
+                                      </div>
+                                      <div className="w-full overflow-hidden h-[500px]">
                                         {/* Get simulation repository from API */}
                                         {simRepo ? (
                                           <GitHubCodeViewer 
@@ -4679,6 +4684,7 @@ The deployment should initialize the contracts with test values and set me as th
                                             branch={simRepo.branch}
                                             path=""
                                             showBreadcrumb={true}
+                                            showCommits={true}
                                           />
                                         ) : simRepoError ? (
                                           <div className="bg-red-950 p-4 rounded border border-red-700">
