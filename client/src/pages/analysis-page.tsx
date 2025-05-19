@@ -3811,16 +3811,22 @@ export default function AnalysisPage() {
                             </div>
                           </div>
                           
-                          {/* Code Viewer */}
+                          {/* Code Viewer with Commit History */}
                           <div className="bg-gray-900 rounded-lg border border-gray-800 p-4 mb-6">
-                            <h4 className="text-lg font-medium text-blue-400 mb-3">Simulation Code</h4>
-                            <div className="w-full overflow-hidden">
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="text-lg font-medium text-blue-400">Simulation Code</h4>
+                              <Badge variant="outline" className="bg-blue-950/50 text-blue-300">
+                                Latest Commit History
+                              </Badge>
+                            </div>
+                            <div className="w-full overflow-hidden h-[500px]">
                               <GitHubCodeViewer 
                                 owner={simRepo.owner}
                                 repo={simRepo.repo}
                                 branch={simRepo.branch}
                                 path=""
                                 showBreadcrumb={true}
+                                showCommits={true}
                               />
                             </div>
                           </div>
