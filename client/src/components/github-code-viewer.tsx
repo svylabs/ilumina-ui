@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Loader2, RefreshCcw, Globe, FileBadge, Copy } from "lucide-react";
+import { Loader2, RefreshCcw, Globe, FileBadge, Copy, GitCommit, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 type GitHubFile = {
   name: string;
@@ -13,6 +15,17 @@ type GitHubFile = {
   html_url: string;
 };
 
+type GitHubCommit = {
+  sha: string;
+  message: string;
+  author: {
+    name: string;
+    email: string;
+    date: string;
+  };
+  html_url: string;
+};
+
 type GitHubCodeViewerProps = {
   owner: string;
   repo: string;
@@ -20,6 +33,7 @@ type GitHubCodeViewerProps = {
   path?: string;
   showBreadcrumb?: boolean;
   onFileSelect?: (file: GitHubFile) => void;
+  showCommits?: boolean;
 };
 
 export default function GitHubCodeViewer({
@@ -28,7 +42,8 @@ export default function GitHubCodeViewer({
   branch = "main",
   path = "",
   showBreadcrumb = true,
-  onFileSelect
+  onFileSelect,
+  showCommits = true
 }: GitHubCodeViewerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +51,8 @@ export default function GitHubCodeViewer({
   const [currentFile, setCurrentFile] = useState<GitHubFile | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
   const [fileContent, setFileContent] = useState<string>("");
+  const [commits, setCommits] = useState<GitHubCommit[]>([]);
+  const [isLoadingCommits, setIsLoadingCommits] = useState(false);
 
   // Function to fetch directory contents
   const fetchContents = async (contentPath: string) => {
@@ -80,10 +97,30 @@ export default function GitHubCodeViewer({
     }
   };
 
+  // Function to fetch commit history
+  const fetchCommits = async (filePath: string = "") => {
+    if (!showCommits) return;
+    
+    setIsLoadingCommits(true);
+    try {
+      // Using the new commit history API endpoint
+      const res = await apiRequest("GET", `/api/github/commits/${owner}/${repo}?ref=${branch}${filePath ? `&path=${filePath}` : ''}`);
+      const data = await res.json();
+      setCommits(data);
+    } catch (err) {
+      console.error("Failed to fetch commit history:", err);
+      // We don't set error state here to not disrupt the main UI
+    } finally {
+      setIsLoadingCommits(false);
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
     fetchContents(path);
-  }, [owner, repo, branch, path]);
+    // Fetch commits for the current path on initial load
+    fetchCommits(path);
+  }, [owner, repo, branch, path, showCommits]);
 
   // Handle navigation
   const navigateToPath = (index: number) => {
@@ -128,7 +165,10 @@ export default function GitHubCodeViewer({
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => fetchContents(breadcrumb.join('/'))}
+          onClick={() => {
+            fetchContents(breadcrumb.join('/'));
+            fetchCommits(breadcrumb.join('/'));
+          }}
           disabled={isLoading}
         >
           <RefreshCcw className="h-3 w-3 mr-1" />
@@ -159,9 +199,10 @@ export default function GitHubCodeViewer({
       )}
 
       <Tabs defaultValue="files" className="flex flex-col flex-grow">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-900/30">
+        <TabsList className={`grid w-full ${showCommits ? 'grid-cols-3' : 'grid-cols-2'} bg-gray-900/30`}>
           <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="code" disabled={!currentFile}>Code Viewer</TabsTrigger>
+          {showCommits && <TabsTrigger value="commits">Commits</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="files" className="flex-grow overflow-auto">
@@ -229,6 +270,63 @@ export default function GitHubCodeViewer({
             </>
           )}
         </TabsContent>
+
+        {showCommits && (
+          <TabsContent value="commits" className="flex-grow overflow-auto">
+            <div className="p-3 bg-gray-900/30 border-b border-gray-800 flex items-center">
+              <GitCommit className="h-4 w-4 mr-2 text-blue-400" />
+              <span className="text-sm text-white font-medium">Recent Commits</span>
+              {currentFile && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {currentFile.path}
+                </Badge>
+              )}
+            </div>
+            {isLoadingCommits ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                <span className="ml-2 text-gray-400 text-sm">Loading commit history...</span>
+              </div>
+            ) : commits.length === 0 ? (
+              <div className="p-4 text-gray-400 text-center">No commit history available</div>
+            ) : (
+              <div className="divide-y divide-gray-800">
+                {commits.map((commit) => (
+                  <div key={commit.sha} className="p-3 hover:bg-gray-800/30">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm text-white font-medium line-clamp-2">
+                          {commit.message}
+                        </p>
+                        <div className="flex items-center mt-1 text-xs text-gray-400">
+                          <span className="mr-2">
+                            {commit.author.name}
+                          </span>
+                          <span>
+                            {format(new Date(commit.author.date), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        </div>
+                      </div>
+                      <a 
+                        href={commit.html_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="ml-2 text-blue-400 hover:text-blue-300"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                    <div className="mt-1 flex items-center">
+                      <Badge variant="secondary" className="text-xs bg-gray-800">
+                        {commit.sha.substring(0, 7)}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

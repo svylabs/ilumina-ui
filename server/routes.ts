@@ -2884,6 +2884,60 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GitHub API proxy endpoints
+  app.get('/api/github/commits/:owner/:repo', async (req, res) => {
+    try {
+      const { owner, repo } = req.params;
+      const branch = req.query.ref as string || 'main';
+      const path = req.query.path as string || '';
+      
+      // Build GitHub API URL for commits
+      let url = `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=10`;
+      
+      // Add path filter if provided
+      if (path) {
+        url += `&path=${path}`;
+      }
+      
+      // GitHub API requires a User-Agent header
+      const headers: HeadersInit = {
+        'User-Agent': 'Ilumina-App',
+      };
+      
+      // Add authorization if GitHub token is available
+      if (process.env.GITHUB_TOKEN) {
+        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      }
+      
+      const response = await fetch(url, { headers });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const commits = await response.json();
+      
+      // Format the response to include only what we need
+      const formattedCommits = commits.map((commit: any) => ({
+        sha: commit.sha,
+        message: commit.commit.message,
+        author: {
+          name: commit.commit.author.name,
+          email: commit.commit.author.email,
+          date: commit.commit.author.date
+        },
+        html_url: commit.html_url
+      }));
+      
+      return res.json(formattedCommits);
+    } catch (error) {
+      console.error("Error fetching GitHub commits:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch commit history"
+      });
+    }
+  });
+
   app.get('/api/github/contents/:owner/:repo/:path(*)', async (req, res) => {
     try {
       const { owner, repo, path } = req.params;
