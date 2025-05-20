@@ -3197,13 +3197,21 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                     <div className="flex items-center">
                       <span className="text-sm font-medium text-gray-300">Verification Status</span>
                     </div>
-                    <Badge variant={verificationData.status === "completed" ? "outline" : "destructive"} 
-                      className={verificationData.status === "completed" ? 
-                        "bg-green-900/30 text-green-300 border-green-700" : 
-                        "bg-red-900/30 text-red-300 border-red-700"}
-                    >
-                      {verificationData.status === "completed" ? "Success" : "Failed"}
-                    </Badge>
+                    {/* Check if debug is in progress based on the steps data */}
+                    {(isDebuggingInProgress || isVerificationInProgress) ? (
+                      <Badge variant="outline" className="bg-blue-900/30 text-blue-300 border-blue-700 flex items-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                        Processing
+                      </Badge>
+                    ) : (
+                      <Badge variant={verificationData.status === "completed" ? "outline" : "destructive"} 
+                        className={verificationData.status === "completed" ? 
+                          "bg-green-900/30 text-green-300 border-green-700" : 
+                          "bg-red-900/30 text-red-300 border-red-700"}
+                      >
+                        {verificationData.status === "completed" ? "Success" : "Failed"}
+                      </Badge>
+                    )}
                   </div>
                   <div className="p-4">
                     <p className="text-sm text-gray-300">{verificationData.details}</p>
