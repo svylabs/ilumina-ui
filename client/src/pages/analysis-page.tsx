@@ -5219,14 +5219,10 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         />
                       
                       ) : currentStep.id === "history" ? (
-                        // Show history data using iframe - always available regardless of analysis step
+                        // Show history data directly instead of using iframe to avoid auth issues
                         <div className="py-4">
                           {id ? (
-                            <iframe 
-                              src={`/api/submission-history-page/${id}`}
-                              style={{ width: '100%', height: '80vh', border: 'none' }}
-                              title="Submission History"
-                            />
+                            <HistoryComponent submissionId={id.toString()} />
                           ) : (
                             <div className="text-center py-10 border border-gray-600 rounded">
                               <div className="mx-auto h-12 w-12 text-gray-400 mb-2">📋</div>

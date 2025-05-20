@@ -2819,7 +2819,35 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      const data = await response.json();
+      // Handle the response data - check for different formats
+      const responseText = await response.text();
+      let data;
+      
+      try {
+        // Try to parse as JSON
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.log("Response is not valid JSON, using default empty array");
+        data = [];
+      }
+      
+      // If data is not an array, convert to an array for consistent handling
+      if (!Array.isArray(data)) {
+        if (data && typeof data === 'object') {
+          // If it's an object with logs property, use that
+          if (Array.isArray(data.logs)) {
+            data = data.logs;
+          } else {
+            // Otherwise wrap the object in an array
+            data = [data];
+          }
+        } else {
+          // Default to empty array if we can't extract meaningful data
+          data = [];
+        }
+      }
+      
+      console.log(`Returning ${data.length} history log entries`);
       return res.json({ success: true, history: data });
     } catch (error) {
       console.error("Error fetching submission history:", error);
