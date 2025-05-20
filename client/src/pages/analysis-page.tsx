@@ -3146,7 +3146,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                         className="bg-blue-900/30 border-blue-700 text-blue-300 hover:bg-blue-900/60 hover:text-blue-200"
                         onClick={async () => {
                           try {
-                            // Make a POST request to the analyze endpoint with correct parameters
+                            // Make a POST request to the backend API endpoint
                             const response = await fetch('/api/analyze', {
                               method: 'POST',
                               headers: {
