@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap, Clock, History as HistoryIcon } from "lucide-react";
+import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap, Clock as ClockIcon, History as HistoryIcon } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,236 +73,8 @@ type HistoryLogEntry = {
   step_metadata?: string;
 };
 
-// History Component
-function HistoryComponent({ submissionId }: { submissionId: string }) {
-  const [historyLogs, setHistoryLogs] = useState<HistoryLogEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  
-  // Function to fetch history data
-  const fetchHistoryData = async () => {
-    if (!submissionId) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`/api/submission-history/${submissionId}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Failed to fetch history (${response.status})`);
-      }
-      
-      const data = await response.json();
-      if (data.history && Array.isArray(data.history)) {
-        // Sort by executed_at in descending order (newest first)
-        const sortedHistory = [...data.history].sort((a, b) => {
-          const dateA = new Date(a.executed_at);
-          const dateB = new Date(b.executed_at);
-          return dateB.getTime() - dateA.getTime();
-        });
-        
-        setHistoryLogs(sortedHistory);
-      } else {
-        setHistoryLogs([]);
-      }
-    } catch (err) {
-      console.error("Error fetching history:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch history data");
-      toast({
-        title: "Failed to fetch history",
-        description: err instanceof Error ? err.message : "An error occurred while fetching history data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Fetch history data on component mount and when submissionId changes
-  useEffect(() => {
-    fetchHistoryData();
-  }, [submissionId]);
-  
-  // Format step name for display
-  const formatStepName = (step: string): string => {
-    return step
-      .replace(/_/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-  
-  // Format status for display with color
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'success':
-        return <Badge className="bg-green-200 text-green-800 hover:bg-green-300">{status}</Badge>;
-      case 'error':
-        return <Badge className="bg-red-200 text-red-800 hover:bg-red-300">{status}</Badge>;
-      case 'in_progress':
-        return <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-300">In Progress</Badge>;
-      default:
-        return <Badge className="bg-gray-200 text-gray-800 hover:bg-gray-300">{status}</Badge>;
-    }
-  };
-  
-  // Format timestamp to human-readable format
-  const formatTimestamp = (timestamp: string): string => {
-    try {
-      const date = new Date(timestamp);
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        hour12: true
-      }).format(date);
-    } catch (e) {
-      return timestamp;
-    }
-  };
-  
-  // Check if metadata is a valid JSON string
-  const isJsonString = (str: string): boolean => {
-    try {
-      JSON.parse(str);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
-  
-  // Render metadata content based on type
-  const renderMetadata = (step: string, metadata?: string) => {
-    if (!metadata) return null;
-    
-    // For certain steps, display only the first part of the metadata to avoid clutter
-    if (step === 'analyze_project' || step === 'analyze_deployment' || step === 'analyze_actors') {
-      return (
-        <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-32">
-          <p className="whitespace-pre-wrap">{metadata.length > 200 ? metadata.substring(0, 200) + '...' : metadata}</p>
-        </div>
-      );
-    }
-    
-    // If metadata is JSON, pretty print it
-    if (isJsonString(metadata)) {
-      try {
-        const jsonData = JSON.parse(metadata);
-        return (
-          <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-40">
-            <pre className="p-2 rounded bg-gray-900 whitespace-pre-wrap text-xs">
-              {JSON.stringify(jsonData, null, 2)}
-            </pre>
-          </div>
-        );
-      } catch (e) {
-        // Fall back to raw display if JSON parse fails
-        return (
-          <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-32">
-            <p className="whitespace-pre-wrap">{metadata}</p>
-          </div>
-        );
-      }
-    }
-    
-    // Default display for non-JSON metadata
-    return (
-      <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-32">
-        <p className="whitespace-pre-wrap">{metadata}</p>
-      </div>
-    );
-  };
-  
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-white">Submission History</h3>
-        
-        <Button 
-          variant="outline"
-          size="sm"
-          onClick={fetchHistoryData}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </>
-          )}
-        </Button>
-      </div>
-      
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      {isLoading && historyLogs.length === 0 ? (
-        <div className="flex justify-center py-10">
-          <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
-        </div>
-      ) : historyLogs.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">
-          <HistoryIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>No history logs available for this submission.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {historyLogs.map((log, index) => (
-            <Card key={index} className="bg-gray-800 border-gray-700">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-md font-medium text-white">
-                      {formatStepName(log.step)}
-                    </CardTitle>
-                    <CardDescription>
-                      {formatTimestamp(log.executed_at)}
-                    </CardDescription>
-                  </div>
-                  <div>{getStatusBadge(log.status)}</div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                {log.user_prompt && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-300 mb-1">User Prompt:</h4>
-                    <p className="text-sm text-gray-400 whitespace-pre-wrap">
-                      {log.user_prompt}
-                    </p>
-                  </div>
-                )}
-                
-                {log.step_metadata && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-300 mb-1">Step Metadata:</h4>
-                    {renderMetadata(log.step, log.step_metadata)}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// Import HistoryComponent for use in the History tab
+import HistoryComponent from "@/components/history-component";
 
 function SimulationsComponent({ analysis, deploymentVerified = false }: SimulationsComponentProps) {
   const { id: submissionId } = useParams();
@@ -4017,7 +3789,7 @@ export default function AnalysisPage() {
               {step.id === "deployment" && <Box className="h-5 w-5 mr-2" />}
               {step.id === "test_setup" && <Laptop className="h-5 w-5 mr-2" />}
               {step.id === "simulations" && <PlayCircle className="h-5 w-5 mr-2" />}
-              {step.id === "history" && <Clock className="h-5 w-5 mr-2" />}
+              {step.id === "history" && <ClockIcon className="h-5 w-5 mr-2" />}
               <span className="font-medium">{step.title}</span>
               <div className="ml-2">
                 <StepStatus 
@@ -5447,10 +5219,22 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         />
                       
                       ) : currentStep.id === "history" ? (
-                        // Show history component for the History tab
-                        <HistoryComponent 
-                          submission={submission}
-                        />
+                        // Show history data using iframe
+                        <div className="py-4">
+                          {analysis && id ? (
+                            <iframe 
+                              src={`/api/submission-history-page/${id}`}
+                              style={{ width: '100%', height: '80vh', border: 'none' }}
+                              title="Submission History"
+                            />
+                          ) : (
+                            <div className="text-center py-10 border border-gray-600 rounded">
+                              <div className="mx-auto h-12 w-12 text-gray-400 mb-2">📋</div>
+                              <h3 className="text-lg font-medium text-gray-300">Submission ID Not Available</h3>
+                              <p className="text-sm text-gray-500">Cannot fetch history without a submission ID.</p>
+                            </div>
+                          )}
+                        </div>
                       
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">

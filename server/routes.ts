@@ -2792,7 +2792,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Endpoint to fetch and stream simulation log contents from GCS URL
+  // Endpoint to fetch and stream submission history logs
   app.get("/api/submission-history/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
     
@@ -2827,6 +2827,367 @@ export function registerRoutes(app: Express): Server {
         success: false, 
         message: "Failed to fetch submission history" 
       });
+    }
+  });
+  
+  // HTML page for viewing submission history
+  app.get("/api/submission-history-page/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Not authenticated");
+    
+    try {
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(req.params.id);
+      
+      if (result.error) {
+        return res.status(result.statusCode || 400).send(`<div class="error">${result.error}</div>`);
+      }
+      
+      const submissionId = result.submissionId;
+      
+      // Call the external API to get submission history
+      console.log(`Fetching history logs for submission: ${submissionId}`);
+      const response = await callExternalIluminaAPI(`/api/submission/${submissionId}/history`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error fetching history logs: ${response.status} - ${errorText}`);
+        return res.status(response.status).send(`
+          <div class="error">
+            <h3>Error Fetching History</h3>
+            <p>${errorText || 'Failed to fetch history logs'}</p>
+          </div>
+        `);
+      }
+      
+      const historyData = await response.json();
+      
+      // Sort logs by execution time (most recent first)
+      const sortedLogs = [...historyData].sort((a, b) => {
+        const dateA = new Date(a.executed_at || a.created_at);
+        const dateB = new Date(b.executed_at || b.created_at);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      // Format step name for display
+      const formatStepName = (step) => {
+        return step
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      };
+      
+      // Format timestamp to human-readable format
+      const formatTimestamp = (timestamp) => {
+        try {
+          const date = new Date(timestamp);
+          // Format as: May 20, 2025, 10:30 AM
+          return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+        } catch (e) {
+          return timestamp;
+        }
+      };
+      
+      // Generate HTML for logs
+      let logsHtml = '';
+      
+      if (sortedLogs.length === 0) {
+        logsHtml = `
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <h3>No History Data</h3>
+            <p>No history logs are available for this submission.</p>
+          </div>
+        `;
+      } else {
+        logsHtml = sortedLogs.map(log => {
+          // Determine status badge style
+          let statusBadgeClass = '';
+          let statusText = log.status || 'Unknown';
+          
+          switch (statusText.toLowerCase()) {
+            case 'completed':
+            case 'success':
+              statusBadgeClass = 'status-badge status-success';
+              break;
+            case 'in_progress':
+              statusBadgeClass = 'status-badge status-in-progress';
+              break;
+            case 'failed':
+            case 'error':
+              statusBadgeClass = 'status-badge status-failed';
+              break;
+            case 'pending':
+              statusBadgeClass = 'status-badge status-pending';
+              break;
+            default:
+              statusBadgeClass = 'status-badge';
+          }
+          
+          // Format metadata if available
+          let metadataHtml = '';
+          const metadata = log.step_metadata || log.metadata;
+          if (metadata) {
+            try {
+              const metadataObj = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+              metadataHtml = `
+                <div class="metadata">
+                  <h4>Metadata</h4>
+                  <pre>${JSON.stringify(metadataObj, null, 2)}</pre>
+                </div>
+              `;
+            } catch (e) {
+              metadataHtml = `
+                <div class="metadata">
+                  <h4>Metadata</h4>
+                  <p>${typeof metadata === 'string' ? metadata : JSON.stringify(metadata)}</p>
+                </div>
+              `;
+            }
+          }
+          
+          // User prompt section
+          let userPromptHtml = '';
+          if (log.user_prompt) {
+            userPromptHtml = `
+              <div class="user-prompt">
+                <h4>User Prompt</h4>
+                <p>${log.user_prompt}</p>
+              </div>
+            `;
+          }
+          
+          // Create card for this log entry
+          return `
+            <div class="log-card">
+              <div class="log-header">
+                <div class="log-title">
+                  <h3>${formatStepName(log.step)}</h3>
+                  <div class="log-timestamp">${formatTimestamp(log.executed_at || log.created_at)}</div>
+                </div>
+                <div class="${statusBadgeClass}">${statusText}</div>
+              </div>
+              <div class="log-content">
+                ${log.details ? `<p class="log-details">${log.details}</p>` : ''}
+                ${userPromptHtml}
+                ${metadataHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // Send complete HTML page with styles
+      res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Submission History</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+              line-height: 1.5;
+              color: #e4e4e7;
+              background-color: #18181b;
+              padding: 1rem;
+              margin: 0;
+            }
+            h1, h2, h3, h4 {
+              color: #e4e4e7;
+              margin-top: 0;
+            }
+            .page-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1.5rem;
+            }
+            .log-card {
+              background-color: #27272a;
+              border: 1px solid #3f3f46;
+              border-radius: 0.5rem;
+              margin-bottom: 1rem;
+              overflow: hidden;
+            }
+            .log-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              padding: 0.75rem 1rem;
+              background-color: #3f3f46;
+              border-bottom: 1px solid #52525b;
+            }
+            .log-title {
+              flex: 1;
+            }
+            .log-title h3 {
+              margin: 0;
+              font-size: 1rem;
+              color: #ffffff;
+            }
+            .log-timestamp {
+              font-size: 0.75rem;
+              color: #a1a1aa;
+              margin-top: 0.25rem;
+            }
+            .status-badge {
+              padding: 0.25rem 0.5rem;
+              border-radius: 9999px;
+              font-size: 0.75rem;
+              font-weight: 500;
+            }
+            .status-success {
+              background-color: rgba(34, 197, 94, 0.1);
+              color: #4ade80;
+              border: 1px solid rgba(74, 222, 128, 0.4);
+            }
+            .status-in-progress {
+              background-color: rgba(59, 130, 246, 0.1);
+              color: #60a5fa;
+              border: 1px solid rgba(96, 165, 250, 0.4);
+            }
+            .status-failed {
+              background-color: rgba(239, 68, 68, 0.1);
+              color: #f87171;
+              border: 1px solid rgba(248, 113, 113, 0.4);
+            }
+            .status-pending {
+              background-color: rgba(234, 179, 8, 0.1);
+              color: #facc15;
+              border: 1px solid rgba(250, 204, 21, 0.4);
+            }
+            .log-content {
+              padding: 1rem;
+            }
+            .log-details {
+              margin-top: 0;
+              margin-bottom: 1rem;
+            }
+            .user-prompt, .metadata {
+              margin-top: 1rem;
+              padding-top: 1rem;
+              border-top: 1px solid #3f3f46;
+            }
+            .user-prompt h4, .metadata h4 {
+              font-size: 0.875rem;
+              margin-bottom: 0.5rem;
+              color: #a1a1aa;
+            }
+            pre {
+              background-color: #18181b;
+              padding: 0.75rem;
+              border-radius: 0.25rem;
+              overflow: auto;
+              font-size: 0.75rem;
+              color: #a1a1aa;
+              max-height: 20rem;
+            }
+            .error {
+              padding: 1rem;
+              background-color: rgba(239, 68, 68, 0.1);
+              border-radius: 0.5rem;
+              border: 1px solid rgba(248, 113, 113, 0.4);
+              color: #f87171;
+            }
+            .empty-state {
+              text-align: center;
+              padding: 3rem 1rem;
+              border: 1px dashed #3f3f46;
+              border-radius: 0.5rem;
+            }
+            .empty-state .icon {
+              font-size: 3rem;
+              margin-bottom: 1rem;
+              color: #71717a;
+            }
+            .empty-state h3 {
+              font-size: 1.25rem;
+              color: #d4d4d8;
+              margin-bottom: 0.5rem;
+            }
+            .empty-state p {
+              color: #a1a1aa;
+              margin: 0;
+            }
+            .refresh-button {
+              background-color: #3f3f46;
+              color: #e4e4e7;
+              border: none;
+              border-radius: 0.25rem;
+              padding: 0.5rem 1rem;
+              font-size: 0.875rem;
+              cursor: pointer;
+              display: inline-flex;
+              align-items: center;
+              transition: background-color 0.2s;
+            }
+            .refresh-button:hover {
+              background-color: #52525b;
+            }
+            .refresh-icon {
+              margin-right: 0.5rem;
+              display: inline-block;
+            }
+            .refresh-button:disabled {
+              opacity: 0.7;
+              cursor: not-allowed;
+            }
+            @media (max-width: 640px) {
+              .log-header {
+                flex-direction: column;
+              }
+              .status-badge {
+                margin-top: 0.5rem;
+                align-self: flex-start;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page-header">
+            <h2>Submission History</h2>
+            <button 
+              class="refresh-button" 
+              onclick="location.reload()"
+              title="Refresh"
+            >
+              <span class="refresh-icon">↻</span> Refresh
+            </button>
+          </div>
+          <div class="logs-container">
+            ${logsHtml}
+          </div>
+          <script>
+            // Add auto-refresh for in-progress logs
+            const refreshIfInProgress = () => {
+              const inProgressLogs = document.querySelectorAll('.status-in-progress');
+              if (inProgressLogs.length > 0) {
+                setTimeout(() => location.reload(), 5000);
+              }
+            }
+            
+            // Call once when page loads
+            refreshIfInProgress();
+          </script>
+        </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Error generating history page:", error);
+      res.status(500).send(`
+        <div class="error">
+          <h3>Error</h3>
+          <p>Failed to generate history page: ${error.message || 'Unknown error'}</p>
+        </div>
+      `);
     }
   });
 
