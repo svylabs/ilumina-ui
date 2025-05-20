@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap } from "lucide-react";
+import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap, Clock, History as HistoryIcon } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, formatDistanceToNow } from "date-fns";
@@ -4010,6 +4011,7 @@ export default function AnalysisPage() {
               {step.id === "deployment" && <Box className="h-5 w-5 mr-2" />}
               {step.id === "test_setup" && <Laptop className="h-5 w-5 mr-2" />}
               {step.id === "simulations" && <PlayCircle className="h-5 w-5 mr-2" />}
+              {step.id === "history" && <Clock className="h-5 w-5 mr-2" />}
               <span className="font-medium">{step.title}</span>
               <div className="ml-2">
                 <StepStatus 
