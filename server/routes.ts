@@ -2792,68 +2792,120 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Endpoint to fetch and stream submission history logs
+  // Endpoint to fetch and stream submission history logs 
   app.get("/api/submission-history/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
     
     try {
-      // Get a valid submission ID using our helper function
-      const result = await getValidSubmissionId(req.params.id);
+      // Get ID parameter
+      const idParam = req.params.id;
+      let submissionId = idParam;
       
-      if (result.error) {
-        return res.status(result.statusCode || 400).json({ success: false, message: result.error });
-      }
-      
-      const submissionId = result.submissionId;
-      
-      // Call the external API to get submission history
-      console.log(`Fetching history logs for submission: ${submissionId}`);
-      const response = await callExternalIluminaAPI(`/api/submission/${submissionId}/history`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Error fetching history logs: ${response.status} - ${errorText}`);
-        return res.status(response.status).json({ 
-          success: false, 
-          message: `Failed to fetch history logs: ${errorText}` 
-        });
-      }
-      
-      // Handle the response data - check for different formats
-      const responseText = await response.text();
-      let data;
-      
-      try {
-        // Try to parse as JSON
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.log("Response is not valid JSON, using default empty array");
-        data = [];
-      }
-      
-      // If data is not an array, convert to an array for consistent handling
-      if (!Array.isArray(data)) {
-        if (data && typeof data === 'object') {
-          // If it's an object with logs property, use that
-          if (Array.isArray(data.logs)) {
-            data = data.logs;
-          } else {
-            // Otherwise wrap the object in an array
-            data = [data];
+      // Handle the case where we're getting a project ID instead of submission ID
+      if (/^\d+$/.test(idParam)) {
+        console.log(`ID ${idParam} appears to be a project ID, looking up the submission`);
+        
+        try {
+          // Look up the submission ID for this project in the database
+          const projectSubmissions = await db
+            .select()
+            .from(submissions)
+            .where(eq(submissions.projectId, parseInt(idParam)))
+            .orderBy(desc(submissions.createdAt))
+            .limit(1);
+            
+          if (projectSubmissions.length === 0) {
+            return res.status(404).json({ 
+              success: false, 
+              message: `No submissions found for project ID ${idParam}` 
+            });
           }
-        } else {
-          // Default to empty array if we can't extract meaningful data
-          data = [];
+          
+          // Use the found submission ID
+          submissionId = projectSubmissions[0].id;
+          console.log(`Found submission ID ${submissionId} for project ID ${idParam}`);
+        } catch (dbError) {
+          console.error("Database error looking up submission ID:", dbError);
+          return res.status(500).json({ 
+            success: false, 
+            message: "Database error when trying to lookup submission ID" 
+          });
         }
       }
       
-      console.log(`Returning ${data.length} history log entries`);
-      return res.json({ success: true, history: data });
+      // Now we have a valid submission ID, fetch history from external API
+      console.log(`Fetching history logs for submission: ${submissionId}`);
+      try {
+        const apiResponse = await callExternalIluminaAPI(`/api/submission/${submissionId}/history`);
+        
+        if (!apiResponse.ok) {
+          const errorText = await apiResponse.text();
+          console.error(`Error from external API: ${apiResponse.status} ${errorText}`);
+          return res.status(apiResponse.status).json({ 
+            success: false, 
+            message: `External API error: ${errorText || apiResponse.statusText}` 
+          });
+        }
+        
+        // Process the response data
+        const responseText = await apiResponse.text();
+        let historyData;
+        
+        try {
+          // Try to parse as JSON
+          historyData = JSON.parse(responseText);
+          console.log(`Successfully parsed history data as JSON with ${Array.isArray(historyData) ? historyData.length : 'non-array'} entries`);
+        } catch (parseError) {
+          console.error("Error parsing JSON response:", parseError);
+          return res.status(500).json({
+            success: false,
+            message: "Invalid JSON response from external API"
+          });
+        }
+        
+        // Make sure we return an array of history entries
+        let normalizedData = [];
+        
+        if (Array.isArray(historyData)) {
+          normalizedData = historyData;
+        } else if (historyData && typeof historyData === 'object') {
+          // If it has a logs property that's an array, use that
+          if (Array.isArray(historyData.logs)) {
+            normalizedData = historyData.logs;
+          } else if (Array.isArray(historyData.history)) {
+            normalizedData = historyData.history;
+          } else {
+            // Add the single object as an array item
+            normalizedData = [historyData];
+          }
+        }
+        
+        // Add default IDs if missing
+        normalizedData = normalizedData.map((entry, index) => {
+          if (!entry.id) {
+            return { ...entry, id: `history-${index}` };
+          }
+          return entry;
+        });
+        
+        console.log(`Returning ${normalizedData.length} history log entries`);
+        return res.json({ 
+          success: true, 
+          submission_id: submissionId,
+          history: normalizedData 
+        });
+      } catch (apiError) {
+        console.error("Error calling external API:", apiError);
+        return res.status(500).json({ 
+          success: false, 
+          message: "Failed to communicate with external API" 
+        });
+      }
     } catch (error) {
-      console.error("Error fetching submission history:", error);
+      console.error("Error in submission history endpoint:", error);
       return res.status(500).json({ 
         success: false, 
-        message: "Failed to fetch submission history" 
+        message: "Internal server error fetching history" 
       });
     }
   });
