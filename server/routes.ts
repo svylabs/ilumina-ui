@@ -2882,41 +2882,55 @@ export function registerRoutes(app: Express): Server {
       ];
       
       try {
-        // Try to get data from external API
-        const apiResponse = await callExternalIluminaAPI(`/api/submission/${submissionId}/history`);
+        // Try to get data from external API - we're using the direct submission endpoint
+        // This endpoint is known to work for other operations
+        console.log(`Calling external API for history with submission ID: ${submissionId}`);
+        const apiResponse = await callExternalIluminaAPI(`/api/submission/${submissionId}`);
         console.log(`External API response status: ${apiResponse.status}`);
         
         if (apiResponse.ok) {
           try {
-            // Process the response data
+            // Process the response data - this is a full submission data
             const responseText = await apiResponse.text();
-            console.log(`External API history response text (first 150 chars): ${responseText.substring(0, 150)}...`);
+            console.log(`External API response text (first 150 chars): ${responseText.substring(0, 150)}...`);
             
             try {
-              // Try to parse as JSON
-              const historyData = JSON.parse(responseText);
-              console.log(`Successfully parsed history data, type: ${typeof historyData}, is array: ${Array.isArray(historyData)}`);
+              // Try to parse the submission data as JSON
+              const submissionData = JSON.parse(responseText);
+              console.log(`Successfully parsed submission data, type: ${typeof submissionData}`);
               
-              // Make sure we return an array of history entries
-              let normalizedData = [];
+              // Extract history logs from the submission data
+              let historyLogs = [];
               
-              if (Array.isArray(historyData)) {
-                normalizedData = historyData;
-                console.log(`Array data with ${normalizedData.length} entries`);
-              } else if (historyData && typeof historyData === 'object') {
-                // If it has a logs property that's an array, use that
-                if (Array.isArray(historyData.logs)) {
-                  normalizedData = historyData.logs;
-                  console.log(`Using logs property with ${normalizedData.length} entries`);
-                } else if (Array.isArray(historyData.history)) {
-                  normalizedData = historyData.history;
-                  console.log(`Using history property with ${normalizedData.length} entries`);
-                } else {
-                  // Add the single object as an array item
-                  normalizedData = [historyData];
-                  console.log(`Using single object as array item`);
-                }
+              // First check if there's a specific history array in the data
+              if (submissionData.history && Array.isArray(submissionData.history)) {
+                historyLogs = submissionData.history;
+                console.log(`Found direct history array with ${historyLogs.length} entries`);
               }
+              // If no history array, extract from the steps data
+              else if (submissionData.steps && typeof submissionData.steps === 'object') {
+                console.log("Extracting history from steps data");
+                
+                // Convert steps data to history logs format
+                const stepsData = submissionData.steps;
+                for (const [stepName, stepData] of Object.entries(stepsData)) {
+                  if (stepData && typeof stepData === 'object') {
+                    // Create history entry from step data
+                    historyLogs.push({
+                      id: `step-${stepName}`,
+                      created_at: stepData.startTime || new Date().toISOString(),
+                      executed_at: stepData.startTime || new Date().toISOString(),
+                      step: stepName,
+                      status: stepData.status || "unknown",
+                      details: stepData.details || `Step: ${stepName}`
+                    });
+                  }
+                }
+                console.log(`Created ${historyLogs.length} history entries from steps data`);
+              }
+              
+              // Normalize the data format
+              let normalizedData = historyLogs;
               
               if (normalizedData.length > 0) {
                 // We successfully got data from the external API
