@@ -148,6 +148,33 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
+  // Submission history endpoint
+  app.get("/api/submission-history/:submissionId", async (req, res) => {
+    const { submissionId } = req.params;
+    
+    if (!submissionId) {
+      return res.status(400).json({ error: "Missing submission ID" });
+    }
+    
+    try {
+      // Call external API to get submission history
+      const historyResponse = await callExternalIluminaAPI(`/submission/${submissionId}/history`);
+      
+      if (!historyResponse.ok) {
+        const errorText = await historyResponse.text();
+        return res.status(historyResponse.status).json({ 
+          error: `Failed to fetch submission history: ${errorText}` 
+        });
+      }
+      
+      const historyData = await historyResponse.json();
+      return res.json(historyData);
+    } catch (error) {
+      console.error("Error fetching submission history:", error);
+      return res.status(500).json({ error: "Failed to fetch submission history" });
+    }
+  });
+  
   // API endpoint for analyze operations including debugging deployment scripts
   app.post("/api/analyze", async (req, res) => {
     const { submission_id, step } = req.body;
