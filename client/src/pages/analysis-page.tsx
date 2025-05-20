@@ -5446,6 +5446,12 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                           deploymentVerified={isDeploymentVerificationCompleted(analysis.completedSteps)} 
                         />
                       
+                      ) : currentStep.id === "history" ? (
+                        // Show history component for the History tab
+                        <HistoryComponent 
+                          submission={submission}
+                        />
+                      
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
                         <div className="text-white font-mono">
                           <div className="space-y-6">

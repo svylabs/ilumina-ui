@@ -148,32 +148,34 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
-  // Submission history endpoint
-  // This endpoint is replaced by the more robust version below
-  /* app.get("/api/submission-history/:submissionId", async (req, res) => {
-    const { submissionId } = req.params;
-    
-    if (!submissionId) {
-      return res.status(400).json({ error: "Missing submission ID" });
-    } */
-    
-  });
-  
   // Now let's continue with the rest of our routes
   
   app.get("/api/submission-details/:submission_id", async (req, res) => {
     try {
       console.log(`Fetching submission details for ${req.params.submission_id}`);
+      const result = await getValidSubmissionId(req.params.submission_id);
       
-      if (!historyResponse.ok) {
-        const errorText = await historyResponse.text();
-        return res.status(historyResponse.status).json({ 
-          error: `Failed to fetch submission history: ${errorText}` 
+      if (result.error) {
+        return res.status(result.statusCode || 400).json({ error: result.error });
+      }
+      
+      const submissionId = result.submissionId;
+      if (!submissionId) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      // Fetch submission details from external API
+      const response = await callExternalIluminaAPI(`/api/submission/${submissionId}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        return res.status(response.status).json({ 
+          error: `Failed to fetch submission details: ${errorText}` 
         });
       }
       
-      const historyData = await historyResponse.json();
-      return res.json(historyData);
+      const submissionData = await response.json();
+      return res.json(submissionData);
     } catch (error) {
       console.error("Error fetching submission history:", error);
       return res.status(500).json({ error: "Failed to fetch submission history" });
@@ -2799,7 +2801,7 @@ export function registerRoutes(app: Express): Server {
       const result = await getValidSubmissionId(req.params.id);
       
       if (result.error) {
-        return res.status(result.status).json({ success: false, message: result.error });
+        return res.status(result.statusCode || 400).json({ success: false, message: result.error });
       }
       
       const submissionId = result.submissionId;
