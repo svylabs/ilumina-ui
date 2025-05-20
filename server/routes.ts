@@ -148,6 +148,39 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
+  // Debug deployment script endpoint
+  app.get("/api/debug-deploy-script/:submissionId", async (req, res) => {
+    const { submissionId } = req.params;
+    
+    if (!submissionId) {
+      return res.status(400).json({ message: "Missing submission ID" });
+    }
+    
+    try {
+      // Call the external API to debug the deployment script
+      const debugResponse = await callExternalIluminaAPI(`/debug_deploy_script?submission_id=${submissionId}`, 'GET');
+      
+      if (!debugResponse.ok) {
+        const errorText = await debugResponse.text();
+        console.error(`Error debugging deployment script: ${debugResponse.status} ${errorText}`);
+        return res.status(debugResponse.status).json({ 
+          message: "Failed to debug deployment script", 
+          details: errorText 
+        });
+      }
+      
+      // Return success response
+      const responseData = await debugResponse.json().catch(() => ({}));
+      return res.status(200).json(responseData);
+    } catch (error) {
+      console.error("Error calling debug deploy script API:", error);
+      return res.status(500).json({ 
+        message: "Internal server error debugging deployment script", 
+        error: error.message 
+      });
+    }
+  });
+  
   // Endpoint to create a new conversation session
   app.post("/api/chat/session/:submission_id", isAuthenticated, async (req, res) => {
     // Check if user has access to chat feature based on their plan

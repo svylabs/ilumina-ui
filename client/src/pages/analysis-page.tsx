@@ -3177,6 +3177,44 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                     <p className="text-gray-300 mt-2 text-sm">
                       The deployment script verification has failed. Please review the logs above for details on what needs to be corrected.
                     </p>
+                    <div className="mt-4 flex items-center">
+                      <Button 
+                        variant="outline"
+                        className="bg-blue-900/30 border-blue-700 text-blue-300 hover:bg-blue-900/60 hover:text-blue-200"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/debug-deploy-script/${submissionId}`);
+                            if (response.ok) {
+                              toast({
+                                title: "Debug Started",
+                                description: "Starting deployment script debug process. This may take a moment.",
+                              });
+                              // Refresh verification data after a short delay
+                              setTimeout(() => {
+                                fetchVerificationData();
+                              }, 3000);
+                            } else {
+                              const errorData = await response.json().catch(() => ({}));
+                              toast({
+                                title: "Debug Failed",
+                                description: errorData.message || "Failed to start debug process. Please try again.",
+                                variant: "destructive",
+                              });
+                            }
+                          } catch (error) {
+                            console.error("Error debugging deploy script:", error);
+                            toast({
+                              title: "Debug Error",
+                              description: "An error occurred while trying to debug the deployment script.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Debug Deployment Script
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
