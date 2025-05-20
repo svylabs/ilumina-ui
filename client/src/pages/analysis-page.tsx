@@ -3206,10 +3206,44 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                                 title: "Debug Started",
                                 description: "Starting deployment script debug process. This may take a moment.",
                               });
-                              // Refresh verification data after a short delay
-                              setTimeout(() => {
-                                fetchVerificationData();
-                              }, 3000);
+                              // Start a polling interval to update verification status
+                              toast({
+                                title: "Checking debug progress...",
+                                description: "Checking for updates every few seconds...",
+                              });
+                              
+                              // Set up a repeating check for debug status
+                              const statusCheckInterval = setInterval(async () => {
+                                // Get the latest status
+                                await fetchSubmissionDetails();
+                                await fetchVerificationData();
+                                
+                                // Check if debug or verification is no longer in progress
+                                const currentDetails = await fetchSubmissionDetails();
+                                if (currentDetails?.data?.completed_steps) {
+                                  const debugStep = currentDetails.data.completed_steps.find((step: any) => 
+                                    step.step === "debug_deployment_script");
+                                  
+                                  // If debug is complete or failed, stop checking
+                                  if (debugStep && debugStep.status !== "in_progress") {
+                                    clearInterval(statusCheckInterval);
+                                    
+                                    // Show a message based on the final status
+                                    if (debugStep.status === "success") {
+                                      toast({
+                                        title: "Debug Complete",
+                                        description: "Debug process completed successfully.",
+                                      });
+                                    } else if (debugStep.status === "error") {
+                                      toast({
+                                        title: "Debug Failed",
+                                        description: "Debug process failed. Please check the logs for details.",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }
+                                }
+                              }, 5000); // Check every 5 seconds
                             } else {
                               const errorData = await response.json().catch(() => ({}));
                               toast({
