@@ -149,16 +149,21 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
   
   // Submission history endpoint
-  app.get("/api/submission-history/:submissionId", async (req, res) => {
+  // This endpoint is replaced by the more robust version below
+  /* app.get("/api/submission-history/:submissionId", async (req, res) => {
     const { submissionId } = req.params;
     
     if (!submissionId) {
       return res.status(400).json({ error: "Missing submission ID" });
-    }
+    } */
     
+  });
+  
+  // Now let's continue with the rest of our routes
+  
+  app.get("/api/submission-details/:submission_id", async (req, res) => {
     try {
-      // Call external API to get submission history
-      const historyResponse = await callExternalIluminaAPI(`/submission/${submissionId}/history`);
+      console.log(`Fetching submission details for ${req.params.submission_id}`);
       
       if (!historyResponse.ok) {
         const errorText = await historyResponse.text();
@@ -2786,6 +2791,43 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Endpoint to fetch and stream simulation log contents from GCS URL
+  app.get("/api/submission-history/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
+    
+    try {
+      // Get a valid submission ID using our helper function
+      const result = await getValidSubmissionId(req.params.id);
+      
+      if (result.error) {
+        return res.status(result.status).json({ success: false, message: result.error });
+      }
+      
+      const submissionId = result.submissionId;
+      
+      // Call the external API to get submission history
+      console.log(`Fetching history logs for submission: ${submissionId}`);
+      const response = await callExternalIluminaAPI(`/api/submission/${submissionId}/history`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error fetching history logs: ${response.status} - ${errorText}`);
+        return res.status(response.status).json({ 
+          success: false, 
+          message: `Failed to fetch history logs: ${errorText}` 
+        });
+      }
+      
+      const data = await response.json();
+      return res.json({ success: true, history: data });
+    } catch (error) {
+      console.error("Error fetching submission history:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch submission history" 
+      });
+    }
+  });
+
   app.get("/api/simulation-log", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ success: false, message: "Not authenticated" });
     
