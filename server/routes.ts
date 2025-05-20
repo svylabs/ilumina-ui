@@ -157,8 +157,11 @@ export function registerRoutes(app: Express): Server {
     }
     
     try {
-      // Call the external API to debug the deployment script
-      const debugResponse = await callExternalIluminaAPI(`/analyze?submission_id=${submissionId}&step=debug_deploy_script`, 'GET');
+      // Call the external API to debug the deployment script - using POST request with required parameters
+      const debugResponse = await callExternalIluminaAPI(`/analyze`, 'POST', {
+        submission_id: submissionId,
+        step: 'debug_deploy_script'
+      });
       
       if (!debugResponse.ok) {
         const errorText = await debugResponse.text();
