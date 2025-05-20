@@ -2227,6 +2227,8 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
   const [activeTab, setActiveTab] = useState<"steps" | "script" | "verification">("steps");
   const [isLoadingScript, setIsLoadingScript] = useState(false);
   const [isLoadingVerification, setIsLoadingVerification] = useState(false);
+  const [isDebugInProgress, setIsDebugInProgress] = useState(false);
+  const [isVerifyInProgress, setIsVerifyInProgress] = useState(false);
   const [scriptError, setScriptError] = useState<string | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   // completedSteps are accessed directly from analysis response, no need for a separate state
@@ -3198,7 +3200,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                       <span className="text-sm font-medium text-gray-300">Verification Status</span>
                     </div>
                     {/* Check if debug is in progress based on the steps data */}
-                    {(isDebuggingInProgress || isVerificationInProgress) ? (
+                    {(isDebugInProgress || isVerifyInProgress) ? (
                       <Badge variant="outline" className="bg-blue-900/30 text-blue-300 border-blue-700 flex items-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
                         Processing
