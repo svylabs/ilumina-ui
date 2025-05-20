@@ -3224,6 +3224,19 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                                   const debugStep = currentDetails.data.completed_steps.find((step: any) => 
                                     step.step === "debug_deployment_script");
                                   
+                                  const verifyStep = currentDetails.data.completed_steps.find((step: any) => 
+                                    step.step === "verify_deployment_script");
+                                  
+                                  // Check if verification status has changed (may be updated as part of debug)
+                                  if (verifyStep && verifyStep.status !== "in_progress") {
+                                    if (verifyStep.status === "success") {
+                                      toast({
+                                        title: "Verification Succeeded",
+                                        description: "Deployment verification passed successfully!",
+                                      });
+                                    }
+                                  }
+                                  
                                   // If debug is complete or failed, stop checking
                                   if (debugStep && debugStep.status !== "in_progress") {
                                     clearInterval(statusCheckInterval);
@@ -3232,8 +3245,14 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                                     if (debugStep.status === "success") {
                                       toast({
                                         title: "Debug Complete",
-                                        description: "Debug process completed successfully.",
+                                        description: "Debug process completed successfully. Verification may still be in progress.",
                                       });
+                                      
+                                      // Check again for verification after debug completes
+                                      setTimeout(() => {
+                                        fetchVerificationData();
+                                      }, 2000);
+                                      
                                     } else if (debugStep.status === "error") {
                                       toast({
                                         title: "Debug Failed",
