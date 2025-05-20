@@ -47,65 +47,58 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
     try {
       console.log(`Fetching history data for submission: ${submissionId}`);
       
-      // Create history data directly from what we know about the project
-      // This ensures the user always sees something in the History tab
-      const historyData: HistoryLogEntry[] = [
-        {
-          id: "history-1",
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          executed_at: new Date(Date.now() - 3550000).toISOString(),
-          step: "analyze_project",
-          status: "completed",
-          details: "Successfully analyzed project structure and code."
-        },
-        {
-          id: "history-2",
-          created_at: new Date(Date.now() - 3000000).toISOString(),
-          executed_at: new Date(Date.now() - 2950000).toISOString(),
-          step: "analyze_actors",
-          status: "completed",
-          details: "Identified key actors and actions in the contract system."
-        },
-        {
-          id: "history-3",
-          created_at: new Date(Date.now() - 2400000).toISOString(),
-          executed_at: new Date(Date.now() - 2350000).toISOString(),
-          step: "analyze_deployment",
-          status: "completed",
-          details: "Created deployment instructions based on contract analysis."
-        },
-        {
-          id: "history-4",
-          created_at: new Date(Date.now() - 1800000).toISOString(),
-          executed_at: new Date(Date.now() - 1750000).toISOString(),
-          step: "implement_deployment_script",
-          status: "completed",
-          details: "Generated deployment script for the smart contract system."
-        },
-        {
-          id: "history-5",
-          created_at: new Date(Date.now() - 1200000).toISOString(),
-          executed_at: new Date(Date.now() - 1150000).toISOString(),
-          step: "verify_deployment_script",
-          status: "completed",
-          details: "Verified deployment script execution in test environment."
-        }
-      ];
-      
-      console.log("Setting sample history data to ensure display");
-      setHistoryLogs(historyData);
-      
-      // Try to get real data from analysis API in the background
-      fetch(`/api/analysis/${submissionId}`)
-        .then(response => {
-          if (response.ok) {
-            return response.json();
+      // First attempt - directly call the submission history endpoint
+      try {
+        // Make sure we have authentication info in the request
+        const response = await fetch(`/api/submission-history/${submissionId}`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json'
           }
-          throw new Error(`Error fetching analysis data: ${response.status}`);
-        })
-        .then(analysisData => {
+        });
+        
+        console.log(`History API response status: ${response.status}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("History API response data:", data);
+          
+          if (data.success && data.history && Array.isArray(data.history)) {
+            if (data.history.length > 0) {
+              console.log(`Received ${data.history.length} history entries from API`);
+              
+              // Sort history logs by timestamp in descending order (newest first)
+              const sortedHistory = [...data.history].sort((a, b) => {
+                const dateA = new Date(a.executed_at || a.created_at);
+                const dateB = new Date(b.executed_at || b.created_at);
+                return dateB.getTime() - dateA.getTime();
+              });
+              
+              setHistoryLogs(sortedHistory);
+              setIsLoading(false);
+              return; // Success - exit the function
+            } else {
+              console.log("API returned empty history array");
+            }
+          } else {
+            console.log("API returned invalid history data format:", data);
+          }
+        } else {
+          const errorText = await response.text();
+          console.error(`History API error (${response.status}): ${errorText}`);
+        }
+      } catch (apiError) {
+        console.error("Error fetching from submission history API:", apiError);
+      }
+      
+      // If we reach here, we need a fallback - try the analysis endpoint
+      try {
+        const analysisResponse = await fetch(`/api/analysis/${submissionId}`);
+        if (analysisResponse.ok) {
+          const analysisData = await analysisResponse.json();
+          
           if (analysisData && analysisData.steps) {
-            // Create history data from analysis steps
+            // Convert the analysis steps data into history log format
             const historyFromAnalysis: HistoryLogEntry[] = [];
             
             for (const [stepName, stepData] of Object.entries(analysisData.steps)) {
@@ -136,15 +129,16 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
                 return (stepOrder[a.step] || 99) - (stepOrder[b.step] || 99);
               });
               
-              console.log(`Updating with ${sortedHistory.length} real history entries from analysis`);
+              console.log(`Using ${sortedHistory.length} history entries from analysis data`);
               setHistoryLogs(sortedHistory);
+              setIsLoading(false);
+              return;
             }
           }
-        })
-        .catch(error => {
-          console.error("Error fetching real history data:", error);
-          // We already have sample data, so no need to handle this error
-        });
+        }
+      } catch (analysisError) {
+        console.error("Error fetching from analysis API:", analysisError);
+      }
       
       // If we still don't have data, create some based on common workflow steps
       const defaultHistoryLogs: HistoryLogEntry[] = [
