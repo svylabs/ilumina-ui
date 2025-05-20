@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap, Clock, History as HistoryIcon } from "lucide-react";
+import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap, Clock, History as HistoryIcon, CheckCircle, ClipboardX, RefreshCcw } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,24 +64,220 @@ interface SimulationsComponentProps {
   deploymentVerified?: boolean;
 }
 
-// Type for history log entries
+// Define a single history log entry type used by both history components
 type HistoryLogEntry = {
+  id: string;
+  created_at: string;
   step: string;
-  status: string;
+  status: "pending" | "in_progress" | "completed" | "failed";
+  details?: string;
+  metadata?: any;
+  step_metadata?: any;
+  // Additional fields used by the existing history display
+  executed_at?: string;
   user_prompt?: string;
-  executed_at: string;
-  step_metadata?: string;
 };
 
-// History Component
-function HistoryComponent({ submissionId }: { submissionId: string }) {
+// Component to display submission history logs
+interface SubmissionHistoryComponentProps {
+  submissionId: string;
+}
+
+function SubmissionHistoryComponent({ submissionId }: SubmissionHistoryComponentProps) {
+  const { toast } = useToast();
   const [historyLogs, setHistoryLogs] = useState<HistoryLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Function to fetch history logs
+  const fetchHistoryLogs = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/submission-history/${submissionId}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch history logs: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.history)) {
+        setHistoryLogs(data.history);
+      } else {
+        setHistoryLogs([]);
+      }
+      
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching history logs:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch history logs");
+      toast({
+        title: "Error",
+        description: "Failed to fetch submission history logs",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [submissionId, toast]);
+
+  // Fetch history logs on component mount
+  useEffect(() => {
+    fetchHistoryLogs();
+    
+    // If the latest log entry has 'in_progress' status, poll every 5 seconds
+    const intervalId = setInterval(() => {
+      if (historyLogs.length > 0 && historyLogs[0].status === "in_progress") {
+        fetchHistoryLogs();
+      }
+    }, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, [fetchHistoryLogs, historyLogs]);
+
+  // Get appropriate icon based on status
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      case "failed":
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      case "in_progress":
+        return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
+      case "pending":
+        return <CircleDot className="h-5 w-5 text-gray-500" />;
+      default:
+        return <CircleDot className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  // Format timestamp
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      return format(new Date(timestamp), "MMM d, yyyy HH:mm:ss");
+    } catch (e) {
+      return timestamp;
+    }
+  };
+
+  return (
+    <div className="space-y-4 mt-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Submission History
+        </h2>
+        <Button 
+          onClick={fetchHistoryLogs} 
+          variant="outline" 
+          size="sm"
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+      
+      {isLoading && historyLogs.length === 0 ? (
+        <div className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : historyLogs.length === 0 ? (
+        <div className="bg-card rounded-lg p-8 text-center">
+          <Clock className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium mb-2">No history logs available</h3>
+          <p className="text-muted-foreground">
+            History logs will appear here when analysis steps are processed.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {historyLogs.map((log) => (
+            <Collapsible key={log.id} className="bg-card rounded-lg overflow-hidden">
+              <CollapsibleTrigger className="flex justify-between items-center w-full p-4 text-left">
+                <div className="flex items-center gap-3">
+                  {getStatusIcon(log.status)}
+                  <div>
+                    <h3 className="font-medium">{log.step}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {formatTimestamp(log.created_at)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant={log.status === "completed" ? "success" : 
+                              log.status === "failed" ? "destructive" : 
+                              log.status === "in_progress" ? "default" : "outline"}>
+                    {log.status === "in_progress" ? (
+                      <span className="flex items-center">
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        In Progress
+                      </span>
+                    ) : (
+                      log.status.charAt(0).toUpperCase() + log.status.slice(1)
+                    )}
+                  </Badge>
+                  <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <div className="border-t px-4 py-3 bg-card/50">
+                  {log.details && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium mb-1">Details</h4>
+                      <p className="text-sm text-muted-foreground">{log.details}</p>
+                    </div>
+                  )}
+                  
+                  {log.metadata && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium mb-1">Metadata</h4>
+                      <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+                        {JSON.stringify(log.metadata, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                  
+                  {log.step_metadata && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium mb-1">Step Metadata</h4>
+                      <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+                        {JSON.stringify(log.step_metadata, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SimulationsComponentProps {
+  analysis?: AnalysisResponse;
+  deploymentVerified?: boolean;
+}
+
+// Component for the History tab
+function HistoryComponent({ submissionId }: { submissionId: string }) {
   const { toast } = useToast();
-  
+  const [historyLogs, setHistoryLogs] = useState<HistoryLogEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   // Function to fetch history data
-  const fetchHistoryData = async () => {
+  const fetchHistoryData = useCallback(async () => {
     if (!submissionId) return;
     
     setIsLoading(true);
@@ -99,8 +295,8 @@ function HistoryComponent({ submissionId }: { submissionId: string }) {
       if (data.history && Array.isArray(data.history)) {
         // Sort by executed_at in descending order (newest first)
         const sortedHistory = [...data.history].sort((a, b) => {
-          const dateA = new Date(a.executed_at);
-          const dateB = new Date(b.executed_at);
+          const dateA = new Date(a.executed_at || a.created_at);
+          const dateB = new Date(b.executed_at || b.created_at);
           return dateB.getTime() - dateA.getTime();
         });
         
@@ -119,12 +315,21 @@ function HistoryComponent({ submissionId }: { submissionId: string }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [submissionId, toast]);
   
   // Fetch history data on component mount and when submissionId changes
   useEffect(() => {
     fetchHistoryData();
-  }, [submissionId]);
+    
+    // Auto-refresh if any log entry has 'in_progress' status
+    const intervalId = setInterval(() => {
+      if (historyLogs.some(log => log.status === "in_progress")) {
+        fetchHistoryData();
+      }
+    }, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, [fetchHistoryData, historyLogs]);
   
   // Format step name for display
   const formatStepName = (step: string): string => {
@@ -138,12 +343,16 @@ function HistoryComponent({ submissionId }: { submissionId: string }) {
   // Format status for display with color
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
+      case 'completed':
       case 'success':
         return <Badge className="bg-green-200 text-green-800 hover:bg-green-300">{status}</Badge>;
+      case 'failed':
       case 'error':
         return <Badge className="bg-red-200 text-red-800 hover:bg-red-300">{status}</Badge>;
       case 'in_progress':
         return <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-300">In Progress</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-200 text-yellow-800 hover:bg-yellow-300">Pending</Badge>;
       default:
         return <Badge className="bg-gray-200 text-gray-800 hover:bg-gray-300">{status}</Badge>;
     }
@@ -153,104 +362,149 @@ function HistoryComponent({ submissionId }: { submissionId: string }) {
   const formatTimestamp = (timestamp: string): string => {
     try {
       const date = new Date(timestamp);
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        hour12: true
-      }).format(date);
+      return format(date, "MMM d, yyyy h:mm:ss a");
     } catch (e) {
       return timestamp;
     }
   };
   
-  // Check if metadata is a valid JSON string
-  const isJsonString = (str: string): boolean => {
-    try {
-      JSON.parse(str);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
-  
-  // Render metadata content based on type
-  const renderMetadata = (step: string, metadata?: string) => {
-    if (!metadata) return null;
-    
-    // For certain steps, display only the first part of the metadata to avoid clutter
-    if (step === 'analyze_project' || step === 'analyze_deployment' || step === 'analyze_actors') {
-      return (
-        <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-32">
-          <p className="whitespace-pre-wrap">{metadata.length > 200 ? metadata.substring(0, 200) + '...' : metadata}</p>
-        </div>
-      );
-    }
-    
-    // If metadata is JSON, pretty print it
-    if (isJsonString(metadata)) {
-      try {
-        const jsonData = JSON.parse(metadata);
-        return (
-          <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-40">
-            <pre className="p-2 rounded bg-gray-900 whitespace-pre-wrap text-xs">
-              {JSON.stringify(jsonData, null, 2)}
-            </pre>
-          </div>
-        );
-      } catch (e) {
-        // Fall back to raw display if JSON parse fails
-        return (
-          <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-32">
-            <p className="whitespace-pre-wrap">{metadata}</p>
-          </div>
-        );
-      }
-    }
-    
-    // Default display for non-JSON metadata
-    return (
-      <div className="mt-2 text-sm text-gray-300 overflow-auto max-h-32">
-        <p className="whitespace-pre-wrap">{metadata}</p>
-      </div>
-    );
-  };
-  
+  // Render the history component
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-white">Submission History</h3>
-        
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-blue-400">Submission History</h2>
         <Button 
-          variant="outline"
-          size="sm"
-          onClick={fetchHistoryData}
+          variant="outline" 
+          size="sm" 
+          onClick={fetchHistoryData} 
           disabled={isLoading}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </>
-          )}
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+          Refresh
         </Button>
       </div>
       
-      {error && (
-        <Alert variant="destructive" className="mb-4">
+      {isLoading && historyLogs.length === 0 ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : error ? (
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+      ) : historyLogs.length === 0 ? (
+        <div className="text-center py-10 border rounded-md">
+          <ClipboardX className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-lg font-medium text-gray-600">No history logs available</h3>
+          <p className="mt-1 text-sm text-gray-500">No activity has been recorded for this submission yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {historyLogs.map((log, index) => (
+            <Card key={log.id || index} className="overflow-hidden">
+              <CardHeader className="bg-gray-50 dark:bg-gray-800 py-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    {log.status === "in_progress" ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                    ) : log.status === "completed" || log.status === "success" ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : log.status === "failed" || log.status === "error" ? (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <Clock className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <h4 className="font-medium">{formatStepName(log.step)}</h4>
+                    {getStatusBadge(log.status)}
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {formatTimestamp(log.executed_at || log.created_at)}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="py-4">
+                {log.details ? (
+                  <div className="text-sm">
+                    <p className="text-gray-600 dark:text-gray-300">{log.details}</p>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 italic">No details available.</div>
+                )}
+                
+                {log.metadata && Object.keys(log.metadata).length > 0 && (
+                  <Collapsible className="mt-3 border-t pt-3">
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="flex items-center justify-between w-full p-0">
+                        <span className="text-xs font-medium">View metadata</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <pre className="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto max-h-64">
+                        {JSON.stringify(log.metadata, null, 2)}
+                      </pre>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
+    </div>
+  );
+}
+  
+  // Helper function to format step name
+  const formatStepName = (step: string): string => {
+    return step
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+  
+  // Helper function to format timestamp
+  const formatTimestamp = (timestamp: string): string => {
+    try {
+      const date = new Date(timestamp);
+      return format(date, "MMM d, yyyy h:mm a");
+    } catch (e) {
+      return timestamp;
+    }
+  };
+  
+  // Get status badge based on status
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <Badge className="bg-green-100 text-green-800 border-green-300">Completed</Badge>;
+      case "in_progress":
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">In Progress</Badge>;
+      case "failed":
+        return <Badge className="bg-red-100 text-red-800 border-red-300">Failed</Badge>;
+      case "pending":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">Pending</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Submission History</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={fetchHistoryData} 
+          disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+          Refresh
+        </Button>
+      </div>
       
       {isLoading && historyLogs.length === 0 ? (
         <div className="flex justify-center py-10">
@@ -5447,9 +5701,9 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         />
                       
                       ) : currentStep.id === "history" ? (
-                        // Show history component for the History tab
-                        <HistoryComponent 
-                          submission={submission}
+                        // Show history logs for the History tab
+                        <SimulationHistoryComponent 
+                          submissionId={submissionId || ""}
                         />
                       
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
