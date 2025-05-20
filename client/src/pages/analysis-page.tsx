@@ -5219,9 +5219,9 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         />
                       
                       ) : currentStep.id === "history" ? (
-                        // Show history data using iframe
+                        // Show history data using iframe - always available regardless of analysis step
                         <div className="py-4">
-                          {analysis && id ? (
+                          {id ? (
                             <iframe 
                               src={`/api/submission-history-page/${id}`}
                               style={{ width: '100%', height: '80vh', border: 'none' }}
