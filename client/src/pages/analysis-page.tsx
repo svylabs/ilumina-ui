@@ -3120,44 +3120,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
               </div>
             ) : verificationData ? (
               <div className="space-y-4">
-                <div className="bg-gray-900 border border-gray-700 rounded-md overflow-hidden">
-                  <div className="bg-gray-800 p-3 border-b border-gray-700 flex justify-between items-center">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-300">Verification Status</span>
-                    </div>
-                    <Badge variant={verificationData.status === "completed" ? "outline" : "destructive"} 
-                      className={verificationData.status === "completed" ? 
-                        "bg-green-900/30 text-green-300 border-green-700" : 
-                        "bg-red-900/30 text-red-300 border-red-700"}
-                    >
-                      {verificationData.status === "completed" ? "Success" : "Failed"}
-                    </Badge>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-sm text-gray-300">{verificationData.details}</p>
-                    
-                    <div className="mt-4">
-                      <h4 className="text-xs text-gray-400 mb-2">Verification Logs:</h4>
-                      <div className="bg-black/40 border border-gray-800 rounded p-3 font-mono text-xs">
-                        {verificationData.logs.map((log: string, index: number) => {
-                          // Style different log levels differently
-                          let textColor = "text-gray-300";
-                          if (log.includes("[SUCCESS]")) textColor = "text-green-400";
-                          if (log.includes("[ERROR]")) textColor = "text-red-400";
-                          if (log.includes("[INFO]")) textColor = "text-blue-400";
-                          
-                          return (
-                            <div key={index} className="flex py-0.5">
-                              <span className="text-gray-500 w-10 inline-block text-right pr-2 select-none">{index + 1}</span>
-                              <span className={`flex-1 ${textColor}`}>{log}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
+                {/* Status message at the top */}
                 {verificationData.status === "completed" ? (
                   <div className="bg-green-900/20 border border-green-900/50 rounded p-4">
                     <h4 className="text-green-400 text-sm font-medium flex items-center">
@@ -3175,7 +3138,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                       Verification Failed
                     </h4>
                     <p className="text-gray-300 mt-2 text-sm">
-                      The deployment script verification has failed. Please review the logs above for details on what needs to be corrected.
+                      The deployment script verification has failed. Please review the logs below for details on what needs to be corrected.
                     </p>
                     <div className="mt-4 flex items-center">
                       <Button 
@@ -3217,6 +3180,45 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                     </div>
                   </div>
                 )}
+                
+                {/* Verification details and logs */}
+                <div className="bg-gray-900 border border-gray-700 rounded-md overflow-hidden">
+                  <div className="bg-gray-800 p-3 border-b border-gray-700 flex justify-between items-center">
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-gray-300">Verification Status</span>
+                    </div>
+                    <Badge variant={verificationData.status === "completed" ? "outline" : "destructive"} 
+                      className={verificationData.status === "completed" ? 
+                        "bg-green-900/30 text-green-300 border-green-700" : 
+                        "bg-red-900/30 text-red-300 border-red-700"}
+                    >
+                      {verificationData.status === "completed" ? "Success" : "Failed"}
+                    </Badge>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm text-gray-300">{verificationData.details}</p>
+                    
+                    <div className="mt-4">
+                      <h4 className="text-xs text-gray-400 mb-2">Verification Logs:</h4>
+                      <div className="bg-black/40 border border-gray-800 rounded p-3 font-mono text-xs">
+                        {verificationData.logs.map((log: string, index: number) => {
+                          // Style different log levels differently
+                          let textColor = "text-gray-300";
+                          if (log.includes("[SUCCESS]")) textColor = "text-green-400";
+                          if (log.includes("[ERROR]")) textColor = "text-red-400";
+                          if (log.includes("[INFO]")) textColor = "text-blue-400";
+                          
+                          return (
+                            <div key={index} className="flex py-0.5">
+                              <span className="text-gray-500 w-10 inline-block text-right pr-2 select-none">{index + 1}</span>
+                              <span className={`flex-1 ${textColor}`}>{log}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="bg-gray-900/50 border border-gray-700 p-6 rounded-md text-center">
