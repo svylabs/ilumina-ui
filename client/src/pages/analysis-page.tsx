@@ -237,7 +237,7 @@ function HistoryComponent({ submissionId }: { submissionId: string }) {
             </>
           ) : (
             <>
-              <RefreshCcw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </>
           )}
@@ -258,7 +258,7 @@ function HistoryComponent({ submissionId }: { submissionId: string }) {
         </div>
       ) : historyLogs.length === 0 ? (
         <div className="text-center py-10 text-gray-400">
-          <History className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <HistoryIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>No history logs available for this submission.</p>
         </div>
       ) : (
@@ -2407,6 +2407,12 @@ All test accounts configured with appropriate initial balances
     status: "pending",
     link: "/results",
     linkText: "View Detailed Results",
+  },
+  {
+    id: "history",
+    title: "History",
+    description: "View submission history and step execution logs",
+    status: "pending",
     output: `// Simulation Results
 Running 4 test scenarios...
 
