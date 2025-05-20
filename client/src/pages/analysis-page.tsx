@@ -5220,14 +5220,16 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                       
                       ) : currentStep.id === "history" ? (
                         // Show history data directly instead of using iframe to avoid auth issues
+                        // No need to check analysis step status for history, always display it
                         <div className="py-4">
                           {id ? (
+                            // We're passing the project ID here, the HistoryComponent will handle conversion
                             <HistoryComponent submissionId={id.toString()} />
                           ) : (
                             <div className="text-center py-10 border border-gray-600 rounded">
                               <div className="mx-auto h-12 w-12 text-gray-400 mb-2">📋</div>
-                              <h3 className="text-lg font-medium text-gray-300">Submission ID Not Available</h3>
-                              <p className="text-sm text-gray-500">Cannot fetch history without a submission ID.</p>
+                              <h3 className="text-lg font-medium text-gray-300">Project ID Not Available</h3>
+                              <p className="text-sm text-gray-500">Cannot fetch history without a project ID.</p>
                             </div>
                           )}
                         </div>
