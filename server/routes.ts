@@ -148,52 +148,56 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
-  // Debug deployment script endpoint
-  app.get("/api/debug-deploy-script/:submissionId", async (req, res) => {
-    const { submissionId } = req.params;
+  // API endpoint for analyze operations including debugging deployment scripts
+  app.post("/api/analyze", async (req, res) => {
+    const { submission_id, step } = req.body;
     
-    if (!submissionId) {
-      return res.status(400).json({ message: "Missing submission ID" });
+    if (!submission_id) {
+      return res.status(400).json({ message: "Missing submission_id parameter" });
+    }
+    
+    if (!step) {
+      return res.status(400).json({ message: "Missing step parameter" });
     }
     
     try {
-      // Call the external API to debug the deployment script - using POST request with required parameters
-      const debugResponse = await callExternalIluminaAPI(`/analyze`, 'POST', {
-        submission_id: submissionId,
-        step: 'debug_deploy_script'
+      // Call the external API with the provided parameters
+      const analyzeResponse = await callExternalIluminaAPI(`/analyze`, 'POST', {
+        submission_id,
+        step
       });
       
-      if (!debugResponse.ok) {
+      if (!analyzeResponse.ok) {
         try {
-          const errorText = await debugResponse.text();
-          console.error(`Error debugging deployment script: ${debugResponse.status} ${errorText}`);
-          return res.status(debugResponse.status).json({ 
-            message: "Failed to debug deployment script", 
+          const errorText = await analyzeResponse.text();
+          console.error(`Error in analyze operation: ${analyzeResponse.status} ${errorText}`);
+          return res.status(analyzeResponse.status).json({ 
+            message: `Failed to execute ${step} operation`, 
             details: errorText 
           });
         } catch (textErr) {
           // If we can't read the response text (e.g., already consumed)
-          console.error(`Error debugging deployment script: ${debugResponse.status} (Could not read error details)`);
-          return res.status(debugResponse.status).json({ 
-            message: "Failed to debug deployment script" 
+          console.error(`Error in analyze operation: ${analyzeResponse.status} (Could not read error details)`);
+          return res.status(analyzeResponse.status).json({ 
+            message: `Failed to execute ${step} operation` 
           });
         }
       }
       
       // Return success response
       try {
-        const responseData = await debugResponse.json();
+        const responseData = await analyzeResponse.json();
         return res.status(200).json(responseData);
       } catch (jsonErr) {
         // If we can't parse JSON, return a generic success message
         return res.status(200).json({ 
-          message: "Debug process started successfully" 
+          message: `Operation ${step} started successfully` 
         });
       }
     } catch (error) {
-      console.error("Error calling debug deploy script API:", error);
+      console.error(`Error calling analyze API with step ${step}:`, error);
       return res.status(500).json({ 
-        message: "Internal server error debugging deployment script", 
+        message: `Internal server error executing ${step} operation`, 
         error: error.message 
       });
     }

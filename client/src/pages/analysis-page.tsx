@@ -3146,7 +3146,17 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                         className="bg-blue-900/30 border-blue-700 text-blue-300 hover:bg-blue-900/60 hover:text-blue-200"
                         onClick={async () => {
                           try {
-                            const response = await fetch(`/api/debug-deploy-script/${submissionId}`);
+                            // Make a POST request to the analyze endpoint with correct parameters
+                            const response = await fetch('/api/analyze', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                submission_id: submissionId,
+                                step: 'debug_deploy_script'
+                              })
+                            });
                             if (response.ok) {
                               toast({
                                 title: "Debug Started",
