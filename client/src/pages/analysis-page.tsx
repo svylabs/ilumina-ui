@@ -2259,6 +2259,48 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
             }
           }
           
+          // Check for all deployment-related steps in completed_steps
+          if (details.data.completed_steps) {
+            // Check for all deployment-related steps that might be in progress
+            const verificationStep = details.data.completed_steps.find((step: any) => 
+              step.step === "verify_deployment_script");
+            
+            const debugStep = details.data.completed_steps.find((step: any) => 
+              step.step === "debug_deployment_script");
+            
+            const analyzeDeploymentStep = details.data.completed_steps.find((step: any) => 
+              step.step === "analyze_deployment");
+            
+            const implementDeploymentStep = details.data.completed_steps.find((step: any) => 
+              step.step === "implement_deployment_script");
+            
+            // Set the in-progress status for showing spinner for verification
+            if (verificationStep) {
+              setIsVerifyInProgress(verificationStep.status === "in_progress");
+              console.log("Verification status:", verificationStep.status);
+            }
+            
+            // Set the in-progress status for showing spinner for debug
+            if (debugStep) {
+              setIsDebugInProgress(debugStep.status === "in_progress");
+              console.log("Debug status:", debugStep.status);
+            }
+            
+            // Also check if any other deployment-related steps are in progress
+            // to show the spinner in the deployment section header
+            const isAnyDeploymentStepInProgress = [
+              verificationStep, 
+              debugStep, 
+              analyzeDeploymentStep, 
+              implementDeploymentStep
+            ].some(step => step && step.status === "in_progress");
+            
+            if (isAnyDeploymentStepInProgress) {
+              // Set either debug or verify to true to show the spinner
+              setIsDebugInProgress(true);
+            }
+          }
+          
           // Check for older format with submissionData.<step>.log
           if (details.data.deployment_implementation?.log) {
             console.log("Found legacy format deployment_implementation.log:", 
@@ -3156,7 +3198,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
                               },
                               body: JSON.stringify({
                                 submission_id: submissionId,
-                                step: 'debug_deploy_script'
+                                step: 'debug_deployment_script'
                               })
                             });
                             if (response.ok) {
