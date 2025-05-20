@@ -45,15 +45,20 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
     setError(null);
     
     try {
+      console.log(`Fetching history data for submission: ${submissionId}`);
       const response = await fetch(`/api/submission-history/${submissionId}`);
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`History API error (${response.status}): ${errorText}`);
         throw new Error(errorText || `Failed to fetch history (${response.status})`);
       }
       
       const data = await response.json();
+      console.log("History API response:", data);
+      
       if (data.success && data.history && Array.isArray(data.history)) {
+        console.log(`Received ${data.history.length} history entries`);
         // Sort history logs by timestamp in descending order (newest first)
         const sortedHistory = [...data.history].sort((a, b) => {
           const dateA = new Date(a.executed_at || a.created_at);
@@ -63,6 +68,7 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
         
         setHistoryLogs(sortedHistory);
       } else {
+        console.log("No history entries found or invalid format");
         setHistoryLogs([]);
       }
     } catch (err) {
