@@ -164,17 +164,32 @@ export function registerRoutes(app: Express): Server {
       });
       
       if (!debugResponse.ok) {
-        const errorText = await debugResponse.text();
-        console.error(`Error debugging deployment script: ${debugResponse.status} ${errorText}`);
-        return res.status(debugResponse.status).json({ 
-          message: "Failed to debug deployment script", 
-          details: errorText 
-        });
+        try {
+          const errorText = await debugResponse.text();
+          console.error(`Error debugging deployment script: ${debugResponse.status} ${errorText}`);
+          return res.status(debugResponse.status).json({ 
+            message: "Failed to debug deployment script", 
+            details: errorText 
+          });
+        } catch (textErr) {
+          // If we can't read the response text (e.g., already consumed)
+          console.error(`Error debugging deployment script: ${debugResponse.status} (Could not read error details)`);
+          return res.status(debugResponse.status).json({ 
+            message: "Failed to debug deployment script" 
+          });
+        }
       }
       
       // Return success response
-      const responseData = await debugResponse.json().catch(() => ({}));
-      return res.status(200).json(responseData);
+      try {
+        const responseData = await debugResponse.json();
+        return res.status(200).json(responseData);
+      } catch (jsonErr) {
+        // If we can't parse JSON, return a generic success message
+        return res.status(200).json({ 
+          message: "Debug process started successfully" 
+        });
+      }
     } catch (error) {
       console.error("Error calling debug deploy script API:", error);
       return res.status(500).json({ 
