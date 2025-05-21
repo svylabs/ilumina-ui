@@ -3929,6 +3929,11 @@ export default function AnalysisPage() {
                     return "Analysis complete";
                   }
                   
+                  // Special case for History tab - don't show "Ready for analysis"
+                  if (currentStep.id === "history") {
+                    return "View analysis history";
+                  }
+                  
                   // Default state for pending
                   return "Ready for analysis";
                 })()}
