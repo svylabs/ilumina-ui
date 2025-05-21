@@ -208,44 +208,9 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
   useEffect(() => {
     if (submissionId) {
       fetchHistoryData();
-      
-      // Auto-refresh if any log entry has 'in_progress' status
-      const intervalId = setInterval(() => {
-        if (historyLogs.some(log => log.status === "in_progress")) {
-          // Use a silent refresh without setting loading state
-          const silentRefresh = async () => {
-            if (!submissionId) return;
-            
-            try {
-              const response = await fetch(`/api/submission-history/${submissionId}`, {
-                credentials: 'include',
-                headers: { 'Accept': 'application/json' }
-              });
-              
-              if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.history && Array.isArray(data.history) && data.history.length > 0) {
-                  const sortedHistory = [...data.history].sort((a, b) => {
-                    const dateA = new Date(a.executed_at || a.created_at);
-                    const dateB = new Date(b.executed_at || b.created_at);
-                    return dateB.getTime() - dateA.getTime();
-                  });
-                  
-                  setHistoryLogs(sortedHistory);
-                }
-              }
-            } catch (err) {
-              console.error("Error in silent refresh:", err);
-            }
-          };
-          
-          silentRefresh();
-        }
-      }, 5000);
-      
-      return () => clearInterval(intervalId);
+      // No auto-refresh needed - user will manually refresh when needed
     }
-  }, [submissionId]);
+  }, [fetchHistoryData, submissionId]);
   
   // Format step name for display
   const formatStepName = (step: string): string => {
