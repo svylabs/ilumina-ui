@@ -303,64 +303,6 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
   
   return (
     <div className="space-y-6">
-      {/* Debug info panel */}
-      <div className="bg-gray-850 border border-gray-700 rounded-md p-4 mb-4">
-        <h3 className="font-semibold text-blue-400 mb-2">Debug Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
-          <div><span className="text-gray-400">Submission ID:</span> <span className="text-white">{submissionId || "None"}</span></div>
-          <div><span className="text-gray-400">Logs Count:</span> <span className="text-white">{historyLogs.length}</span></div>
-          <div><span className="text-gray-400">Loading:</span> <span className={isLoading ? "text-yellow-400" : "text-green-400"}>{isLoading ? "Yes" : "No"}</span></div>
-          <div><span className="text-gray-400">Error:</span> <span className={error ? "text-red-400" : "text-green-400"}>{error ? "Yes" : "No"}</span></div>
-          <div className="col-span-2"><span className="text-gray-400">Status:</span> <span className="text-white">{
-            error ? "Error: " + error :
-            isLoading ? "Loading..." :
-            historyLogs.length === 0 ? "No history data" :
-            "Displaying " + historyLogs.length + " history items"
-          }</span></div>
-        </div>
-        <div className="mt-3 flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={fetchHistoryData}
-            disabled={isLoading}
-          >
-            <RefreshCw className="mr-2 h-3 w-3" />
-            Refresh Data
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // Direct API call for testing
-              fetch(`/api/submission-history/${submissionId}`, {
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-              })
-              .then(res => {
-                console.log("TEST API Response:", res.status, res.statusText);
-                return res.text();
-              })
-              .then(text => {
-                try {
-                  console.log("TEST API Raw response:", text.substring(0, 500) + (text.length > 500 ? "..." : ""));
-                  const data = JSON.parse(text);
-                  console.log("TEST API Parsed data:", data);
-                } catch (e) {
-                  console.error("TEST API Parse error:", e);
-                }
-              })
-              .catch(e => console.error("TEST API Fetch error:", e));
-            }}
-          >
-            Test API
-          </Button>
-        </div>
-      </div>
-
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-blue-400">Submission History</h2>
         <Button 

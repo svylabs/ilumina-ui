@@ -3931,7 +3931,7 @@ export default function AnalysisPage() {
                       return "Ready to run simulations";
                     }
                     
-                    return "Analysis complete";
+                    return "View Progress";
                   }
                   
                   // Special case for History tab - don't show "Ready for analysis"
