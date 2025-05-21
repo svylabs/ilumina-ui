@@ -3637,6 +3637,11 @@ export default function AnalysisPage() {
   };
   
   const getStepStatus = (stepId: string): StepStatus => {
+    // Special case for history tab - always consider it completed since it's just a view
+    if (stepId === "history") {
+      return "completed";
+    }
+    
     // Special case for simulations step - if deployment is verified, mark it as completed
     if (stepId === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps)) {
       return "completed";
