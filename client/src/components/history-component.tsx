@@ -333,7 +333,7 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
                   </div>
                 )}
                 
-                {(log.step_metadata || log.metadata) && (
+                {(log.step_metadata || log.metadata) && log.status !== "in_progress" && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-300 mb-1">Metadata:</h4>
                     {renderMetadata(log.step, log.step_metadata || log.metadata)}
