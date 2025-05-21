@@ -2961,13 +2961,13 @@ export function registerRoutes(app: Express): Server {
                   source: "external_api"
                 });
               } else {
-                console.log(`No history entries found in external API, using mock data`);
-                // Fallback to mock data
+                console.log(`No history entries found in external API, returning empty history array`);
+                // Return empty array instead of mock data
                 return res.json({ 
                   success: true, 
                   submission_id: submissionId,
-                  history: mockHistoryData,
-                  source: "mock_data"
+                  history: [],
+                  source: "external_api"
                 });
               }
             } catch (parseError) {
