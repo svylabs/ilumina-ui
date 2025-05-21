@@ -2908,6 +2908,29 @@ export function registerRoutes(app: Express): Server {
                 historyLogs = submissionData.history;
                 console.log(`Found direct history array with ${historyLogs.length} entries`);
               }
+              // Check for completed_steps array in the submission data
+              else if (submissionData.completed_steps && Array.isArray(submissionData.completed_steps)) {
+                console.log(`Found completed_steps array with ${submissionData.completed_steps.length} entries`);
+                console.log('Sample completed_step data:', JSON.stringify(submissionData.completed_steps[0]));
+                
+                try {
+                  // Convert completed_steps to history logs format
+                  historyLogs = submissionData.completed_steps.map((step, index) => {
+                    return {
+                      id: `cs-${index}`,
+                      created_at: step.updated_at || new Date().toISOString(),
+                      executed_at: step.updated_at || new Date().toISOString(),
+                      step: step.step || "unknown_step",
+                      status: step.status === "success" ? "completed" : step.status || "unknown",
+                      details: `Completed step: ${step.step || "unknown"}`,
+                    };
+                  });
+                  console.log(`Converted ${historyLogs.length} entries from completed_steps to history format`);
+                  console.log('Sample converted history entry:', JSON.stringify(historyLogs[0]));
+                } catch (error) {
+                  console.error('Error converting completed_steps to history format:', error);
+                }
+              }
               // If no history array, extract from the steps data
               else if (submissionData.steps && typeof submissionData.steps === 'object') {
                 console.log("Extracting history from steps data");
