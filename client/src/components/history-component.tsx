@@ -307,41 +307,64 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
           <p className="text-sm text-gray-500">No history logs are available for this submission.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="relative pl-8 before:content-[''] before:absolute before:left-[7px] before:top-0 before:h-full before:w-0.5 before:bg-blue-600 before:bg-opacity-30">
           {historyLogs.map((log, index) => (
-            <Card key={log.id || index} className="bg-gray-800 border-gray-700">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-md font-medium text-white">
-                      {formatStepName(log.step)}
-                    </CardTitle>
-                    <CardDescription>
-                      {formatTimestamp(log.executed_at || log.created_at)}
-                    </CardDescription>
+            <div key={log.id || index} className={`relative mb-8 ${index === historyLogs.length - 1 ? "" : ""}`}>
+              {/* Timeline dot */}
+              <div 
+                className={`absolute -left-[10px] top-1 w-5 h-5 rounded-full border-4 ${
+                  log.status === "completed" || log.status === "success" 
+                    ? "bg-green-600 border-green-400" 
+                    : log.status === "in_progress" 
+                      ? "bg-blue-600 border-blue-400 animate-pulse" 
+                      : log.status === "failed" || log.status === "error"
+                        ? "bg-red-600 border-red-400"
+                        : "bg-gray-600 border-gray-400"
+                }`}
+              />
+
+              {/* Timeline content */}
+              <div className="bg-gray-800 border border-gray-700 rounded-md overflow-hidden ml-4">
+                <div className="p-4 pb-3 border-b border-gray-700">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-md font-medium text-white">
+                        {formatStepName(log.step)}
+                      </h3>
+                      <p className="text-xs text-gray-400">
+                        {formatTimestamp(log.executed_at || log.created_at)}
+                      </p>
+                    </div>
+                    <div>{getStatusBadge(log.status)}</div>
                   </div>
-                  <div>{getStatusBadge(log.status)}</div>
                 </div>
-              </CardHeader>
-              
-              <CardContent>
-                {log.user_prompt && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-300 mb-1">User Prompt:</h4>
-                    <p className="text-sm text-gray-400 whitespace-pre-wrap">
-                      {log.user_prompt}
-                    </p>
-                  </div>
-                )}
-                
-                {(log.step_metadata || log.metadata) && log.status !== "in_progress" && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-300 mb-1">Metadata:</h4>
-                    {renderMetadata(log.step, log.step_metadata || log.metadata)}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
+                <div className="px-4 py-3">
+                  {log.user_prompt && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-gray-300 mb-1">User Prompt:</h4>
+                      <p className="text-sm text-gray-400 whitespace-pre-wrap">
+                        {log.user_prompt}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {log.details && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-gray-300 mb-1">Details:</h4>
+                      <p className="text-sm text-gray-400">{log.details}</p>
+                    </div>
+                  )}
+                  
+                  {(log.step_metadata || log.metadata) && log.status !== "in_progress" && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-300 mb-1">Metadata:</h4>
+                      {renderMetadata(log.step, log.step_metadata || log.metadata)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}
