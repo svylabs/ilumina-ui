@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import * as timeago from "timeago.js";
 import { 
   Card, 
   CardContent, 
@@ -220,11 +221,11 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
       .join(' ');
   };
   
-  // Format timestamp to human-readable format
+  // Format timestamp to human-readable relative time
   const formatTimestamp = (timestamp: string): string => {
     try {
       const date = new Date(timestamp);
-      return format(date, "MMM d, yyyy h:mm a");
+      return timeago.format(date); // Returns relative time like "2 hours ago"
     } catch (e) {
       return timestamp;
     }

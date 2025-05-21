@@ -73,6 +73,7 @@
     "stripe": "^17.6.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "timeago.js": "^4.0.2",
     "uuid": "^11.1.0",
     "vaul": "^1.1.0",
     "wouter": "^3.3.5",
