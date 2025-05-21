@@ -2886,101 +2886,57 @@ export function registerRoutes(app: Express): Server {
         // Try to get data from external API - we're using the direct submission endpoint
         // This endpoint is known to work for other operations
         console.log(`Calling external API for history with submission ID: ${submissionId}`);
-        const apiResponse = await callExternalIluminaAPI(`/api/submission/${submissionId}`);
+        const apiResponse = await callExternalIluminaAPI(`/api/submission/${submissionId}/history`);
         console.log(`External API response status: ${apiResponse.status}`);
         
         if (apiResponse.ok) {
           try {
-            // Process the response data - this is a full submission data
+            // Process the response data - this should be history entries directly
             const responseText = await apiResponse.text();
             console.log(`External API response text (first 150 chars): ${responseText.substring(0, 150)}...`);
             
             try {
-              // Try to parse the submission data as JSON
-              const submissionData = JSON.parse(responseText);
-              console.log(`Successfully parsed submission data, type: ${typeof submissionData}`);
+              // Try to parse the history data as JSON
+              const historyData = JSON.parse(responseText);
+              console.log(`Successfully parsed history data, type: ${typeof historyData}`);
               
-              // Extract history logs from the submission data
+              // Extract history logs from the response
               let historyLogs = [];
               
-              // First check if there's a specific history array in the data
-              if (submissionData.history && Array.isArray(submissionData.history)) {
-                historyLogs = submissionData.history;
+              // Check if the response is directly an array of history entries
+              if (Array.isArray(historyData)) {
+                historyLogs = historyData;
                 console.log(`Found direct history array with ${historyLogs.length} entries`);
               }
-              // Check for completed_steps array in the submission data
-              else if (submissionData.completed_steps && Array.isArray(submissionData.completed_steps)) {
-                console.log(`Found completed_steps array with ${submissionData.completed_steps.length} entries`);
-                console.log('Sample completed_step data:', JSON.stringify(submissionData.completed_steps[0]));
-                
-                try {
-                  // Convert completed_steps to history logs format
-                  historyLogs = submissionData.completed_steps.map((step, index) => {
-                    // For time calculation, create dates at different times for clear display
-                    const baseDate = new Date();
-                    const createdDate = new Date(baseDate);
-                    // Offset by index to ensure chronological order, each 10 minutes apart
-                    createdDate.setMinutes(createdDate.getMinutes() - (submissionData.completed_steps.length - index) * 10);
-                    const executedDate = new Date(createdDate);
-                    executedDate.setMinutes(executedDate.getMinutes() + 1); // Execution happened 1 minute after creation
-                    
-                    // Get step details based on step type
-                    let details = "";
-                    switch(step.step) {
-                      case "analyze_project": 
-                        details = "Successfully analyzed project structure and code."; 
-                        break;
-                      case "analyze_actors": 
-                        details = "Identified key actors and actions in the contract system."; 
-                        break;
-                      case "analyze_deployment": 
-                        details = "Created deployment instructions based on contract analysis."; 
-                        break;
-                      case "implement_deployment_script": 
-                        details = "Generated deployment script for the smart contract system."; 
-                        break;
-                      case "verify_deployment_script": 
-                        details = "Verified deployment script execution in test environment."; 
-                        break;
-                      default: 
-                        details = `Completed step: ${step.step || "unknown"}`;
-                    }
-                    
-                    return {
-                      id: `cs-${index}`,
-                      created_at: step.updated_at || createdDate.toISOString(),
-                      executed_at: step.updated_at || executedDate.toISOString(),
-                      step: step.step || "unknown_step",
-                      status: step.status === "success" ? "completed" : step.status || "unknown",
-                      details: details,
-                    };
-                  });
-                  console.log(`Converted ${historyLogs.length} entries from completed_steps to history format`);
-                  console.log('Sample converted history entry:', JSON.stringify(historyLogs[0]));
-                } catch (error) {
-                  console.error('Error converting completed_steps to history format:', error);
-                }
+              // Check if the response is an object with a 'history' array property
+              else if (historyData.history && Array.isArray(historyData.history)) {
+                historyLogs = historyData.history;
+                console.log(`Found history array in response with ${historyLogs.length} entries`);
               }
-              // If no history array, extract from the steps data
-              else if (submissionData.steps && typeof submissionData.steps === 'object') {
-                console.log("Extracting history from steps data");
-                
-                // Convert steps data to history logs format
-                const stepsData = submissionData.steps;
-                for (const [stepName, stepData] of Object.entries(stepsData)) {
-                  if (stepData && typeof stepData === 'object') {
-                    // Create history entry from step data
-                    historyLogs.push({
-                      id: `step-${stepName}`,
-                      created_at: stepData.startTime || new Date().toISOString(),
-                      executed_at: stepData.startTime || new Date().toISOString(),
-                      step: stepName,
-                      status: stepData.status || "unknown",
-                      details: stepData.details || `Step: ${stepName}`
-                    });
+              // Check if the response is an object with an 'entries' array property
+              else if (historyData.entries && Array.isArray(historyData.entries)) {
+                historyLogs = historyData.entries;
+                console.log(`Found entries array in response with ${historyLogs.length} entries`);
+              }
+              // Check if the response is an object with a 'logs' array property
+              else if (historyData.logs && Array.isArray(historyData.logs)) {
+                historyLogs = historyData.logs;
+                console.log(`Found logs array in response with ${historyLogs.length} entries`);
+              }
+              // Check for expected format even if the response property names are different
+              else {
+                for (const key in historyData) {
+                  if (Array.isArray(historyData[key])) {
+                    const possibleLogs = historyData[key];
+                    // Check if array items look like history entries
+                    if (possibleLogs.length > 0 && 
+                        (possibleLogs[0].step || possibleLogs[0].status || possibleLogs[0].created_at)) {
+                      historyLogs = possibleLogs;
+                      console.log(`Found potential history array in key '${key}' with ${historyLogs.length} entries`);
+                      break;
+                    }
                   }
                 }
-                console.log(`Created ${historyLogs.length} history entries from steps data`);
               }
               
               // Normalize the data format
