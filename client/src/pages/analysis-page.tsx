@@ -5197,55 +5197,12 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         />
                       
                       ) : currentStep.id === "history" ? (
-                        // Show history data directly with explicit fallback data
                         <div className="py-4">
-                          <div className="bg-gray-800 p-4 rounded-md mb-6">
-                            <h3 className="text-lg font-medium text-blue-400 mb-3">History Component Debug Info</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
-                              <div className="text-sm"><span className="text-gray-400">Submission ID:</span> <span className="text-white font-mono">{submissionId || "Not available"}</span></div>
-                              <div className="text-sm"><span className="text-gray-400">Project ID:</span> <span className="text-white font-mono">{id || "Not available"}</span></div>
-                              <div className="text-sm"><span className="text-gray-400">Current Step:</span> <span className="text-white font-mono">{currentStep.id}</span></div>
-                              <div className="text-sm"><span className="text-gray-400">Timestamp:</span> <span className="text-white font-mono">{new Date().toISOString()}</span></div>
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              <button
-                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                                onClick={() => {
-                                  console.log("Manually refreshing history data");
-                                  // Force component re-render by updating state
-                                  setSelectedStep("files");
-                                  setTimeout(() => setSelectedStep("history"), 100);
-                                }}
-                              >
-                                Refresh History View
-                              </button>
-                              
-                              <button
-                                className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700"
-                                onClick={() => {
-                                  console.log("Testing direct API call");
-                                  // Test the API endpoint directly
-                                  fetch(`/api/submission-history/${submissionId || id}`, {
-                                    credentials: 'include',
-                                    headers: { 'Accept': 'application/json' }
-                                  })
-                                  .then(res => {
-                                    console.log("API response:", res.status, res.statusText);
-                                    return res.text();
-                                  })
-                                  .then(data => console.log("API data:", data))
-                                  .catch(err => console.error("API error:", err));
-                                }}
-                              >
-                                Test API
-                              </button>
-                            </div>
-                          </div>
+                          <h3 className="text-lg font-medium text-blue-400 mb-2">Submission History</h3>
+                          <p className="text-sm text-gray-400 mb-4">View detailed history of this submission's analysis process</p>
                           
-                          {/* Fallback to built-in history data if needed */}
-                          {(submissionId || id) ? (
-                            <HistoryComponent submissionId={submissionId || id?.toString()} />
+                          {submissionId || id ? (
+                            <HistoryComponent submissionId={submissionId || id?.toString() || ""} />
                           ) : (
                             <div className="text-center py-10 border border-gray-600 rounded">
                               <div className="mx-auto h-12 w-12 text-gray-400 mb-2">📋</div>
