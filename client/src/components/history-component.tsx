@@ -183,8 +183,9 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
       }
       
       // If we don't have any data, show an empty array
-      console.log("No history entries found in external API");
+      console.log("No history entries found in external API, returning empty history array");
       setHistoryLogs([]);
+      setIsLoading(false);
       
     } catch (err) {
       console.error("Error in fetchHistoryData:", err);
