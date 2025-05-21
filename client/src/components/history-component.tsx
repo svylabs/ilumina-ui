@@ -182,36 +182,9 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
         console.error("Error fetching from analysis API:", analysisError);
       }
       
-      // If we still don't have data, create some based on common workflow steps
-      const defaultHistoryLogs: HistoryLogEntry[] = [
-        {
-          id: "analyze-project",
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          executed_at: new Date(Date.now() - 3550000).toISOString(),
-          step: "analyze_project",
-          status: "completed",
-          details: "Project analysis completed successfully."
-        },
-        {
-          id: "analyze-actors",
-          created_at: new Date(Date.now() - 3000000).toISOString(),
-          executed_at: new Date(Date.now() - 2950000).toISOString(),
-          step: "analyze_actors",
-          status: "completed",
-          details: "Actors analysis completed successfully."
-        },
-        {
-          id: "analyze-deployment",
-          created_at: new Date(Date.now() - 2400000).toISOString(),
-          executed_at: new Date(Date.now() - 2350000).toISOString(),
-          step: "analyze_deployment",
-          status: "completed",
-          details: "Deployment analysis completed successfully."
-        }
-      ];
-      
-      console.log("Using default history logs");
-      setHistoryLogs(defaultHistoryLogs);
+      // If we don't have any data, show an empty array
+      console.log("No history entries found in external API");
+      setHistoryLogs([]);
       
     } catch (err) {
       console.error("Error in fetchHistoryData:", err);
