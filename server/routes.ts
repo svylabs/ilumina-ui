@@ -47,7 +47,8 @@ async function callExternalIluminaAPI(endpoint: string, method: 'GET' | 'POST' =
   // For the Ilumina API, we need to handle the URL differently
   // Base URL should not include /api for external calls
   const baseUrl = (process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app').replace(/\/api$/, '');
-  const url = joinPath(baseUrl, '/api' + endpoint);
+  // Fix the URL formation to avoid duplicate 'api' in path
+  const url = joinPath(baseUrl, endpoint.startsWith('/api/') ? endpoint : '/api' + endpoint);
   
   console.log(`Calling external Ilumina API: ${method} ${url}`);
   
