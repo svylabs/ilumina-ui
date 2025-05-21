@@ -2185,7 +2185,6 @@ All test accounts configured with appropriate initial balances
     title: "History",
     description: "View submission history and step execution logs",
     status: "pending"
-    // No output string for history - it's handled separately by HistoryComponent
   }
 ];
 
@@ -5193,19 +5192,26 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         />
                       
                       ) : currentStep.id === "history" ? (
-                        // Show history data directly
-                        // Always display it, using submissionId if available
+                        // Show history data directly - more resilient to different ID formats
                         <div className="py-4">
-                          {(submissionId || id) ? (
-                            // Use actual submission ID if available, otherwise use project ID
-                            <HistoryComponent submissionId={submissionId || id?.toString()} />
-                          ) : (
-                            <div className="text-center py-10 border border-gray-600 rounded">
-                              <div className="mx-auto h-12 w-12 text-gray-400 mb-2">📋</div>
-                              <h3 className="text-lg font-medium text-gray-300">ID Not Available</h3>
-                              <p className="text-sm text-gray-500">Cannot fetch history without a project or submission ID.</p>
-                            </div>
-                          )}
+                          {(() => {
+                            console.log("History tab selected - Submission ID:", submissionId, "Project ID:", id);
+                            
+                            if (submissionId || id) {
+                              // Use actual submission ID if available, otherwise use project ID
+                              const idToUse = submissionId || id?.toString();
+                              console.log("Using ID for history component:", idToUse);
+                              return <HistoryComponent submissionId={idToUse} />;
+                            } else {
+                              return (
+                                <div className="text-center py-10 border border-gray-600 rounded">
+                                  <div className="mx-auto h-12 w-12 text-gray-400 mb-2">📋</div>
+                                  <h3 className="text-lg font-medium text-gray-300">ID Not Available</h3>
+                                  <p className="text-sm text-gray-500">Cannot fetch history without a project or submission ID.</p>
+                                </div>
+                              );
+                            }
+                          })()}
                         </div>
                       
                       ) : currentStep.id === "test_setup" && getStepStatus(currentStep.id) === "completed" ? (
