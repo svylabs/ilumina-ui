@@ -2886,7 +2886,7 @@ export function registerRoutes(app: Express): Server {
         // Try to get data from external API - we're using the direct submission endpoint
         // This endpoint is known to work for other operations
         console.log(`Calling external API for history with submission ID: ${submissionId}`);
-        const apiResponse = await callExternalIluminaAPI(`/api/submission/${submissionId}`);
+        const apiResponse = await callExternalIluminaAPI(`/api/submission/${submissionId}/history`);
         console.log(`External API response status: ${apiResponse.status}`);
         
         if (apiResponse.ok) {
