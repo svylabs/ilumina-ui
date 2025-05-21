@@ -212,13 +212,40 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
       // Auto-refresh if any log entry has 'in_progress' status
       const intervalId = setInterval(() => {
         if (historyLogs.some(log => log.status === "in_progress")) {
-          fetchHistoryData();
+          // Use a silent refresh without setting loading state
+          const silentRefresh = async () => {
+            if (!submissionId) return;
+            
+            try {
+              const response = await fetch(`/api/submission-history/${submissionId}`, {
+                credentials: 'include',
+                headers: { 'Accept': 'application/json' }
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.history && Array.isArray(data.history) && data.history.length > 0) {
+                  const sortedHistory = [...data.history].sort((a, b) => {
+                    const dateA = new Date(a.executed_at || a.created_at);
+                    const dateB = new Date(b.executed_at || b.created_at);
+                    return dateB.getTime() - dateA.getTime();
+                  });
+                  
+                  setHistoryLogs(sortedHistory);
+                }
+              }
+            } catch (err) {
+              console.error("Error in silent refresh:", err);
+            }
+          };
+          
+          silentRefresh();
         }
       }, 5000);
       
       return () => clearInterval(intervalId);
     }
-  }, [fetchHistoryData, historyLogs, submissionId]);
+  }, [submissionId]);
   
   // Format step name for display
   const formatStepName = (step: string): string => {
@@ -317,7 +344,7 @@ export default function HistoryComponent({ submissionId }: { submissionId: strin
                     ? "bg-green-600 border-green-400" 
                     : log.status === "in_progress" 
                       ? "bg-blue-600 border-blue-400 animate-pulse" 
-                      : log.status === "failed" || log.status === "error"
+                      : log.status === "failed" 
                         ? "bg-red-600 border-red-400"
                         : "bg-gray-600 border-gray-400"
                 }`}
