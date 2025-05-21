@@ -2184,34 +2184,8 @@ All test accounts configured with appropriate initial balances
     id: "history",
     title: "History",
     description: "View submission history and step execution logs",
-    status: "pending",
-    output: `// Simulation Results
-Running 4 test scenarios...
-
-✓ Basic Trading Scenario
-  - Tokens minted successfully
-  - Trading functions working as expected
-  - Price impact calculations correct
-
-✓ Liquidity Provision Scenario
-  - Liquidity added successfully
-  - LP tokens minted at correct ratio
-  - Removing liquidity returns correct amounts
-
-✓ Staking Rewards Scenario
-  - Staking mechanism works correctly
-  - Rewards calculated properly based on time
-  - Withdrawal functionality verified
-
-✗ Attack Simulation Scenario
-  - VULNERABILITY FOUND: Price manipulation possible through flash loans
-  - VULNERABILITY FOUND: Missing slippage protection in swap functions
-  - RECOMMENDATION: Implement price oracle and slippage protection
-  - RECOMMENDATION: Add time-weighted average price (TWAP) mechanism
-
-Overall security score: 78/100
-Recommendations generated and available in full report.
-`
+    status: "pending"
+    // No output string for history - it's handled separately by HistoryComponent
   }
 ];
 
