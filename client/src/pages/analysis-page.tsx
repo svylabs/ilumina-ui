@@ -1536,9 +1536,29 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
               <div className="md:col-span-3 bg-gray-900/50 p-4 rounded-md border border-gray-700">
                 <h4 className="text-sm font-medium text-gray-300 mb-3">Actor Configuration</h4>
                 <div className="space-y-3">
-                  {analysis?.steps?.actors?.jsonData?.actors && analysis.steps.actors.jsonData.actors.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {analysis.steps.actors.jsonData.actors.map((actor: any, index: number) => (
+                  {(() => {
+                    // Use same actor data parsing logic as Actor Summary section
+                    let actorsData = { actors: [] };
+                    try {
+                      const actorsStep = analysis?.steps?.actors;
+                      if (actorsStep?.jsonData) {
+                        if (typeof actorsStep.jsonData.actors_summary === 'string') {
+                          try {
+                            actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+                          } catch (e) {
+                            console.error("Failed to parse actors_summary:", e);
+                          }
+                        } else {
+                          actorsData = actorsStep.jsonData;
+                        }
+                      }
+                    } catch (e) {
+                      console.error("Failed to parse actors data:", e);
+                    }
+
+                    return actorsData.actors && actorsData.actors.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {actorsData.actors.map((actor: any, index: number) => (
                         <div key={index} className="bg-gray-800/50 p-3 rounded-md">
                           <div className="flex items-center justify-between mb-2">
                             <div>
@@ -1572,10 +1592,16 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value.trim(), 10);
                                   if (!isNaN(val) && val >= 1 && val <= 50) {
-                                    setActorConfig(prev => ({
-                                      ...prev,
-                                      [actor.name]: val
-                                    }));
+                                    const currentTotal = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
+                                    const otherActorsTotal = currentTotal - (actorConfig[actor.name] || 1);
+                                    const newTotal = otherActorsTotal + val;
+                                    
+                                    if (newTotal <= 500) {
+                                      setActorConfig(prev => ({
+                                        ...prev,
+                                        [actor.name]: val
+                                      }));
+                                    }
                                   }
                                 }}
                                 disabled={isRunningSimulation}
@@ -1585,14 +1611,16 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                 type="button"
                                 onClick={() => {
                                   const currentCount = actorConfig[actor.name] || 1;
-                                  if (currentCount < 50) {
+                                  const currentTotal = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
+                                  
+                                  if (currentCount < 50 && currentTotal < 500) {
                                     setActorConfig(prev => ({
                                       ...prev,
                                       [actor.name]: currentCount + 1
                                     }));
                                   }
                                 }}
-                                disabled={isRunningSimulation || (actorConfig[actor.name] || 1) >= 50}
+                                disabled={isRunningSimulation || (actorConfig[actor.name] || 1) >= 50 || Object.values(actorConfig).reduce((sum, count) => sum + count, 0) >= 500}
                                 className="bg-gray-700 border border-gray-600 rounded-r-md px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 +
@@ -1602,22 +1630,49 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <div className="text-center p-4 text-gray-500 text-sm">
-                      No actors available for configuration
-                    </div>
-                  )}
+                      ) : (
+                        <div className="text-center p-4 text-gray-500 text-sm">
+                          No actors available for configuration
+                        </div>
+                      );
+                  })()}
                   
                   <div className="flex items-center justify-between pt-2 border-t border-gray-700">
                     <div className="text-xs text-gray-400">
-                      Total actors: {Object.values(actorConfig).reduce((sum, count) => sum + count, 0)}
+                      Total actors: {(() => {
+                        const total = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
+                        return total > 500 ? (
+                          <span className="text-red-400">{total} (max 500)</span>
+                        ) : (
+                          <span className="text-white">{total}</span>
+                        );
+                      })()}
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        if (analysis?.steps?.actors?.jsonData?.actors) {
+                        // Use same parsing logic as above
+                        let actorsData = { actors: [] };
+                        try {
+                          const actorsStep = analysis?.steps?.actors;
+                          if (actorsStep?.jsonData) {
+                            if (typeof actorsStep.jsonData.actors_summary === 'string') {
+                              try {
+                                actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+                              } catch (e) {
+                                console.error("Failed to parse actors_summary:", e);
+                              }
+                            } else {
+                              actorsData = actorsStep.jsonData;
+                            }
+                          }
+                        } catch (e) {
+                          console.error("Failed to parse actors data:", e);
+                        }
+                        
+                        if (actorsData.actors && actorsData.actors.length > 0) {
                           const resetConfig: {[actorName: string]: number} = {};
-                          analysis.steps.actors.jsonData.actors.forEach((actor: any) => {
+                          actorsData.actors.forEach((actor: any) => {
                             resetConfig[actor.name] = 1;
                           });
                           setActorConfig(resetConfig);
