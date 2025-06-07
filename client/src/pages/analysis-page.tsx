@@ -5084,7 +5084,7 @@ The deployment should initialize the contracts with test values and set me as th
                                                   <div className="space-y-4">
                                                     {actor.actions.map((action: any, i: number) => (
                                                       <Collapsible key={i}>
-                                                        <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between">
+                                                        <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between hover:bg-gray-600/50">
                                                           <div className="flex items-center gap-2">
                                                             <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
                                                             <span>{action.name}</span>
@@ -5093,9 +5093,9 @@ The deployment should initialize the contracts with test values and set me as th
                                                             <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
                                                               {action.contract_name}
                                                             </span>
-                                                            <Button size="sm" variant="outline" className="h-7 text-xs">
+                                                            <span className="text-xs px-3 py-1 border border-gray-600 rounded text-gray-300 bg-gray-800/50">
                                                               Modify
-                                                            </Button>
+                                                            </span>
                                                           </div>
                                                         </CollapsibleTrigger>
                                                         <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
