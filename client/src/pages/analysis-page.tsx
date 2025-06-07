@@ -320,9 +320,9 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
     if (methodLine !== undefined) {
       const codeContainer = document.querySelector(`#${uniqueContainerId}`);
       if (codeContainer) {
-        const lineHeight = 16; // approximate line height in pixels
-        // Scroll to show the function signature with some context above
-        const scrollPosition = Math.max(0, (methodLine - 1) * lineHeight);
+        const lineHeight = 20; // adjust for line numbers
+        // Scroll to show the function definition with context above
+        const scrollPosition = Math.max(0, (methodLine - 2) * lineHeight);
         codeContainer.scrollTop = scrollPosition;
       }
     }
@@ -367,15 +367,21 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
             id={uniqueContainerId}
             className="overflow-y-auto max-h-48"
           >
-            <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
+            <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap font-mono">
               {codeLines.map((line, index) => {
                 const isMethodLine = Object.values(methods).includes(index);
+                const lineNumber = index + 1;
                 return (
                   <div 
                     key={index} 
-                    className={isMethodLine ? 'bg-blue-900/30 px-1 rounded' : ''}
+                    className={`flex ${isMethodLine ? 'bg-blue-900/30 px-1 rounded' : ''}`}
                   >
-                    {line}
+                    <span className="text-gray-500 select-none mr-3 text-right w-8 flex-shrink-0">
+                      {lineNumber}
+                    </span>
+                    <span className="flex-1">
+                      {line}
+                    </span>
                   </div>
                 );
               })}
