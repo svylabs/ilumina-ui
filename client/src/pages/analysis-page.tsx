@@ -4628,14 +4628,30 @@ export default function AnalysisPage() {
                     return (
                       <>
                         <div>
-                          {analysis?.status === "success" || analysis?.status === "error" ? (
+                          {analysis?.status === "error" ? (
                             <>
-                              <span className={analysis?.status === "success" ? "text-green-300" : "text-red-300"}>
-                                {analysis?.status === "success" ? "Completed:" : "Failed at:"}
-                              </span>{" "}
+                              <span className="text-red-300">Failed at:</span>{" "}
                               <span className="text-white font-medium">
-                                {currentStep ? stepDisplayNames[currentStep] || currentStep : "Final Step"}
+                                {currentStep ? stepDisplayNames[currentStep] || currentStep : "Unknown Step"}
                               </span>
+                            </>
+                          ) : analysis?.status === "success" ? (
+                            <>
+                              {essentialStepsComplete ? (
+                                <>
+                                  <span className="text-green-300">Completed:</span>{" "}
+                                  <span className="text-white font-medium">
+                                    {currentStep ? stepDisplayNames[currentStep] || currentStep : "Final Step"}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-blue-300">Next Step:</span>{" "}
+                                  <span className="text-white font-medium">
+                                    {currentStep ? stepDisplayNames[currentStep] || currentStep : "Unknown"}
+                                  </span>
+                                </>
+                              )}
                             </>
                           ) : (
                             <>
