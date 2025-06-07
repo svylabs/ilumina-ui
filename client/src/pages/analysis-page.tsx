@@ -4675,16 +4675,15 @@ export default function AnalysisPage() {
                             <div className="text-xs font-medium text-blue-300 mb-2">Analysis Pipeline Progress</div>
                             {analysisFlow.map((step, index) => {
                               const isCompleted = (() => {
-                                const apiStepName = step === "analyze_project" ? "files" : 
-                                                   step === "analyze_actors" ? "actors" : 
-                                                   step === "analyze_deployment" ? "deployment" : 
-                                                   step;
+                                // Check if step is completed in completedSteps array (use original step name)
+                                const completedInArray = analysis?.completedSteps?.some(cs => cs.step === step);
                                 
-                                // Check if step is completed in completedSteps array
-                                const completedInArray = analysis?.completedSteps?.some(cs => cs.step === apiStepName);
-                                
-                                // Check if step status is "completed" in steps object
-                                const completedInSteps = analysis?.steps?.[apiStepName]?.status === "completed";
+                                // For backward compatibility, also check the steps object with UI mapping
+                                const uiStepName = step === "analyze_project" ? "files" : 
+                                                 step === "analyze_actors" ? "actors" : 
+                                                 step === "analyze_deployment" ? "deployment" : 
+                                                 step;
+                                const completedInSteps = analysis?.steps?.[uiStepName]?.status === "completed";
                                 
                                 return completedInArray || completedInSteps;
                               })();
