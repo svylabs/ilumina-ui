@@ -135,14 +135,19 @@ function ValidationRulesTab({ submissionId, contractName, functionName, action, 
 
   return (
     <div className="bg-black/40 p-3 rounded text-xs">
-      {realActionData?.action_detail?.pre_execution_parameter_generation_rules ? (
-        <div className="space-y-2">
-          <p className="text-yellow-300 mb-2">Parameter Generation Rules:</p>
-          <ul className="list-disc pl-5 text-yellow-400 space-y-1">
-            {realActionData.action_detail.pre_execution_parameter_generation_rules.map((rule, index) => (
-              <li key={index} className="text-xs">{rule}</li>
-            ))}
-          </ul>
+      {realActionData?.action_detail?.post_execution_contract_state_validation_rules ? (
+        <div className="space-y-3">
+          <p className="text-yellow-300 mb-2">Post-Execution Validation Rules:</p>
+          {realActionData.action_detail.post_execution_contract_state_validation_rules.map((category, categoryIndex) => (
+            <div key={categoryIndex} className="space-y-1">
+              <p className="text-blue-300 font-semibold">{category.category}:</p>
+              <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+                {category.rule_descriptions.map((rule, ruleIndex) => (
+                  <li key={ruleIndex} className="text-xs">{rule}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       ) : (
         <div>
