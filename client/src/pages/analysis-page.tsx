@@ -4544,13 +4544,20 @@ export default function AnalysisPage() {
                           <div className="mt-3 pt-3 border-t border-blue-500/30 space-y-2">
                             <div className="text-xs font-medium text-blue-300 mb-2">Analysis Pipeline Progress</div>
                             {analysisFlow.map((step, index) => {
-                              const isCompleted = analysis?.completedSteps?.some(cs => {
+                              const isCompleted = (() => {
                                 const apiStepName = step === "analyze_project" ? "files" : 
                                                    step === "analyze_snapshot" ? "actors" : 
                                                    step === "analyze_deployment" ? "deployment" : 
                                                    step;
-                                return cs.step === apiStepName;
-                              });
+                                
+                                // Check if step is completed in completedSteps array
+                                const completedInArray = analysis?.completedSteps?.some(cs => cs.step === apiStepName);
+                                
+                                // Check if step status is "completed" in steps object
+                                const completedInSteps = analysis?.steps?.[apiStepName]?.status === "completed";
+                                
+                                return completedInArray || completedInSteps;
+                              })();
                               const isCurrent = step === currentStep;
                               const completionDate = getStepCompletionDate(step);
                               
