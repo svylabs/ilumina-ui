@@ -267,6 +267,9 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
 }) {
   const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
   
+  // Extract the actual TypeScript code from the API response
+  const realCodeContent = codeData?.content;
+  
   console.log('ActionCodeTab COMPONENT RENDERED:', { submissionId, contractName, functionName, codeData, isLoading, error });
   console.log('Does codeData exist?', !!codeData);
   console.log('Does realCodeContent exist?', !!realCodeContent);
@@ -280,9 +283,6 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
       </div>
     );
   }
-
-  // Extract the actual TypeScript code from the API response
-  const realCodeContent = codeData?.content;
 
   return (
     <div className="bg-black/40 p-3 rounded text-xs max-h-64 overflow-y-auto">
