@@ -4444,22 +4444,18 @@ export default function AnalysisPage() {
           <div className="mb-6 bg-blue-900/30 border border-blue-500/50 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               {(() => {
-                // Check if all steps up to implement_all_actions are complete
-                const allMainStepsComplete = analysisFlow.every(step => {
-                  const apiStepName = step === "analyze_project" ? "files" : 
-                                     step === "analyze_actors" ? "actors" : 
-                                     step === "analyze_deployment" ? "deployment" : 
-                                     step;
-                  
-                  const completedInArray = analysis?.completedSteps?.some(cs => cs.step === apiStepName);
-                  const completedInSteps = analysis?.steps?.[apiStepName]?.status === "completed";
-                  
+                // Check if the essential steps for simulations are complete
+                // These are the steps that actually exist in the API and are needed for simulations
+                const essentialSteps = ["files", "actors", "deployment"];
+                const essentialStepsComplete = essentialSteps.every(stepName => {
+                  const completedInArray = analysis?.completedSteps?.some(cs => cs.step === stepName);
+                  const completedInSteps = analysis?.steps?.[stepName]?.status === "completed";
                   return completedInArray || completedInSteps;
                 });
 
                 if (analysis?.status === "error") {
                   return <XCircle className="h-5 w-5 text-red-400" />;
-                } else if (allMainStepsComplete || analysis?.status === "success") {
+                } else if (essentialStepsComplete && analysis?.status === "success") {
                   return <CheckCircle2 className="h-5 w-5 text-green-400" />;
                 } else {
                   return <Loader2 className="h-5 w-5 animate-spin text-blue-400" />;
@@ -4467,22 +4463,17 @@ export default function AnalysisPage() {
               })()}
               <div className="flex-1">
                 {(() => {
-                  // Check if all steps up to implement_all_actions are complete
-                  const allMainStepsComplete = analysisFlow.every(step => {
-                    const apiStepName = step === "analyze_project" ? "files" : 
-                                       step === "analyze_actors" ? "actors" : 
-                                       step === "analyze_deployment" ? "deployment" : 
-                                       step;
-                    
-                    const completedInArray = analysis?.completedSteps?.some(cs => cs.step === apiStepName);
-                    const completedInSteps = analysis?.steps?.[apiStepName]?.status === "completed";
-                    
+                  // Check if the essential steps for simulations are complete
+                  const essentialSteps = ["files", "actors", "deployment"];
+                  const essentialStepsComplete = essentialSteps.every(stepName => {
+                    const completedInArray = analysis?.completedSteps?.some(cs => cs.step === stepName);
+                    const completedInSteps = analysis?.steps?.[stepName]?.status === "completed";
                     return completedInArray || completedInSteps;
                   });
 
                   if (analysis?.status === "error") {
                     return <h3 className="text-red-400 font-medium">Analysis Failed</h3>;
-                  } else if (allMainStepsComplete || analysis?.status === "success") {
+                  } else if (essentialStepsComplete && analysis?.status === "success") {
                     return (
                       <>
                         <h3 className="text-green-400 font-medium">Analysis Complete</h3>
