@@ -5065,7 +5065,7 @@ The deployment should initialize the contracts with test values and set me as th
                                         <div className="space-y-4">
                                           {enhancedTestSetupData.actors.length > 0 ? (
                                             enhancedTestSetupData.actors.map((actor: any, index: number) => (
-                                              <Collapsible key={index} className="bg-gray-800 rounded-md">
+                                              <Collapsible key={index} className="bg-gray-800 rounded-md" open={index === 0}>
                                                 <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
                                                   <div>
                                                     <h4 className="text-lg font-medium text-blue-400 text-left">{actor.name}</h4>
@@ -5092,6 +5092,7 @@ The deployment should initialize the contracts with test values and set me as th
                                                           </div>
                                                         </CollapsibleTrigger>
                                                         <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
+                                                          {console.log('CollapsibleContent is rendering for action:', action.name)}
                                                           <div className="space-y-3">
                                                             <div>
                                                               <h5 className="text-sm font-medium text-blue-300 mb-2">Implementation</h5>
@@ -5113,7 +5114,7 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 </TabsList>
                                                                 
                                                                 <TabsContent value="summary" className="mt-0">
-                                                                  {console.log('Rendering Summary tab with:', { submissionId, contractName: action.contract_name, functionName: action.function_name })}
+                                                                  {console.log('Rendering Summary tab with:', { submissionId, contractName: action.contract_name, functionName: action.function_name, submissionIdExists: !!submissionId })}
                                                                   {submissionId ? (
                                                                     <ActionSummaryTab 
                                                                       submissionId={submissionId}
