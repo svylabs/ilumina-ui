@@ -2734,7 +2734,7 @@ function isDeploymentVerificationCompleted(completedSteps?: CompletedStep[]): bo
 // Updated analysis steps with new sequence
 const analysisSteps: AnalysisStep[] = [
   {
-    id: "files",
+    id: "analyze_project",
     title: "Analyze Project",
     description: "Analyzing repository structure and identifying smart contract files",
     status: "pending",
@@ -2756,7 +2756,7 @@ Compiler version: 0.8.17
 `
   },
   {
-    id: "actors",
+    id: "analyze_actors",
     title: "Analyze Actors",
     description: "Identifying potential actors and their interactions with the contracts",
     status: "pending",
@@ -4289,11 +4289,26 @@ export default function AnalysisPage() {
 
   // Map UI step IDs to API step names
   const getApiStepName = (stepId: string): string => {
-    return stepId === "files" ? "analyze_project" :
-      stepId === "actors" ? "analyze_actors" :
-      stepId === "test_setup" ? "simulation_setup" :
-      stepId === "deployment" ? "analyze_deployment" : // API uses analyze_deployment instead of deployment_instructions
-      stepId === "simulations" ? "run_simulation" : "";
+    console.log(`Getting API step name for stepId: ${stepId}`);
+    
+    // Direct mapping for API step names (if already correct API names)
+    if (stepId === "analyze_project" || stepId === "analyze_actors" || stepId === "analyze_deployment") {
+      console.log(`Returning existing API name: ${stepId}`);
+      return stepId;
+    }
+    
+    // Map UI names to API names
+    const mapping: Record<string, string> = {
+      "files": "analyze_project",
+      "actors": "analyze_actors", 
+      "deployment": "analyze_deployment",
+      "test_setup": "simulation_setup",
+      "simulations": "run_simulation"
+    };
+    
+    const apiName = mapping[stepId] || stepId;
+    console.log(`Mapped ${stepId} to API name: ${apiName}`);
+    return apiName;
   };
   
   // Map API step names to UI step IDs (inverse of getApiStepName)
