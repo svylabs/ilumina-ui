@@ -5118,7 +5118,8 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 </TabsList>
                                                                 
                                                                 <TabsContent value="summary" className="mt-0">
-                                                                  {console.log('Rendering Summary tab with:', { submissionId, contractName: action.contract_name, functionName: action.function_name, submissionIdExists: !!submissionId })}
+                                                                  {console.log('DEBUG: Rendering Summary tab with submissionId:', submissionId, 'Expected:', 'b2467fc4-e77a-4529-bcea-09c31cb2e8fe')}
+                                                                  {console.log('DEBUG: Contract/Function:', { contractName: action.contract_name, functionName: action.function_name })}
                                                                   {submissionId ? (
                                                                     <ActionSummaryTab 
                                                                       submissionId={submissionId}
