@@ -7624,13 +7624,14 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      const { submissionId, branch, numSimulations, simulationType, ...additionalParams } = req.body;
+      const { submissionId, branch, numSimulations, simulationType, actorConfig, ...additionalParams } = req.body;
       
       console.log("Run simulation request received:", { 
         submissionId, 
         branch: branch || "main", 
         numSimulations: numSimulations || 1,
-        simulationType: simulationType || "run"
+        simulationType: simulationType || "run",
+        actorConfig: actorConfig || {}
       });
       
       if (!submissionId) {
@@ -7759,6 +7760,11 @@ export function registerRoutes(app: Express): Server {
       // Add description if provided, but only if it's a non-empty string
       if (additionalParams.description && typeof additionalParams.description === 'string' && additionalParams.description.trim() !== '') {
         apiPayload.description = additionalParams.description.trim();
+      }
+      
+      // Add actor configuration if provided
+      if (actorConfig && typeof actorConfig === 'object' && Object.keys(actorConfig).length > 0) {
+        apiPayload.actor_config = actorConfig;
       }
       
       console.log('Sending API payload:', JSON.stringify(apiPayload, null, 2));

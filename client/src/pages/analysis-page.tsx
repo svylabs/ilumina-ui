@@ -1185,7 +1185,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
           branch: selectedBranch, // Include selected branch
           description: simulationDescription, // Include description
           numSimulations: numSimulations, // Include number of simulations
-          simulationType: simulationType // Include simulation type (run or batch_run)
+          simulationType: simulationType, // Include simulation type (run or batch_run)
+          actorConfig: actorConfig // Include actor configuration
         })
       });
       
