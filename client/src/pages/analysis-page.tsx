@@ -259,19 +259,20 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
 }
 
 // Component for displaying action code from real TypeScript data
-function ActionCodeTab({ submissionId, contractName, functionName, action }: {
+function ActionCodeTab({ submissionId, contractName, functionName, action, sectionContext }: {
   submissionId: string | undefined;
   contractName: string;
   functionName: string;
   action: any;
+  sectionContext?: string;
 }) {
   const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
   
   // Extract the actual TypeScript code from the API response
   const realCodeContent = codeData?.content;
   
-  // Generate a stable unique ID for this specific instance
-  const uniqueContainerId = `code-container-${contractName}-${functionName}-${submissionId?.slice(-8) || 'default'}`;
+  // Generate a stable unique ID for this specific instance with section context
+  const uniqueContainerId = `code-container-${sectionContext || 'default'}-${contractName}-${functionName}-${submissionId?.slice(-8) || 'default'}`;
   
   console.log('ActionCodeTab COMPONENT RENDERED:', { submissionId, contractName, functionName, codeData, isLoading, error });
   console.log('Does codeData exist?', !!codeData);
