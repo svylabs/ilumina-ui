@@ -121,7 +121,11 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
 }) {
   const { data: summaryData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'json');
 
-  console.log('ActionSummaryTab data:', { submissionId, contractName, functionName, summaryData, isLoading, error });
+  console.log('ActionSummaryTab COMPONENT RENDERED:', { submissionId, contractName, functionName, summaryData, isLoading, error });
+
+  // Extract the actual content from the API response
+  const realActionData = summaryData?.content;
+  console.log('Extracted action data:', realActionData);
 
   if (isLoading) {
     return (
@@ -5105,6 +5109,7 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 </TabsList>
                                                                 
                                                                 <TabsContent value="summary" className="mt-0">
+                                                                  {console.log('Rendering Summary tab with:', { submissionId, contractName: action.contract_name, functionName: action.function_name })}
                                                                   <ActionSummaryTab 
                                                                     submissionId={submissionId}
                                                                     contractName={action.contract_name}
