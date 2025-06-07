@@ -4238,9 +4238,9 @@ export default function AnalysisPage() {
                                                           <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
                                                             {action.contract_name}
                                                           </span>
-                                                          <Button size="sm" variant="outline" className="h-7 text-xs">
+                                                          <span className="text-xs bg-gray-600 hover:bg-gray-500 border border-gray-500 px-2 py-1 rounded text-gray-200 cursor-pointer">
                                                             Modify
-                                                          </Button>
+                                                          </span>
                                                         </div>
                                                       </CollapsibleTrigger>
                                                       <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
