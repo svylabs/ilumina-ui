@@ -4450,6 +4450,10 @@ export default function AnalysisPage() {
                 const essentialStepsComplete = essentialSteps.every(stepName => {
                   const completedInArray = analysis?.completedSteps?.some(cs => cs.step === stepName);
                   const completedInSteps = analysis?.steps?.[stepName]?.status === "completed";
+                  console.log(`Checking step ${stepName}:`, { completedInArray, completedInSteps, 
+                    completedSteps: analysis?.completedSteps?.map(cs => cs.step),
+                    stepsKeys: Object.keys(analysis?.steps || {})
+                  });
                   return completedInArray || completedInSteps;
                 });
 
@@ -4469,6 +4473,11 @@ export default function AnalysisPage() {
                     const completedInArray = analysis?.completedSteps?.some(cs => cs.step === stepName);
                     const completedInSteps = analysis?.steps?.[stepName]?.status === "completed";
                     return completedInArray || completedInSteps;
+                  });
+                  
+                  console.log(`Essential steps complete: ${essentialStepsComplete}`, {
+                    analysis: analysis?.status,
+                    completedSteps: analysis?.completedSteps
                   });
 
                   if (analysis?.status === "error") {
