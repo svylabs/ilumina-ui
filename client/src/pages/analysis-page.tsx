@@ -4348,29 +4348,18 @@ export default function AnalysisPage() {
                                                               </TabsContent>
                                                               
                                                               <TabsContent value="code" className="mt-0">
-                                                                <div className="bg-black/40 p-3 rounded text-xs">
-                                                                  <pre className="whitespace-pre-wrap text-green-300 font-mono text-xs">{`
-// Implementation for ${action.name}
-// Contract: ${action.contract_name}
-// Function: ${action.function_name}
-
-async function execute() {
-  // Setup required parameters
-  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
-  
-  // Execute the transaction
-  const tx = await ${action.contract_name.toLowerCase()}.${action.function_name.split('(')[0]}(
-    // Parameters will depend on the specific function
-  );
-  
-  // Wait for confirmation
-  await tx.wait();
-  
-  // Log the result
-  console.log("${action.name} executed successfully");
-}
-`}</pre>
-                                                                </div>
+                                                                {submissionId ? (
+                                                                  <ActionCodeTab 
+                                                                    submissionId={submissionId}
+                                                                    contractName={action.contract_name}
+                                                                    functionName={action.function_name}
+                                                                    action={action}
+                                                                  />
+                                                                ) : (
+                                                                  <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
+                                                                    Loading submission data...
+                                                                  </div>
+                                                                )}
                                                               </TabsContent>
                                                               
                                                               <TabsContent value="preview" className="mt-0">
