@@ -438,6 +438,28 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
   const [simulationType, setSimulationType] = useState<'run' | 'batch_run'>('run');
   const [simRepo, setSimRepo] = useState<{ owner: string; repo: string } | null>(null);
   
+  // Actor configuration state
+  const [actorConfig, setActorConfig] = useState<{[actorName: string]: number}>({});
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
+  
+  // Initialize actor config from submission data
+  useEffect(() => {
+    if (analysis?.steps?.actors?.jsonData?.actors) {
+      const actors = analysis.steps.actors.jsonData.actors;
+      const defaultConfig: {[actorName: string]: number} = {};
+      
+      // Check if there's existing actor_config in submission data
+      const existingActorConfig = analysis.steps.actors.jsonData.actor_config;
+      
+      actors.forEach((actor: any) => {
+        // Use existing config if available, otherwise default to 1
+        defaultConfig[actor.name] = existingActorConfig?.[actor.name] || 1;
+      });
+      
+      setActorConfig(defaultConfig);
+    }
+  }, [analysis]);
+  
   // Tab state for Simulations/History tabs
   const [activeTab, setActiveTab] = useState<'simulations' | 'history'>('simulations');
   
@@ -1494,6 +1516,121 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                 className="bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
+
+            {/* Advanced Configuration Toggle */}
+            <div className="md:col-span-3">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedConfig(!showAdvancedConfig)}
+                disabled={isRunningSimulation}
+                className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 disabled:opacity-50"
+              >
+                <ChevronRight className={`h-4 w-4 transition-transform ${showAdvancedConfig ? 'rotate-90' : ''}`} />
+                Advanced Configuration
+              </button>
+            </div>
+
+            {/* Advanced Configuration Panel */}
+            {showAdvancedConfig && (
+              <div className="md:col-span-3 bg-gray-900/50 p-4 rounded-md border border-gray-700">
+                <h4 className="text-sm font-medium text-gray-300 mb-3">Actor Configuration</h4>
+                <div className="space-y-3">
+                  {analysis?.steps?.actors?.jsonData?.actors && analysis.steps.actors.jsonData.actors.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {analysis.steps.actors.jsonData.actors.map((actor: any, index: number) => (
+                        <div key={index} className="bg-gray-800/50 p-3 rounded-md">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <h5 className="text-sm font-medium text-gray-300">{actor.name}</h5>
+                              <p className="text-xs text-gray-500">{actor.summary}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs text-gray-400">Count:</label>
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const currentCount = actorConfig[actor.name] || 1;
+                                  if (currentCount > 1) {
+                                    setActorConfig(prev => ({
+                                      ...prev,
+                                      [actor.name]: currentCount - 1
+                                    }));
+                                  }
+                                }}
+                                disabled={isRunningSimulation || (actorConfig[actor.name] || 1) <= 1}
+                                className="bg-gray-700 border border-gray-600 rounded-l-md px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={actorConfig[actor.name] || 1}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value.trim(), 10);
+                                  if (!isNaN(val) && val >= 1 && val <= 50) {
+                                    setActorConfig(prev => ({
+                                      ...prev,
+                                      [actor.name]: val
+                                    }));
+                                  }
+                                }}
+                                disabled={isRunningSimulation}
+                                className="bg-gray-800 border-y border-gray-600 px-2 py-1 text-xs w-12 text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const currentCount = actorConfig[actor.name] || 1;
+                                  if (currentCount < 50) {
+                                    setActorConfig(prev => ({
+                                      ...prev,
+                                      [actor.name]: currentCount + 1
+                                    }));
+                                  }
+                                }}
+                                disabled={isRunningSimulation || (actorConfig[actor.name] || 1) >= 50}
+                                className="bg-gray-700 border border-gray-600 rounded-r-md px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-4 text-gray-500 text-sm">
+                      No actors available for configuration
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                    <div className="text-xs text-gray-400">
+                      Total actors: {Object.values(actorConfig).reduce((sum, count) => sum + count, 0)}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (analysis?.steps?.actors?.jsonData?.actors) {
+                          const resetConfig: {[actorName: string]: number} = {};
+                          analysis.steps.actors.jsonData.actors.forEach((actor: any) => {
+                            resetConfig[actor.name] = 1;
+                          });
+                          setActorConfig(resetConfig);
+                        }
+                      }}
+                      disabled={isRunningSimulation}
+                      className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50"
+                    >
+                      Reset to defaults
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Run Button */}
             <div className="flex items-end">
