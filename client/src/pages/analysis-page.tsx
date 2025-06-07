@@ -4710,13 +4710,13 @@ export default function AnalysisPage() {
                               
                               return (
                                 <div key={step} className={`text-xs flex items-center justify-between py-1 ${
-                                  isCurrent ? 'text-blue-300 font-medium' : 
-                                  isCompleted ? 'text-green-400' : 'text-gray-500'
+                                  isCompleted ? 'text-green-400' : 
+                                  isCurrent ? 'text-blue-300 font-medium' : 'text-gray-500'
                                 }`}>
                                   <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${
-                                      isCurrent ? 'bg-blue-400 animate-pulse' : 
-                                      isCompleted ? 'bg-green-400' : 'bg-gray-600'
+                                      isCompleted ? 'bg-green-400' : 
+                                      isCurrent ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'
                                     }`} />
                                     <span>{index + 1}. {stepDisplayNames[step]}</span>
                                   </div>
