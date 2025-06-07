@@ -4445,15 +4445,15 @@ export default function AnalysisPage() {
             <div className="flex items-center space-x-3">
               {(() => {
                 // Check if the essential steps for simulations are complete
-                // These are the steps that actually exist in the API and are needed for simulations
-                const essentialSteps = ["files", "actors", "deployment"];
-                const essentialStepsComplete = essentialSteps.every(stepName => {
-                  const completedInArray = analysis?.completedSteps?.some(cs => cs.step === stepName);
-                  const completedInSteps = analysis?.steps?.[stepName]?.status === "completed";
-                  console.log(`Checking step ${stepName}:`, { completedInArray, completedInSteps, 
-                    completedSteps: analysis?.completedSteps?.map(cs => cs.step),
-                    stepsKeys: Object.keys(analysis?.steps || {})
-                  });
+                // Note: completedSteps uses original names, steps object uses transformed names
+                const essentialSteps = [
+                  { original: "analyze_project", transformed: "files" },
+                  { original: "analyze_actors", transformed: "actors" },
+                  { original: "analyze_deployment", transformed: "deployment" }
+                ];
+                const essentialStepsComplete = essentialSteps.every(step => {
+                  const completedInArray = analysis?.completedSteps?.some(cs => cs.step === step.original);
+                  const completedInSteps = analysis?.steps?.[step.transformed]?.status === "completed";
                   return completedInArray || completedInSteps;
                 });
 
@@ -4468,16 +4468,15 @@ export default function AnalysisPage() {
               <div className="flex-1">
                 {(() => {
                   // Check if the essential steps for simulations are complete
-                  const essentialSteps = ["files", "actors", "deployment"];
-                  const essentialStepsComplete = essentialSteps.every(stepName => {
-                    const completedInArray = analysis?.completedSteps?.some(cs => cs.step === stepName);
-                    const completedInSteps = analysis?.steps?.[stepName]?.status === "completed";
+                  const essentialSteps = [
+                    { original: "analyze_project", transformed: "files" },
+                    { original: "analyze_actors", transformed: "actors" },
+                    { original: "analyze_deployment", transformed: "deployment" }
+                  ];
+                  const essentialStepsComplete = essentialSteps.every(step => {
+                    const completedInArray = analysis?.completedSteps?.some(cs => cs.step === step.original);
+                    const completedInSteps = analysis?.steps?.[step.transformed]?.status === "completed";
                     return completedInArray || completedInSteps;
-                  });
-                  
-                  console.log(`Essential steps complete: ${essentialStepsComplete}`, {
-                    analysis: analysis?.status,
-                    completedSteps: analysis?.completedSteps
                   });
 
                   if (analysis?.status === "error") {
