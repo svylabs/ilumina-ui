@@ -136,21 +136,7 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-black/40 p-3 rounded text-xs">
-        <p className="text-green-400 mb-2">
-          This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
-        </p>
-        <div className="text-white/80 space-y-2">
-          <p>Contract: {action.contract_name}</p>
-          <p>Function: {action.function_name}</p>
-          <p>Actor: {actor.name}</p>
-          <p>Implementation will be generated during simulation setup</p>
-        </div>
-      </div>
-    );
-  }
+  // Always prioritize displaying real data when available
 
   // Use the extracted real action data
   
@@ -242,12 +228,20 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
 
   // Extract the actual TypeScript code from the API response
   const realCodeContent = codeData?.content;
-  
-  if (error || !realCodeContent) {
-    return (
-      <div className="bg-black/40 p-3 rounded text-xs">
-        <p className="text-orange-400 mb-2">Code implementation will be available after simulation setup.</p>
-        <pre className="text-gray-400 text-xs overflow-x-auto">
+
+  return (
+    <div className="bg-black/40 p-3 rounded text-xs">
+      {realCodeContent ? (
+        <>
+          <p className="text-green-400 mb-2">TypeScript Implementation:</p>
+          <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
+            {realCodeContent}
+          </pre>
+        </>
+      ) : error ? (
+        <>
+          <p className="text-orange-400 mb-2">Code implementation will be available after simulation setup.</p>
+          <pre className="text-gray-400 text-xs overflow-x-auto">
 {`// Implementation for ${action.name}
 // Contract: ${action.contract_name}
 // Function: ${action.function_name}
@@ -257,17 +251,11 @@ async function execute() {
   // Setup required parameters and execute transaction
   // Implementation details will be available once generated
 }`}
-        </pre>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-black/40 p-3 rounded text-xs">
-      <p className="text-green-400 mb-2">TypeScript Implementation:</p>
-      <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
-        {realCodeContent}
-      </pre>
+          </pre>
+        </>
+      ) : (
+        <p className="text-gray-400">Loading TypeScript implementation...</p>
+      )}
     </div>
   );
 }
