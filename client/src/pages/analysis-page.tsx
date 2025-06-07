@@ -4725,13 +4725,17 @@ export default function AnalysisPage() {
                                     <span>{index + 1}. {stepDisplayNames[step]}</span>
                                   </div>
                                   <div className="text-xs text-gray-400">
-                                    {isCompleted && completionDate ? (
-                                      new Date(completionDate).toLocaleString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })
+                                    {isCompleted ? (
+                                      completionDate ? (
+                                        new Date(completionDate).toLocaleString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })
+                                      ) : (
+                                        'Completed'
+                                      )
                                     ) : isCurrent ? (
                                       'In Progress'
                                     ) : (
