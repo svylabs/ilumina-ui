@@ -2875,12 +2875,16 @@ All test accounts configured with appropriate initial balances
 ];
 
 function StepStatus({ status, startTime }: { status: StepStatus; startTime?: string | null }) {
+  console.log(`StepStatus component received status: ${status}`);
   switch (status) {
     case "completed":
+      console.log(`StepStatus rendering completed icon`);
       return <CheckCircle2 className="h-6 w-6 text-green-500" />;
     case "failed":
+      console.log(`StepStatus rendering failed icon`);
       return <XCircle className="h-6 w-6 text-red-500" />;
     case "in_progress":
+      console.log(`StepStatus rendering in_progress icon`);
       return (
         <div className="flex items-center space-x-2">
           <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -2892,6 +2896,7 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
         </div>
       );
     default:
+      console.log(`StepStatus rendering default (pending) icon for status: ${status}`);
       return <CircleDot className="h-6 w-6 text-gray-300" />;
   }
 }
@@ -4355,18 +4360,25 @@ export default function AnalysisPage() {
   };
   
   const getStepStatus = (stepId: string): StepStatus => {
+    console.log(`getStepStatus called for stepId: ${stepId}`);
+    
     // Special case for history tab - always consider it completed since it's just a view
     if (stepId === "history") {
+      console.log(`${stepId}: returning completed (history)`);
       return "completed";
     }
     
     // Special case for simulations step - if deployment is verified, mark it as completed
     if (stepId === "simulations" && isDeploymentVerificationCompleted(analysis.completedSteps)) {
+      console.log(`${stepId}: returning completed (deployment verified)`);
       return "completed";
     }
     
     // ONLY use the completedSteps array to determine if a step is completed
-    if (isStepActuallyCompleted(stepId)) {
+    const isCompleted = isStepActuallyCompleted(stepId);
+    console.log(`${stepId}: isStepActuallyCompleted returned ${isCompleted}`);
+    if (isCompleted) {
+      console.log(`${stepId}: returning completed`);
       return "completed";
     }
     
