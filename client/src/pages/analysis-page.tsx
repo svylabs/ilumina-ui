@@ -186,7 +186,17 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
               <p className="text-purple-300 mb-1">State Changes:</p>
               <div className="ml-2 space-y-1">
                 {realActionData.action_detail.on_execution_state_updates_made.slice(0, 3).map((update, index) => (
-                  <p key={index} className="text-xs text-gray-300">• {update.category}: {update.description}</p>
+                  <div key={index} className="text-xs text-gray-300 mb-1">
+                    <p className="font-semibold text-purple-200">• {update.category}:</p>
+                    <div className="ml-4 space-y-1">
+                      {update.state_update_descriptions?.slice(0, 2).map((desc, descIndex) => (
+                        <p key={descIndex} className="text-gray-400">- {desc}</p>
+                      ))}
+                      {update.state_update_descriptions?.length > 2 && (
+                        <p className="text-gray-500">... and {update.state_update_descriptions.length - 2} more updates</p>
+                      )}
+                    </div>
+                  </div>
                 ))}
                 {realActionData.action_detail.on_execution_state_updates_made.length > 3 && (
                   <p className="text-xs text-gray-400">... and {realActionData.action_detail.on_execution_state_updates_made.length - 3} more</p>
@@ -230,32 +240,33 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
     );
   }
 
-  const defaultCode = `// Implementation for ${action.name}
+  // Extract the actual TypeScript code from the API response
+  const realCodeContent = codeData?.content;
+  
+  if (error || !realCodeContent) {
+    return (
+      <div className="bg-black/40 p-3 rounded text-xs">
+        <p className="text-orange-400 mb-2">Code implementation will be available after simulation setup.</p>
+        <pre className="text-gray-400 text-xs overflow-x-auto">
+{`// Implementation for ${action.name}
 // Contract: ${action.contract_name}
 // Function: ${action.function_name}
-// Implementation will be generated during simulation setup
+// TypeScript implementation will be generated during simulation setup
 
 async function execute() {
-  // Setup required parameters
-  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
-  
-  // Execute the transaction
-  const tx = await ${action.contract_name.toLowerCase()}.${action.function_name.split('(')[0]}(
-    // Parameters will depend on the specific function
-  );
-  
-  // Wait for confirmation
-  await tx.wait();
-  
-  return tx;
-}`;
-
-  const codeContent = error ? defaultCode : (codeData?.content || defaultCode);
+  // Setup required parameters and execute transaction
+  // Implementation details will be available once generated
+}`}
+        </pre>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-black/40 p-3 rounded text-xs">
-      <pre className="whitespace-pre-wrap text-green-300 font-mono text-xs overflow-x-auto">
-        {codeContent}
+      <p className="text-green-400 mb-2">TypeScript Implementation:</p>
+      <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
+        {realCodeContent}
       </pre>
     </div>
   );
