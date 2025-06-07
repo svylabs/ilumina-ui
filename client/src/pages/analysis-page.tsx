@@ -4145,6 +4145,17 @@ export default function AnalysisPage() {
   useEffect(() => {
     console.log("Analysis data received:", analysis);
     
+    // Debug completedSteps structure
+    if (analysis?.completedSteps) {
+      console.log("CompletedSteps array:", analysis.completedSteps);
+      console.log("CompletedSteps length:", analysis.completedSteps.length);
+      analysis.completedSteps.forEach((step, index) => {
+        console.log(`CompletedStep ${index}:`, step);
+      });
+    } else {
+      console.log("No completedSteps found in analysis data");
+    }
+    
     if (analysis?.submissionId) {
       console.log(`Found submission ID in analysis data: ${analysis.submissionId}`);
       
@@ -4308,8 +4319,14 @@ export default function AnalysisPage() {
     // Get the corresponding step name used in the API
     const apiStepName = getApiStepName(stepId);
     
+    console.log(`Checking completion for stepId: ${stepId}, apiStepName: ${apiStepName}`);
+    console.log('Available completed steps:', analysis.completedSteps.map(s => s.step));
+    
     // Check if this step is in the completed_steps array
-    return analysis.completedSteps.some(step => step.step === apiStepName);
+    const isCompleted = analysis.completedSteps.some(step => step.step === apiStepName);
+    console.log(`Result: ${isCompleted}`);
+    
+    return isCompleted;
   };
   
   // Function to explicitly check if a deployment step is completed using our enhanced endpoint
