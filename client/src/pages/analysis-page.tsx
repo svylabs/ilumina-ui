@@ -152,44 +152,44 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
     );
   }
 
-  const actionData = summaryData?.content;
+  // Use the extracted real action data
   
   return (
     <div className="bg-black/40 p-3 rounded text-xs">
-      {actionData?.action_detail ? (
+      {realActionData?.action_detail ? (
         <div className="space-y-3">
           <div>
             <p className="text-green-400 mb-2">
-              {actionData.action?.summary || `This action will call the ${action.function_name} function on the ${action.contract_name} contract.`}
+              {realActionData.action?.summary || `This action will call the ${action.function_name} function on the ${action.contract_name} contract.`}
             </p>
           </div>
           
           <div className="text-white/80 space-y-2">
-            <p>Contract: {actionData.action_detail.contract_name}</p>
-            <p>Function: {actionData.action_detail.function_name}</p>
+            <p>Contract: {realActionData.action_detail.contract_name}</p>
+            <p>Function: {realActionData.action_detail.function_name}</p>
             <p>Actor: {actor.name}</p>
           </div>
 
-          {actionData.action_detail.pre_execution_parameter_generation_rules && (
+          {realActionData.action_detail.pre_execution_parameter_generation_rules && (
             <div>
               <p className="text-blue-300 mb-1">Parameter Generation Rules:</p>
               <div className="ml-2 space-y-1">
-                {actionData.action_detail.pre_execution_parameter_generation_rules.map((rule, index) => (
+                {realActionData.action_detail.pre_execution_parameter_generation_rules.map((rule, index) => (
                   <p key={index} className="text-xs text-gray-300">• {rule}</p>
                 ))}
               </div>
             </div>
           )}
 
-          {actionData.action_detail.on_execution_state_updates_made && (
+          {realActionData.action_detail.on_execution_state_updates_made && (
             <div>
               <p className="text-purple-300 mb-1">State Changes:</p>
               <div className="ml-2 space-y-1">
-                {actionData.action_detail.on_execution_state_updates_made.slice(0, 3).map((update, index) => (
+                {realActionData.action_detail.on_execution_state_updates_made.slice(0, 3).map((update, index) => (
                   <p key={index} className="text-xs text-gray-300">• {update.category}: {update.description}</p>
                 ))}
-                {actionData.action_detail.on_execution_state_updates_made.length > 3 && (
-                  <p className="text-xs text-gray-400">... and {actionData.action_detail.on_execution_state_updates_made.length - 3} more</p>
+                {realActionData.action_detail.on_execution_state_updates_made.length > 3 && (
+                  <p className="text-xs text-gray-400">... and {realActionData.action_detail.on_execution_state_updates_made.length - 3} more</p>
                 )}
               </div>
             </div>
