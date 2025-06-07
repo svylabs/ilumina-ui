@@ -3559,6 +3559,121 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // API endpoint to fetch action implementation files from simulation repository
+  app.get('/api/action-file/:submissionId/:contractName/:functionName/:fileType', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+      const { submissionId, contractName, functionName, fileType } = req.params;
+      
+      // Validate file type
+      if (!['json', 'ts'].includes(fileType)) {
+        return res.status(400).json({ error: 'Invalid file type. Must be json or ts.' });
+      }
+
+      console.log(`Fetching action file for submission ${submissionId}: ${contractName}_${functionName}.${fileType}`);
+
+      // Get simulation repository information
+      const repoResponse = await fetch(`${req.protocol}://${req.get('host')}/api/simulation-repo/${submissionId}`);
+      if (!repoResponse.ok) {
+        return res.status(404).json({ error: 'Simulation repository not found' });
+      }
+
+      const repoData = await repoResponse.json();
+      const { owner, repo } = repoData;
+
+      // Construct the file path
+      const fileName = `${contractName.toLowerCase()}_${functionName.toLowerCase()}.${fileType}`;
+      const filePath = `simulation/action/${fileName}`;
+
+      console.log(`Fetching file from GitHub: ${owner}/${repo}/${filePath}`);
+
+      // Check if we have a GitHub token
+      const githubToken = process.env.GITHUB_TOKEN;
+      if (!githubToken) {
+        return res.status(500).json({ error: 'GitHub token not configured' });
+      }
+
+      // Fetch the file from GitHub
+      const githubResponse = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`,
+        {
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'Stablebase-App'
+          }
+        }
+      );
+
+      if (!githubResponse.ok) {
+        if (githubResponse.status === 404) {
+          return res.status(404).json({ 
+            error: 'Action file not found',
+            details: `File ${fileName} does not exist in the simulation repository`
+          });
+        }
+        return res.status(githubResponse.status).json({ 
+          error: 'Failed to fetch file from GitHub',
+          details: await githubResponse.text()
+        });
+      }
+
+      const fileData = await githubResponse.json();
+
+      // Decode the base64 content
+      if (fileData.content) {
+        const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
+        
+        // For JSON files, parse and validate the content
+        if (fileType === 'json') {
+          try {
+            const jsonContent = JSON.parse(content);
+            return res.json({
+              success: true,
+              filename: fileName,
+              content: jsonContent,
+              raw_content: content,
+              file_info: {
+                path: filePath,
+                sha: fileData.sha,
+                size: fileData.size
+              }
+            });
+          } catch (parseError) {
+            return res.status(500).json({ 
+              error: 'Invalid JSON file',
+              details: 'The action file contains invalid JSON'
+            });
+          }
+        } else {
+          // For TypeScript files, return as text
+          return res.json({
+            success: true,
+            filename: fileName,
+            content: content,
+            file_info: {
+              path: filePath,
+              sha: fileData.sha,
+              size: fileData.size
+            }
+          });
+        }
+      } else {
+        return res.status(500).json({ error: 'File content not available' });
+      }
+
+    } catch (error) {
+      console.error('Error fetching action file:', error);
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        details: error.message 
+      });
+    }
+  });
+
   // GitHub API proxy endpoints
   app.get('/api/github/commits/:owner/:repo', async (req, res) => {
     try {

@@ -76,6 +76,28 @@ type HistoryLogEntry = {
 // Import HistoryComponent for use in the History tab
 import HistoryComponent from "@/components/history-component";
 
+// Hook to fetch action files from simulation repository
+function useActionFile(submissionId: string | undefined, contractName: string, functionName: string, fileType: 'json' | 'ts') {
+  return useQuery({
+    queryKey: ['/api/action-file', submissionId, contractName, functionName, fileType],
+    queryFn: async () => {
+      if (!submissionId) throw new Error('No submission ID');
+      
+      const response = await fetch(`/api/action-file/${submissionId}/${contractName}/${functionName}/${fileType}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Action file not found: ${contractName}_${functionName}.${fileType}`);
+        }
+        throw new Error(`Failed to fetch action file: ${response.status}`);
+      }
+      return response.json();
+    },
+    enabled: !!submissionId && !!contractName && !!functionName,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1
+  });
+}
+
 function SimulationsComponent({ analysis, deploymentVerified = false }: SimulationsComponentProps) {
   const { id: submissionId } = useParams();
   
