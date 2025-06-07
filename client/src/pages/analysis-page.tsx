@@ -4076,6 +4076,20 @@ export default function AnalysisPage() {
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   
+  // Define the complete analysis flow order at component level
+  const analysisFlow = [
+    "analyze_project",
+    "analyze_actors", 
+    "analyze_deployment",
+    "implement_deployment_script",
+    "verify_deployment_script",
+    "debug_deployment_script",
+    "scaffold",
+    "analyze_all_actions",
+    "analyze_all_snapshots",
+    "implement_snapshots",
+    "implement_all_actions"
+  ];
 
   const { data: project } = useQuery<{
     id: number;
