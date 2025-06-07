@@ -134,14 +134,14 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
   if (error) {
     return (
       <div className="bg-black/40 p-3 rounded text-xs">
-        <p className="text-yellow-400 mb-2">
-          Using default summary - action file not found
+        <p className="text-green-400 mb-2">
+          This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
         </p>
         <div className="text-white/80 space-y-2">
-          <p>Contract interaction: {action.contract_name}</p>
+          <p>Contract: {action.contract_name}</p>
           <p>Function: {action.function_name}</p>
           <p>Actor: {actor.name}</p>
-          <p>Parameters will be passed according to the function specification</p>
+          <p>Implementation will be generated during simulation setup</p>
         </div>
       </div>
     );
@@ -201,10 +201,10 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
     );
   }
 
-  const defaultCode = `
-// Implementation for ${action.name}
+  const defaultCode = `// Implementation for ${action.name}
 // Contract: ${action.contract_name}
 // Function: ${action.function_name}
+// Implementation will be generated during simulation setup
 
 async function execute() {
   // Setup required parameters
@@ -225,11 +225,6 @@ async function execute() {
 
   return (
     <div className="bg-black/40 p-3 rounded text-xs">
-      {error && (
-        <p className="text-yellow-400 mb-2 text-xs">
-          Using default implementation - action file not found
-        </p>
-      )}
       <pre className="whitespace-pre-wrap text-green-300 font-mono text-xs overflow-x-auto">
         {codeContent}
       </pre>

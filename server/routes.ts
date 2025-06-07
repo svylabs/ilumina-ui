@@ -3585,7 +3585,7 @@ export function registerRoutes(app: Express): Server {
 
       // Construct the file path
       const fileName = `${contractName.toLowerCase()}_${functionName.toLowerCase()}.${fileType}`;
-      const filePath = `simulation/action/${fileName}`;
+      const filePath = `simulation/actions/${fileName}`;
 
       console.log(`Fetching file from GitHub: ${owner}/${repo}/${filePath}`);
 
