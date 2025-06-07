@@ -4433,6 +4433,7 @@ export default function AnalysisPage() {
                 <h3 className="text-blue-400 font-medium">Analysis in Progress</h3>
                 <div className="text-gray-300 text-sm mt-1 space-y-1">
                   {(() => {
+                    const [showDetails, setShowDetails] = useState(false);
                     // Define the complete analysis flow order
                     const analysisFlow = [
                       "analyze_project",
@@ -4460,6 +4461,20 @@ export default function AnalysisPage() {
                       "analyze_all_snapshots": "Snapshot Processing",
                       "implement_snapshots": "Snapshot Implementation",
                       "implement_all_actions": "Action Implementation"
+                    };
+                    
+                    const stepDescriptions = {
+                      "analyze_project": "Analyzing smart contract code and identifying key components",
+                      "analyze_snapshot": "Examining contract state snapshots and data structures",
+                      "analyze_deployment": "Reviewing deployment configuration and requirements",
+                      "implement_deployment_script": "Creating deployment scripts for the contract",
+                      "verify_deployment_script": "Testing and validating deployment scripts",
+                      "debug_deployment_script": "Troubleshooting deployment issues if needed",
+                      "scaffold": "Setting up test environment and infrastructure",
+                      "analyze_all_actions": "Identifying and categorizing all contract actions",
+                      "analyze_all_snapshots": "Processing all contract state snapshots",
+                      "implement_snapshots": "Implementing snapshot capture mechanisms",
+                      "implement_all_actions": "Creating implementations for all identified actions"
                     };
                     
                     // Find current step from completedSteps (most recent in-progress step)
