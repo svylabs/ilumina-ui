@@ -270,6 +270,9 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
   // Extract the actual TypeScript code from the API response
   const realCodeContent = codeData?.content;
   
+  // Generate a stable unique ID for this specific instance
+  const uniqueContainerId = `code-container-${contractName}-${functionName}-${submissionId?.slice(-8) || 'default'}`;
+  
   console.log('ActionCodeTab COMPONENT RENDERED:', { submissionId, contractName, functionName, codeData, isLoading, error });
   console.log('Does codeData exist?', !!codeData);
   console.log('Does realCodeContent exist?', !!realCodeContent);
@@ -291,15 +294,16 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
     const methods = {};
     const lines = code.split('\n');
     
-    // Find method start lines
+    // Find method start lines - look for function signature lines
     lines.forEach((line, index) => {
-      if (line.includes('async initialize(') || line.includes('initialize(')) {
+      // Look for the actual function signature, not just any line containing the word
+      if (line.trim().match(/^(async\s+)?initialize\s*\(/)) {
         methods.initialize = index;
       }
-      if (line.includes('async execute(') || line.includes('execute(')) {
+      if (line.trim().match(/^(async\s+)?execute\s*\(/)) {
         methods.execute = index;
       }
-      if (line.includes('async validate(') || line.includes('validate(')) {
+      if (line.trim().match(/^(async\s+)?validate\s*\(/)) {
         methods.validate = index;
       }
     });
@@ -313,10 +317,12 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
   const scrollToMethod = (methodName: string) => {
     const methodLine = methods[methodName];
     if (methodLine !== undefined) {
-      const codeContainer = document.querySelector('#code-container-' + contractName + '-' + functionName);
+      const codeContainer = document.querySelector(`#${uniqueContainerId}`);
       if (codeContainer) {
         const lineHeight = 16; // approximate line height in pixels
-        codeContainer.scrollTop = methodLine * lineHeight;
+        // Scroll to show the function signature with some context above
+        const scrollPosition = Math.max(0, (methodLine - 1) * lineHeight);
+        codeContainer.scrollTop = scrollPosition;
       }
     }
   };
@@ -357,7 +363,7 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
             )}
           </div>
           <div 
-            id={`code-container-${contractName}-${functionName}`}
+            id={uniqueContainerId}
             className="overflow-y-auto max-h-48"
           >
             <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
