@@ -4431,16 +4431,65 @@ export default function AnalysisPage() {
               <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
               <div className="flex-1">
                 <h3 className="text-blue-400 font-medium">Analysis in Progress</h3>
-                <p className="text-gray-300 text-sm mt-1">
+                <div className="text-gray-300 text-sm mt-1 space-y-1">
                   {(() => {
-                    // Find which step is currently in progress
-                    const inProgressSteps = analysisSteps.filter(step => getStepStatus(step.id) === "in_progress");
-                    if (inProgressSteps.length > 0) {
-                      return `Running ${inProgressSteps.map(s => s.title).join(", ")}...`;
+                    // Define the analysis flow order
+                    const analysisFlow = [
+                      "analyze_project",
+                      "analyze_actors", 
+                      "analyze_deployment",
+                      "implement_deployment_script",
+                      "verify_deployment_script"
+                    ];
+                    
+                    const stepDisplayNames = {
+                      "analyze_project": "Project Analysis",
+                      "analyze_actors": "Actor Analysis", 
+                      "analyze_deployment": "Deployment Analysis",
+                      "implement_deployment_script": "Deployment Implementation",
+                      "verify_deployment_script": "Deployment Verification"
+                    };
+                    
+                    // Find current step from completedSteps (most recent in-progress step)
+                    let currentStep = null;
+                    let nextStep = null;
+                    
+                    if (analysis.completedSteps && analysis.completedSteps.length > 0) {
+                      // Find the last step that's either completed or in progress
+                      const lastStep = analysis.completedSteps[analysis.completedSteps.length - 1];
+                      currentStep = lastStep.step;
+                      
+                      // Find next step in the flow
+                      const currentIndex = analysisFlow.indexOf(currentStep);
+                      if (currentIndex >= 0 && currentIndex < analysisFlow.length - 1) {
+                        nextStep = analysisFlow[currentIndex + 1];
+                      }
+                    } else {
+                      // If no completed steps, we're on the first step
+                      currentStep = analysisFlow[0];
+                      nextStep = analysisFlow[1];
                     }
-                    return "Processing your smart contract analysis...";
+                    
+                    return (
+                      <>
+                        <div>
+                          <span className="text-blue-300">Current Step:</span>{" "}
+                          <span className="text-white font-medium">
+                            {currentStep ? stepDisplayNames[currentStep] || currentStep : "Initializing..."}
+                          </span>
+                        </div>
+                        {nextStep && (
+                          <div>
+                            <span className="text-gray-400">Next Step:</span>{" "}
+                            <span className="text-gray-200">
+                              {stepDisplayNames[nextStep] || nextStep}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    );
                   })()}
-                </p>
+                </div>
               </div>
             </div>
           </div>
