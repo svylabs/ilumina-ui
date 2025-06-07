@@ -4546,6 +4546,18 @@ export default function AnalysisPage() {
                       "implement_all_actions": "Creating implementations for all identified actions"
                     };
                     
+                    // Check if essential steps are complete first
+                    const essentialSteps = [
+                      { original: "analyze_project", transformed: "files" },
+                      { original: "analyze_actors", transformed: "actors" },
+                      { original: "analyze_deployment", transformed: "deployment" }
+                    ];
+                    const essentialStepsComplete = essentialSteps.every(step => {
+                      const completedInArray = analysis?.completedSteps?.some(cs => cs.step === step.original);
+                      const completedInSteps = analysis?.steps?.[step.transformed]?.status === "completed";
+                      return completedInArray || completedInSteps;
+                    });
+
                     // Determine current step based on analysis status
                     let currentStep = null;
                     let nextStep = null;
