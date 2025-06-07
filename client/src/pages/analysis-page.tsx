@@ -4437,7 +4437,7 @@ export default function AnalysisPage() {
                     // Define the complete analysis flow order
                     const analysisFlow = [
                       "analyze_project",
-                      "analyze_snapshot", 
+                      "analyze_actors", 
                       "analyze_deployment",
                       "implement_deployment_script",
                       "verify_deployment_script",
@@ -4451,7 +4451,7 @@ export default function AnalysisPage() {
                     
                     const stepDisplayNames = {
                       "analyze_project": "Project Analysis",
-                      "analyze_snapshot": "Snapshot Analysis",
+                      "analyze_actors": "Actor Analysis",
                       "analyze_deployment": "Deployment Analysis",
                       "implement_deployment_script": "Deployment Implementation",
                       "verify_deployment_script": "Deployment Verification",
@@ -4465,7 +4465,7 @@ export default function AnalysisPage() {
                     
                     const stepDescriptions = {
                       "analyze_project": "Analyzing smart contract code and identifying key components",
-                      "analyze_snapshot": "Examining contract state snapshots and data structures",
+                      "analyze_actors": "Identifying and analyzing contract actors and their interactions",
                       "analyze_deployment": "Reviewing deployment configuration and requirements",
                       "implement_deployment_script": "Creating deployment scripts for the contract",
                       "verify_deployment_script": "Testing and validating deployment scripts",
