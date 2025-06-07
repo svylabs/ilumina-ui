@@ -5275,6 +5275,7 @@ The deployment should initialize the contracts with test values and set me as th
                                                                       contractName={action.contract_name}
                                                                       functionName={action.function_name}
                                                                       action={action}
+                                                                      sectionContext="validation-rules"
                                                                     />
                                                                   ) : (
                                                                     <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
@@ -5404,6 +5405,7 @@ The deployment should initialize the contracts with test values and set me as th
                                                                       contractName={action.contract_name}
                                                                       functionName={action.function_name}
                                                                       action={action}
+                                                                      sectionContext="action-summary"
                                                                     />
                                                                   ) : (
                                                                     <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
