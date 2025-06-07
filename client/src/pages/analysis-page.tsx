@@ -4732,10 +4732,6 @@ export default function AnalysisPage() {
                                                                   <Code2 className="h-3.5 w-3.5 mr-1" />
                                                                   Code
                                                                 </TabsTrigger>
-                                                                <TabsTrigger value="preview" className="h-7 text-xs px-3">
-                                                                  <FileEdit className="h-3.5 w-3.5 mr-1" />
-                                                                  Preview Changes
-                                                                </TabsTrigger>
                                                               </TabsList>
                                                               
                                                               <TabsContent value="summary" className="mt-0">
@@ -4779,30 +4775,7 @@ export default function AnalysisPage() {
                                                                 )}
                                                               </TabsContent>
                                                               
-                                                              <TabsContent value="preview" className="mt-0">
-                                                                <div className="bg-black/40 p-3 rounded text-xs">
-                                                                  <div className="flex items-center justify-between mb-2">
-                                                                    <div className="text-gray-300 text-xs">Modified implementation code:</div>
-                                                                    <div className="flex gap-2">
-                                                                      <Button size="sm" variant="outline" className="h-6 text-xs">
-                                                                        Reject Changes
-                                                                      </Button>
-                                                                      <Button size="sm" variant="default" className="h-6 text-xs">
-                                                                        Accept Changes
-                                                                      </Button>
-                                                                    </div>
-                                                                  </div>
-                                                                  <div className="border border-gray-700 rounded-md overflow-hidden">
-                                                                    <div className="bg-red-950/30 p-2 text-red-300 font-mono text-xs line-through">{`async function execute() {
-  // Setup required parameters
-  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");`}</div>
-                                                                    <div className="bg-green-950/30 p-2 text-green-300 font-mono text-xs">{`async function execute() {
-  // Setup required parameters with provider and signer
-  const signer = await ethers.getSigner();
-  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address", signer);`}</div>
-                                                                  </div>
-                                                                </div>
-                                                              </TabsContent>
+
                                                             </Tabs>
                                                           </div>
                                                           
@@ -4817,10 +4790,6 @@ export default function AnalysisPage() {
                                                                 <TabsTrigger value="code" className="h-7 text-xs px-3">
                                                                   <Code2 className="h-3.5 w-3.5 mr-1" />
                                                                   Validation Code
-                                                                </TabsTrigger>
-                                                                <TabsTrigger value="preview" className="h-7 text-xs px-3">
-                                                                  <FileEdit className="h-3.5 w-3.5 mr-1" />
-                                                                  Preview Changes
                                                                 </TabsTrigger>
                                                               </TabsList>
                                                               
@@ -4862,31 +4831,7 @@ export default function AnalysisPage() {
                                                                 )}
                                                               </TabsContent>
                                                               
-                                                              <TabsContent value="preview" className="mt-0">
-                                                                <div className="bg-black/40 p-3 rounded text-xs">
-                                                                  <div className="text-yellow-300 mb-2">Enhanced validation with additional safety checks:</div>
-                                                                  <pre className="whitespace-pre-wrap text-gray-300 font-mono text-xs">{`
-// Additional checks added:
-// 1. Verify contract state
-// 2. Check for reentrancy vulnerabilities
-// 3. Validate input bounds
 
-async function enhancedValidate(params) {
-  // Include existing validations...
-  
-  // Additional safety checks 
-  const contractState = await checkContractState();
-  const reentrancyProtected = await validateReentrancyProtection();
-  
-  return {
-    valid: hasPermission && parametersValid && gasWithinLimits && 
-           contractState.valid && reentrancyProtected,
-    errors: [...basicValidation.errors, ...contractState.errors]
-  };
-}
-`}</pre>
-                                                                </div>
-                                                              </TabsContent>
                                                             </Tabs>
                                                           </div>
                                                         </div>
