@@ -4424,7 +4424,34 @@ export default function AnalysisPage() {
           </div>
         </div>
 
-        {/* Project Details section removed - info moved to page title */}
+        {/* Progress Indicator - Show when analysis is running */}
+        {analysis?.status === "in_progress" && (
+          <div className="mb-6 bg-blue-900/30 border border-blue-500/50 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+              <div className="flex-1">
+                <h3 className="text-blue-400 font-medium">Analysis in Progress</h3>
+                <p className="text-gray-300 text-sm mt-1">
+                  {(() => {
+                    // Find which step is currently in progress
+                    const inProgressSteps = analysisSteps.filter(step => getStepStatus(step.id) === "in_progress");
+                    if (inProgressSteps.length > 0) {
+                      return `Running ${inProgressSteps.map(s => s.title).join(", ")}...`;
+                    }
+                    return "Processing your smart contract analysis...";
+                  })()}
+                </p>
+              </div>
+              <div className="text-blue-400 text-sm">
+                {(() => {
+                  const completedCount = analysisSteps.filter(step => getStepStatus(step.id) === "completed").length;
+                  const totalCount = analysisSteps.length;
+                  return `${completedCount}/${totalCount} steps completed`;
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Compact Steps Bar */}
         <div className="flex flex-wrap justify-center mb-6">
