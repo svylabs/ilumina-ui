@@ -7624,7 +7624,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      const { submissionId, branch, numSimulations, simulationType, actorConfig, ...additionalParams } = req.body;
+      const { submissionId, branch, numSimulations, simulationType, actorConfig, iterations, ...additionalParams } = req.body;
       
       console.log("Run simulation request received:", { 
         submissionId, 

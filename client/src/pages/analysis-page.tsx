@@ -424,6 +424,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [simulationDescription, setSimulationDescription] = useState("");
   const [numSimulations, setNumSimulations] = useState(1);
+  const [iterations, setIterations] = useState(350);
   const [availableBranches, setAvailableBranches] = useState<{name: string; isDefault?: boolean}[]>([]);
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [simStatus, setSimStatus] = useState<{
@@ -1215,7 +1216,8 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
           description: simulationDescription, // Include description
           numSimulations: numSimulations, // Include number of simulations
           simulationType: simulationType, // Include simulation type (run or batch_run)
-          actorConfig: completeActorConfig // Include complete actor configuration
+          actorConfig: completeActorConfig, // Include complete actor configuration
+          iterations: iterations // Include iterations count
         })
       });
       
@@ -1563,7 +1565,33 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
             {/* Advanced Configuration Panel */}
             {showAdvancedConfig && (
               <div className="md:col-span-3 bg-gray-900/50 p-4 rounded-md border border-gray-700">
-                <h4 className="text-sm font-medium text-gray-300 mb-3">Actor Configuration</h4>
+                <h4 className="text-sm font-medium text-gray-300 mb-3">Advanced Configuration</h4>
+                
+                {/* Iterations Field */}
+                <div className="mb-4">
+                  <label htmlFor="iterations" className="text-sm text-gray-300 block mb-1">
+                    Iterations
+                  </label>
+                  <input
+                    id="iterations"
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={iterations}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val >= 1 && val <= 1000) {
+                        setIterations(val);
+                      }
+                    }}
+                    disabled={isRunningSimulation}
+                    className="bg-gray-800 border border-gray-600 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="350"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Number of iterations per simulation (default: 350)</p>
+                </div>
+
+                <h5 className="text-sm font-medium text-gray-300 mb-2">Actor Configuration</h5>
                 <div className="space-y-3">
                   {(() => {
                     // Use same actor data parsing logic as Actor Summary section
