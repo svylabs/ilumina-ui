@@ -121,6 +121,8 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
 }) {
   const { data: summaryData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'json');
 
+  console.log('ActionSummaryTab data:', { submissionId, contractName, functionName, summaryData, isLoading, error });
+
   if (isLoading) {
     return (
       <div className="bg-black/40 p-3 rounded text-xs flex items-center">
