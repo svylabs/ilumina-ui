@@ -1,0 +1,49 @@
+validateDOMNesting(...): <button> cannot appear as a descendant of <button>.
+    at button
+    at _c (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/src/components/ui/button.tsx:47:11)
+    at div
+    at button
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=88971fdb:41:13
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZMJ6J7EO.js?v=88971fdb:75:13
+    at div
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=88971fdb:41:13
+    at Provider (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MQDSU7FK.js?v=88971fdb:38:15)
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZMJ6J7EO.js?v=88971fdb:38:7
+    at div
+    at div
+    at div
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=88971fdb:41:13
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZMJ6J7EO.js?v=88971fdb:104:11
+    at Presence (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKISZHX2.js?v=88971fdb:24:11)
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZMJ6J7EO.js?v=88971fdb:97:13
+    at div
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=88971fdb:41:13
+    at Provider (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MQDSU7FK.js?v=88971fdb:38:15)
+    at https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZMJ6J7EO.js?v=88971fdb:38:7
+    at div
+    at div
+    at div
+    at div
+    at div
+    at div
+    at div
+    at div
+    at div
+    at _c9 (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/src/components/ui/card.tsx:106:12)
+    at div
+    at _c (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at div
+    at div
+    at div
+    at AnalysisPage (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/src/pages/analysis-page.tsx:4769:18)
+    at Route (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=88971fdb:323:16)
+    at ProtectedRoute (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=88971fdb:379:17)
+    at main
+    at div
+    at RootLayout (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/src/components/layout/root-layout.tsx:18:38)
+    at Router
+    at AuthProvider (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/src/lib/auth.tsx:24:32)
+    at QueryClientProvider (https://63f5e07b-fb88-41d9-8baa-01ea3b0dd817-00-h3hxu1p41696.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=88971fdb:2805:3)
+    at App

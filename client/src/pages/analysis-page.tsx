@@ -5144,12 +5144,12 @@ The deployment should initialize the contracts with test values and set me as th
                                                                     <div className="flex items-center justify-between mb-2">
                                                                       <div className="text-gray-300 text-xs">Modified implementation code:</div>
                                                                       <div className="flex gap-2">
-                                                                        <Button size="sm" variant="outline" className="h-6 text-xs">
+                                                                        <button className="h-6 text-xs px-3 py-1 border border-gray-600 rounded text-gray-300 hover:bg-gray-700">
                                                                           Reject Changes
-                                                                        </Button>
-                                                                        <Button size="sm" variant="default" className="h-6 text-xs">
+                                                                        </button>
+                                                                        <button className="h-6 text-xs px-3 py-1 bg-blue-600 rounded text-white hover:bg-blue-700">
                                                                           Accept Changes
-                                                                        </Button>
+                                                                        </button>
                                                                       </div>
                                                                     </div>
                                                                     <div className="border border-gray-700 rounded-md overflow-hidden">
@@ -5274,12 +5274,12 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                                                                     <div className="flex items-center justify-between mb-2">
                                                                       <div className="text-gray-300 text-xs">Modified validation code:</div>
                                                                       <div className="flex gap-2">
-                                                                        <Button size="sm" variant="outline" className="h-6 text-xs">
+                                                                        <button className="h-6 text-xs px-3 py-1 border border-gray-600 rounded text-gray-300 hover:bg-gray-700">
                                                                           Reject Changes
-                                                                        </Button>
-                                                                        <Button size="sm" variant="default" className="h-6 text-xs">
+                                                                        </button>
+                                                                        <button className="h-6 text-xs px-3 py-1 bg-blue-600 rounded text-white hover:bg-blue-700">
                                                                           Accept Changes
-                                                                        </Button>
+                                                                        </button>
                                                                       </div>
                                                                     </div>
                                                                     <div className="border border-gray-700 rounded-md overflow-hidden">
