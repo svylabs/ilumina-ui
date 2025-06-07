@@ -4074,6 +4074,7 @@ export default function AnalysisPage() {
   const [simRepo, setSimRepo] = useState<{owner: string, repo: string, branch: string} | null>(null);
   const [simRepoError, setSimRepoError] = useState<string | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [showProgressDetails, setShowProgressDetails] = useState(false);
   
 
   const { data: project } = useQuery<{
@@ -4433,7 +4434,6 @@ export default function AnalysisPage() {
                 <h3 className="text-blue-400 font-medium">Analysis in Progress</h3>
                 <div className="text-gray-300 text-sm mt-1 space-y-1">
                   {(() => {
-                    const [showDetails, setShowDetails] = useState(false);
                     // Define the complete analysis flow order
                     const analysisFlow = [
                       "analyze_project",
@@ -4497,6 +4497,19 @@ export default function AnalysisPage() {
                       nextStep = analysisFlow[1];
                     }
                     
+                    // Helper function to get completion date for a step
+                    const getStepCompletionDate = (stepKey: string): string | null => {
+                      if (!analysis?.completedSteps) return null;
+                      
+                      const apiStepName = stepKey === "analyze_project" ? "files" : 
+                                         stepKey === "analyze_snapshot" ? "actors" : 
+                                         stepKey === "analyze_deployment" ? "deployment" : 
+                                         stepKey;
+                      
+                      const completedStep = analysis.completedSteps.find(step => step.step === apiStepName);
+                      return completedStep?.updatedAt || null;
+                    };
+
                     return (
                       <>
                         <div>
@@ -4505,12 +4518,71 @@ export default function AnalysisPage() {
                             {currentStep ? stepDisplayNames[currentStep] || currentStep : "Initializing..."}
                           </span>
                         </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {currentStep ? stepDescriptions[currentStep] : "Preparing analysis environment..."}
+                        </div>
                         {nextStep && (
-                          <div>
+                          <div className="mt-2">
                             <span className="text-gray-400">Next Step:</span>{" "}
                             <span className="text-gray-200">
                               {stepDisplayNames[nextStep] || nextStep}
                             </span>
+                          </div>
+                        )}
+                        
+                        {/* Expandable Details Button */}
+                        <button 
+                          onClick={() => setShowProgressDetails(!showProgressDetails)}
+                          className="mt-3 text-xs text-blue-300 hover:text-blue-200 flex items-center gap-1 transition-colors"
+                        >
+                          <ChevronRight className={`h-3 w-3 transition-transform ${showProgressDetails ? 'rotate-90' : ''}`} />
+                          {showProgressDetails ? 'Hide Details' : 'More Information'}
+                        </button>
+                        
+                        {/* Expandable Details Section */}
+                        {showProgressDetails && (
+                          <div className="mt-3 pt-3 border-t border-blue-500/30 space-y-2">
+                            <div className="text-xs font-medium text-blue-300 mb-2">Analysis Pipeline Progress</div>
+                            {analysisFlow.map((step, index) => {
+                              const isCompleted = analysis?.completedSteps?.some(cs => {
+                                const apiStepName = step === "analyze_project" ? "files" : 
+                                                   step === "analyze_snapshot" ? "actors" : 
+                                                   step === "analyze_deployment" ? "deployment" : 
+                                                   step;
+                                return cs.step === apiStepName;
+                              });
+                              const isCurrent = step === currentStep;
+                              const completionDate = getStepCompletionDate(step);
+                              
+                              return (
+                                <div key={step} className={`text-xs flex items-center justify-between py-1 ${
+                                  isCurrent ? 'text-blue-300 font-medium' : 
+                                  isCompleted ? 'text-green-400' : 'text-gray-500'
+                                }`}>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                      isCurrent ? 'bg-blue-400 animate-pulse' : 
+                                      isCompleted ? 'bg-green-400' : 'bg-gray-600'
+                                    }`} />
+                                    <span>{index + 1}. {stepDisplayNames[step]}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-400">
+                                    {isCompleted && completionDate ? (
+                                      new Date(completionDate).toLocaleString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })
+                                    ) : isCurrent ? (
+                                      'In Progress'
+                                    ) : (
+                                      'Not started'
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </>
