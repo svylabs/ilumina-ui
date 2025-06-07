@@ -1174,10 +1174,29 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
       
       console.log("Using submission UUID for simulation:", uuidSubmissionId);
       
+      // Get actors from analysis data using same logic as above
+      let actorsData = { actors: [] };
+      try {
+        const actorsStep = analysis?.steps?.actors;
+        if (actorsStep?.jsonData) {
+          if (typeof actorsStep.jsonData.actors_summary === 'string') {
+            try {
+              actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+            } catch (e) {
+              console.error("Failed to parse actors_summary:", e);
+            }
+          } else {
+            actorsData = actorsStep.jsonData;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse actors data:", e);
+      }
+      
       // Build complete actor configuration including all actors with their current values
       const completeActorConfig: {[actorName: string]: number} = {};
-      if (actors && actors.length > 0) {
-        actors.forEach((actor: any) => {
+      if (actorsData.actors && actorsData.actors.length > 0) {
+        actorsData.actors.forEach((actor: any) => {
           completeActorConfig[actor.name] = actorConfig[actor.name] || 1;
         });
       }
