@@ -98,6 +98,131 @@ function useActionFile(submissionId: string | undefined, contractName: string, f
   });
 }
 
+// Component for displaying action summary from real JSON data
+function ActionSummaryTab({ submissionId, contractName, functionName, action, actor }: {
+  submissionId: string | undefined;
+  contractName: string;
+  functionName: string;
+  action: any;
+  actor: any;
+}) {
+  const { data: summaryData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'json');
+
+  if (isLoading) {
+    return (
+      <div className="bg-black/40 p-3 rounded text-xs flex items-center">
+        <Loader2 className="h-3 w-3 animate-spin mr-2" />
+        <span className="text-white/60">Loading action summary...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-black/40 p-3 rounded text-xs">
+        <p className="text-yellow-400 mb-2">
+          Using default summary - action file not found
+        </p>
+        <div className="text-white/80 space-y-2">
+          <p>Contract interaction: {action.contract_name}</p>
+          <p>Function: {action.function_name}</p>
+          <p>Actor: {actor.name}</p>
+          <p>Parameters will be passed according to the function specification</p>
+        </div>
+      </div>
+    );
+  }
+
+  const summary = summaryData?.content;
+  
+  return (
+    <div className="bg-black/40 p-3 rounded text-xs">
+      <p className="text-green-400 mb-2">
+        {summary?.description || `This action will call the ${action.function_name} function on the ${action.contract_name} contract.`}
+      </p>
+      
+      <div className="text-white/80 space-y-2">
+        <p>Contract: {summary?.contract || action.contract_name}</p>
+        <p>Function: {summary?.function || action.function_name}</p>
+        <p>Actor: {summary?.actor || actor.name}</p>
+        
+        {summary?.parameters && (
+          <div>
+            <p className="text-blue-300 mb-1">Parameters:</p>
+            <div className="ml-2 space-y-1">
+              {Object.entries(summary.parameters).map(([key, value]) => (
+                <p key={key} className="text-xs">• {key}: {String(value)}</p>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {summary?.expected_outcome && (
+          <p className="text-green-300">Expected: {summary.expected_outcome}</p>
+        )}
+        
+        {summary?.gas_estimate && (
+          <p className="text-blue-300">Gas estimate: {summary.gas_estimate}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Component for displaying action code from real TypeScript data
+function ActionCodeTab({ submissionId, contractName, functionName, action }: {
+  submissionId: string | undefined;
+  contractName: string;
+  functionName: string;
+  action: any;
+}) {
+  const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
+
+  if (isLoading) {
+    return (
+      <div className="bg-black/40 p-3 rounded text-xs flex items-center">
+        <Loader2 className="h-3 w-3 animate-spin mr-2" />
+        <span className="text-white/60">Loading action code...</span>
+      </div>
+    );
+  }
+
+  const defaultCode = `
+// Implementation for ${action.name}
+// Contract: ${action.contract_name}
+// Function: ${action.function_name}
+
+async function execute() {
+  // Setup required parameters
+  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
+  
+  // Execute the transaction
+  const tx = await ${action.contract_name.toLowerCase()}.${action.function_name.split('(')[0]}(
+    // Parameters will depend on the specific function
+  );
+  
+  // Wait for confirmation
+  await tx.wait();
+  
+  return tx;
+}`;
+
+  const codeContent = error ? defaultCode : (codeData?.content || defaultCode);
+
+  return (
+    <div className="bg-black/40 p-3 rounded text-xs">
+      {error && (
+        <p className="text-yellow-400 mb-2 text-xs">
+          Using default implementation - action file not found
+        </p>
+      )}
+      <pre className="whitespace-pre-wrap text-green-300 font-mono text-xs overflow-x-auto">
+        {codeContent}
+      </pre>
+    </div>
+  );
+}
+
 function SimulationsComponent({ analysis, deploymentVerified = false }: SimulationsComponentProps) {
   const { id: submissionId } = useParams();
   
@@ -4946,44 +5071,22 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 </TabsList>
                                                                 
                                                                 <TabsContent value="summary" className="mt-0">
-                                                                  <div className="bg-black/40 p-3 rounded text-xs">
-                                                                    <p className="text-green-400 mb-2">
-                                                                      This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
-                                                                    </p>
-                                                                    
-                                                                    <div className="text-white/80 space-y-2">
-                                                                      <p>Contract interaction: {action.contract_name}</p>
-                                                                      <p>Function: {action.function_name}</p>
-                                                                      <p>Actor: {actor.name}</p>
-                                                                      <p>Parameters will be passed according to the function specification</p>
-                                                                    </div>
-                                                                  </div>
+                                                                  <ActionSummaryTab 
+                                                                    submissionId={submissionId}
+                                                                    contractName={action.contract_name}
+                                                                    functionName={action.function_name}
+                                                                    action={action}
+                                                                    actor={actor}
+                                                                  />
                                                                 </TabsContent>
                                                                 
                                                                 <TabsContent value="code" className="mt-0">
-                                                                  <div className="bg-black/40 p-3 rounded text-xs">
-                                                                    <pre className="whitespace-pre-wrap text-green-300 font-mono text-xs">{`
-// Implementation for ${action.name}
-// Contract: ${action.contract_name}
-// Function: ${action.function_name}
-
-async function execute() {
-  // Setup required parameters
-  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
-  
-  // Execute the transaction
-  const tx = await ${action.contract_name.toLowerCase()}.${action.function_name.split('(')[0]}(
-    // Parameters will depend on the specific function
-  );
-  
-  // Wait for confirmation
-  await tx.wait();
-  
-  // Log the result
-  console.log("${action.name} executed successfully");
-}
-`}</pre>
-                                                                  </div>
+                                                                  <ActionCodeTab 
+                                                                    submissionId={submissionId}
+                                                                    contractName={action.contract_name}
+                                                                    functionName={action.function_name}
+                                                                    action={action}
+                                                                  />
                                                                 </TabsContent>
                                                                 
                                                                 <TabsContent value="preview" className="mt-0">
