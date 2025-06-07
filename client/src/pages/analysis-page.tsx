@@ -4502,7 +4502,7 @@ export default function AnalysisPage() {
                       if (!analysis?.completedSteps) return null;
                       
                       const apiStepName = stepKey === "analyze_project" ? "files" : 
-                                         stepKey === "analyze_snapshot" ? "actors" : 
+                                         stepKey === "analyze_actors" ? "actors" : 
                                          stepKey === "analyze_deployment" ? "deployment" : 
                                          stepKey;
                       
