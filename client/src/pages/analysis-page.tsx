@@ -4425,13 +4425,60 @@ export default function AnalysisPage() {
           </div>
         </div>
 
-        {/* Progress Indicator - Show when analysis is running */}
-        {analysis?.status === "in_progress" && (
+        {/* Progress Indicator - Show for all analysis statuses */}
+        {analysis && (analysis.status === "in_progress" || analysis.status === "success" || analysis.status === "error") && (
           <div className="mb-6 bg-blue-900/30 border border-blue-500/50 rounded-lg p-4">
             <div className="flex items-center space-x-3">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+              {(() => {
+                // Check if all steps up to implement_all_actions are complete
+                const allMainStepsComplete = analysisFlow.every(step => {
+                  const apiStepName = step === "analyze_project" ? "files" : 
+                                     step === "analyze_actors" ? "actors" : 
+                                     step === "analyze_deployment" ? "deployment" : 
+                                     step;
+                  
+                  const completedInArray = analysis?.completedSteps?.some(cs => cs.step === apiStepName);
+                  const completedInSteps = analysis?.steps?.[apiStepName]?.status === "completed";
+                  
+                  return completedInArray || completedInSteps;
+                });
+
+                if (analysis?.status === "error") {
+                  return <XCircle className="h-5 w-5 text-red-400" />;
+                } else if (allMainStepsComplete || analysis?.status === "success") {
+                  return <CheckCircle2 className="h-5 w-5 text-green-400" />;
+                } else {
+                  return <Loader2 className="h-5 w-5 animate-spin text-blue-400" />;
+                }
+              })()}
               <div className="flex-1">
-                <h3 className="text-blue-400 font-medium">Analysis in Progress</h3>
+                {(() => {
+                  // Check if all steps up to implement_all_actions are complete
+                  const allMainStepsComplete = analysisFlow.every(step => {
+                    const apiStepName = step === "analyze_project" ? "files" : 
+                                       step === "analyze_actors" ? "actors" : 
+                                       step === "analyze_deployment" ? "deployment" : 
+                                       step;
+                    
+                    const completedInArray = analysis?.completedSteps?.some(cs => cs.step === apiStepName);
+                    const completedInSteps = analysis?.steps?.[apiStepName]?.status === "completed";
+                    
+                    return completedInArray || completedInSteps;
+                  });
+
+                  if (analysis?.status === "error") {
+                    return <h3 className="text-red-400 font-medium">Analysis Failed</h3>;
+                  } else if (allMainStepsComplete || analysis?.status === "success") {
+                    return (
+                      <>
+                        <h3 className="text-green-400 font-medium">Analysis Complete</h3>
+                        <div className="text-green-300 text-sm mt-1">Ready to run simulations</div>
+                      </>
+                    );
+                  } else {
+                    return <h3 className="text-blue-400 font-medium">Analysis in Progress</h3>;
+                  }
+                })()}
                 <div className="text-gray-300 text-sm mt-1 space-y-1">
                   {(() => {
                     // Define the complete analysis flow order
