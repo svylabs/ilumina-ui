@@ -4433,21 +4433,33 @@ export default function AnalysisPage() {
                 <h3 className="text-blue-400 font-medium">Analysis in Progress</h3>
                 <div className="text-gray-300 text-sm mt-1 space-y-1">
                   {(() => {
-                    // Define the analysis flow order
+                    // Define the complete analysis flow order
                     const analysisFlow = [
                       "analyze_project",
-                      "analyze_actors", 
+                      "analyze_snapshot", 
                       "analyze_deployment",
                       "implement_deployment_script",
-                      "verify_deployment_script"
+                      "verify_deployment_script",
+                      "debug_deployment_script",
+                      "scaffold",
+                      "analyze_all_actions",
+                      "analyze_all_snapshots",
+                      "implement_snapshots",
+                      "implement_all_actions"
                     ];
                     
                     const stepDisplayNames = {
                       "analyze_project": "Project Analysis",
-                      "analyze_actors": "Actor Analysis", 
+                      "analyze_snapshot": "Snapshot Analysis",
                       "analyze_deployment": "Deployment Analysis",
                       "implement_deployment_script": "Deployment Implementation",
-                      "verify_deployment_script": "Deployment Verification"
+                      "verify_deployment_script": "Deployment Verification",
+                      "debug_deployment_script": "Deployment Debugging",
+                      "scaffold": "Scaffolding",
+                      "analyze_all_actions": "Action Analysis",
+                      "analyze_all_snapshots": "Snapshot Processing",
+                      "implement_snapshots": "Snapshot Implementation",
+                      "implement_all_actions": "Action Implementation"
                     };
                     
                     // Find current step from completedSteps (most recent in-progress step)
