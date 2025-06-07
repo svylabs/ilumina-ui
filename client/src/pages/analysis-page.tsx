@@ -4476,9 +4476,18 @@ export default function AnalysisPage() {
                     { original: "analyze_deployment", transformed: "deployment" }
                   ];
                   const essentialStepsComplete = essentialSteps.every(step => {
+                    // Use completedSteps array as authoritative source
                     const completedInArray = analysis?.completedSteps?.some(cs => cs.step === step.original);
-                    const completedInSteps = analysis?.steps?.[step.transformed]?.status === "completed";
-                    return completedInArray || completedInSteps;
+                    // Only use steps object as fallback if completedSteps array is empty or undefined
+                    const hasCompletedStepsData = analysis?.completedSteps && analysis.completedSteps.length > 0;
+                    
+                    if (hasCompletedStepsData) {
+                      return completedInArray;
+                    } else {
+                      // Fallback to steps object if no completedSteps data
+                      const completedInSteps = analysis?.steps?.[step.transformed]?.status === "completed";
+                      return completedInSteps;
+                    }
                   });
 
                   if (analysis?.status === "error") {
@@ -4553,9 +4562,18 @@ export default function AnalysisPage() {
                       { original: "analyze_deployment", transformed: "deployment" }
                     ];
                     const essentialStepsComplete = essentialSteps.every(step => {
+                      // Use completedSteps array as authoritative source
                       const completedInArray = analysis?.completedSteps?.some(cs => cs.step === step.original);
-                      const completedInSteps = analysis?.steps?.[step.transformed]?.status === "completed";
-                      return completedInArray || completedInSteps;
+                      // Only use steps object as fallback if completedSteps array is empty or undefined
+                      const hasCompletedStepsData = analysis?.completedSteps && analysis.completedSteps.length > 0;
+                      
+                      if (hasCompletedStepsData) {
+                        return completedInArray;
+                      } else {
+                        // Fallback to steps object if no completedSteps data
+                        const completedInSteps = analysis?.steps?.[step.transformed]?.status === "completed";
+                        return completedInSteps;
+                      }
                     });
 
                     // Determine current step based on analysis status
