@@ -4443,6 +4443,7 @@ export default function AnalysisPage() {
                                                                     contractName={action.contract_name}
                                                                     functionName={action.function_name}
                                                                     action={action}
+                                                                    sectionContext={`implementation-${index}-${i}`}
                                                                   />
                                                                 ) : (
                                                                   <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
@@ -4525,6 +4526,7 @@ export default function AnalysisPage() {
                                                                     contractName={action.contract_name}
                                                                     functionName={action.function_name}
                                                                     action={action}
+                                                                    sectionContext={`validation-${index}-${i}`}
                                                                   />
                                                                 ) : (
                                                                   <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
