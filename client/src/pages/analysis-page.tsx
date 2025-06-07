@@ -2874,17 +2874,17 @@ All test accounts configured with appropriate initial balances
   }
 ];
 
-function StepStatus({ status, startTime }: { status: StepStatus; startTime?: string | null }) {
-  console.log(`StepStatus component received status: ${status}`);
+function StepStatus({ status, startTime, stepId }: { status: StepStatus; startTime?: string | null; stepId?: string }) {
+  console.log(`StepStatus for ${stepId || 'unknown'}: received status ${status}`);
   switch (status) {
     case "completed":
-      console.log(`StepStatus rendering completed icon`);
+      console.log(`StepStatus for ${stepId || 'unknown'}: rendering completed icon (green checkmark)`);
       return <CheckCircle2 className="h-6 w-6 text-green-500" />;
     case "failed":
-      console.log(`StepStatus rendering failed icon`);
+      console.log(`StepStatus for ${stepId || 'unknown'}: rendering failed icon`);
       return <XCircle className="h-6 w-6 text-red-500" />;
     case "in_progress":
-      console.log(`StepStatus rendering in_progress icon`);
+      console.log(`StepStatus for ${stepId || 'unknown'}: rendering in_progress icon`);
       return (
         <div className="flex items-center space-x-2">
           <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -2896,7 +2896,7 @@ function StepStatus({ status, startTime }: { status: StepStatus; startTime?: str
         </div>
       );
     default:
-      console.log(`StepStatus rendering default (pending) icon for status: ${status}`);
+      console.log(`StepStatus for ${stepId || 'unknown'}: rendering default (pending) icon for status: ${status}`);
       return <CircleDot className="h-6 w-6 text-gray-300" />;
   }
 }
@@ -3174,7 +3174,7 @@ function DeploymentInstructionsSection({ submissionId, analysis }: { submissionI
   };
 
   // Get a specific step status from analysis.completedSteps
-  const getStepStatus = (stepType: string): string | null => {
+  const getDeploymentStepStatus = (stepType: string): string | null => {
     // Get completedSteps directly from the analysis response
     if (!analysis?.completedSteps || analysis.completedSteps.length === 0) return null;
     
@@ -4797,6 +4797,7 @@ export default function AnalysisPage() {
                 <StepStatus 
                   status={getStepStatus(step.id)} 
                   startTime={analysis.steps[step.id]?.startTime}
+                  stepId={step.id}
                 />
               </div>
             </div>
