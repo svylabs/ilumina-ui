@@ -7767,6 +7767,11 @@ export function registerRoutes(app: Express): Server {
         apiPayload.actor_config = actorConfig;
       }
       
+      // Add iterations if provided
+      if (iterations && typeof iterations === 'number' && iterations > 0) {
+        apiPayload.iterations = iterations;
+      }
+      
       console.log('Sending API payload:', JSON.stringify(apiPayload, null, 2));
       
       const apiResponse = await fetch(url, {
