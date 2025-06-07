@@ -126,6 +126,9 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
   // Extract the actual content from the API response
   const realActionData = summaryData?.content;
   console.log('Extracted action data:', realActionData);
+  console.log('Full summaryData object:', summaryData);
+  console.log('Does realActionData exist?', !!realActionData);
+  console.log('Does action_detail exist?', !!realActionData?.action_detail);
 
   if (isLoading) {
     return (
@@ -216,6 +219,8 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
   action: any;
 }) {
   const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
+  
+  console.log('ActionCodeTab COMPONENT RENDERED:', { submissionId, contractName, functionName, codeData, isLoading, error });
 
   if (isLoading) {
     return (
@@ -5109,22 +5114,34 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 
                                                                 <TabsContent value="summary" className="mt-0">
                                                                   {console.log('Rendering Summary tab with:', { submissionId, contractName: action.contract_name, functionName: action.function_name })}
-                                                                  <ActionSummaryTab 
-                                                                    submissionId={submissionId}
-                                                                    contractName={action.contract_name}
-                                                                    functionName={action.function_name}
-                                                                    action={action}
-                                                                    actor={actor}
-                                                                  />
+                                                                  {submissionId ? (
+                                                                    <ActionSummaryTab 
+                                                                      submissionId={submissionId}
+                                                                      contractName={action.contract_name}
+                                                                      functionName={action.function_name}
+                                                                      action={action}
+                                                                      actor={actor}
+                                                                    />
+                                                                  ) : (
+                                                                    <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
+                                                                      Loading submission data...
+                                                                    </div>
+                                                                  )}
                                                                 </TabsContent>
                                                                 
                                                                 <TabsContent value="code" className="mt-0">
-                                                                  <ActionCodeTab 
-                                                                    submissionId={submissionId}
-                                                                    contractName={action.contract_name}
-                                                                    functionName={action.function_name}
-                                                                    action={action}
-                                                                  />
+                                                                  {submissionId ? (
+                                                                    <ActionCodeTab 
+                                                                      submissionId={submissionId}
+                                                                      contractName={action.contract_name}
+                                                                      functionName={action.function_name}
+                                                                      action={action}
+                                                                    />
+                                                                  ) : (
+                                                                    <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
+                                                                      Loading submission data...
+                                                                    </div>
+                                                                  )}
                                                                 </TabsContent>
                                                                 
                                                                 <TabsContent value="preview" className="mt-0">
