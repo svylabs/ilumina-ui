@@ -1174,6 +1174,16 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
       
       console.log("Using submission UUID for simulation:", uuidSubmissionId);
       
+      // Build complete actor configuration including all actors with their current values
+      const completeActorConfig: {[actorName: string]: number} = {};
+      if (actors && actors.length > 0) {
+        actors.forEach((actor: any) => {
+          completeActorConfig[actor.name] = actorConfig[actor.name] || 1;
+        });
+      }
+      
+      console.log("Complete actor configuration being sent:", completeActorConfig);
+      
       // Call the new API endpoint to trigger the simulation
       const response = await fetch('/api/run-simulation', {
         method: 'POST',
@@ -1186,7 +1196,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
           description: simulationDescription, // Include description
           numSimulations: numSimulations, // Include number of simulations
           simulationType: simulationType, // Include simulation type (run or batch_run)
-          actorConfig: actorConfig // Include actor configuration
+          actorConfig: completeActorConfig // Include complete actor configuration
         })
       });
       
