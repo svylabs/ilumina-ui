@@ -4535,31 +4535,31 @@ export default function AnalysisPage() {
                     ];
                     
                     const stepDisplayNames = {
-                      "analyze_project": "Project Analysis",
-                      "analyze_actors": "Actor Analysis",
-                      "analyze_deployment": "Deployment Analysis",
-                      "implement_deployment_script": "Deployment Implementation",
+                      "analyze_project": "Analyze Project",
+                      "analyze_actors": "Analyze Actors",
+                      "analyze_deployment": "Analyze Deployment",
+                      "implement_deployment_script": "Implement Deployment Script",
                       "verify_deployment_script": "Deployment Verification",
                       "debug_deployment_script": "Deployment Debugging",
                       "scaffold": "Scaffolding",
                       "analyze_all_actions": "Action Analysis",
-                      "analyze_all_snapshots": "Snapshot Processing",
+                      "analyze_all_snapshots": "Snapshot Analysis",
                       "implement_snapshots": "Snapshot Implementation",
                       "implement_all_actions": "Action Implementation"
                     };
                     
                     const stepDescriptions = {
-                      "analyze_project": "Analyzing smart contract code and identifying key components",
-                      "analyze_actors": "Identifying and analyzing contract actors and their interactions",
-                      "analyze_deployment": "Reviewing deployment configuration and requirements",
-                      "implement_deployment_script": "Creating deployment scripts for the contract",
-                      "verify_deployment_script": "Testing and validating deployment scripts",
-                      "debug_deployment_script": "Troubleshooting deployment issues if needed",
-                      "scaffold": "Setting up test environment and infrastructure",
-                      "analyze_all_actions": "Identifying and categorizing all contract actions",
-                      "analyze_all_snapshots": "Processing all contract state snapshots",
-                      "implement_snapshots": "Implementing snapshot capture mechanisms",
-                      "implement_all_actions": "Creating implementations for all identified actions"
+                      "analyze_project": "Analyzes the project, the purpose, etc.",
+                      "analyze_actors": "Identifies market participants and actions that will be taken by each of the market participant.",
+                      "analyze_deployment": "Evaluate how to deploy the contracts based on user input.",
+                      "implement_deployment_script": "Implements deployment script",
+                      "verify_deployment_script": "Ensures that deployment script works",
+                      "debug_deployment_script": "Deployment debugging (If needed)",
+                      "scaffold": "Scaffolds actions, actors and snapshots",
+                      "analyze_all_actions": "Understands what are the state changes and validations necessary for each action.",
+                      "analyze_all_snapshots": "What are the states that should be snapshotted and how.",
+                      "implement_snapshots": "Implements datastructures and methods to snapshot contracts.",
+                      "implement_all_actions": "Implements parameter generation logic, execution of action logic and validation of action. At this point, simulation code should be ready."
                     };
                     
                     // Check if essential steps are complete first
@@ -4718,7 +4718,12 @@ export default function AnalysisPage() {
                                       isCompleted ? 'bg-green-400' : 
                                       isCurrent ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'
                                     }`} />
-                                    <span>{index + 1}. {stepDisplayNames[step]}</span>
+                                    <span 
+                                      title={stepDescriptions[step]}
+                                      className="cursor-help"
+                                    >
+                                      {index + 1}. {stepDisplayNames[step]}
+                                    </span>
                                   </div>
                                   <div className="text-xs text-gray-400">
                                     {isCompleted ? (
