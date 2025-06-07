@@ -83,14 +83,27 @@ function useActionFile(submissionId: string | undefined, contractName: string, f
     queryFn: async () => {
       if (!submissionId) throw new Error('No submission ID');
       
-      const response = await fetch(`/api/action-file/${submissionId}/${contractName}/${functionName}/${fileType}`);
+      console.log(`Fetching action file: ${contractName}_${functionName}.${fileType} for submission ${submissionId}`);
+      
+      const response = await fetch(`/api/action-file/${submissionId}/${contractName}/${functionName}/${fileType}`, {
+        credentials: 'include' // Include cookies for authentication
+      });
+      
+      console.log(`API response status: ${response.status}`);
+      
       if (!response.ok) {
         if (response.status === 404) {
+          console.log(`Action file not found: ${contractName}_${functionName}.${fileType}`);
           throw new Error(`Action file not found: ${contractName}_${functionName}.${fileType}`);
         }
+        const errorText = await response.text();
+        console.error(`Failed to fetch action file: ${response.status} - ${errorText}`);
         throw new Error(`Failed to fetch action file: ${response.status}`);
       }
-      return response.json();
+      
+      const data = await response.json();
+      console.log(`Successfully fetched action file data:`, data);
+      return data;
     },
     enabled: !!submissionId && !!contractName && !!functionName,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -106,6 +119,7 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
   action: any;
   actor: any;
 }) {
+  console.log(`ActionSummaryTab: submissionId=${submissionId}, contractName=${contractName}, functionName=${functionName}`);
   const { data: summaryData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'json');
 
   if (isLoading) {
