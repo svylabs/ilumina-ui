@@ -119,7 +119,6 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
   action: any;
   actor: any;
 }) {
-  console.log(`ActionSummaryTab: submissionId=${submissionId}, contractName=${contractName}, functionName=${functionName}`);
   const { data: summaryData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'json');
 
   if (isLoading) {
@@ -147,38 +146,62 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
     );
   }
 
-  const summary = summaryData?.content;
+  const actionData = summaryData?.content;
   
   return (
     <div className="bg-black/40 p-3 rounded text-xs">
-      <p className="text-green-400 mb-2">
-        {summary?.description || `This action will call the ${action.function_name} function on the ${action.contract_name} contract.`}
-      </p>
-      
-      <div className="text-white/80 space-y-2">
-        <p>Contract: {summary?.contract || action.contract_name}</p>
-        <p>Function: {summary?.function || action.function_name}</p>
-        <p>Actor: {summary?.actor || actor.name}</p>
-        
-        {summary?.parameters && (
+      {actionData?.action_detail ? (
+        <div className="space-y-3">
           <div>
-            <p className="text-blue-300 mb-1">Parameters:</p>
-            <div className="ml-2 space-y-1">
-              {Object.entries(summary.parameters).map(([key, value]) => (
-                <p key={key} className="text-xs">• {key}: {String(value)}</p>
-              ))}
-            </div>
+            <p className="text-green-400 mb-2">
+              {actionData.action?.summary || `This action will call the ${action.function_name} function on the ${action.contract_name} contract.`}
+            </p>
           </div>
-        )}
-        
-        {summary?.expected_outcome && (
-          <p className="text-green-300">Expected: {summary.expected_outcome}</p>
-        )}
-        
-        {summary?.gas_estimate && (
-          <p className="text-blue-300">Gas estimate: {summary.gas_estimate}</p>
-        )}
-      </div>
+          
+          <div className="text-white/80 space-y-2">
+            <p>Contract: {actionData.action_detail.contract_name}</p>
+            <p>Function: {actionData.action_detail.function_name}</p>
+            <p>Actor: {actor.name}</p>
+          </div>
+
+          {actionData.action_detail.pre_execution_parameter_generation_rules && (
+            <div>
+              <p className="text-blue-300 mb-1">Parameter Generation Rules:</p>
+              <div className="ml-2 space-y-1">
+                {actionData.action_detail.pre_execution_parameter_generation_rules.map((rule, index) => (
+                  <p key={index} className="text-xs text-gray-300">• {rule}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {actionData.action_detail.on_execution_state_updates_made && (
+            <div>
+              <p className="text-purple-300 mb-1">State Changes:</p>
+              <div className="ml-2 space-y-1">
+                {actionData.action_detail.on_execution_state_updates_made.slice(0, 3).map((update, index) => (
+                  <p key={index} className="text-xs text-gray-300">• {update.category}: {update.description}</p>
+                ))}
+                {actionData.action_detail.on_execution_state_updates_made.length > 3 && (
+                  <p className="text-xs text-gray-400">... and {actionData.action_detail.on_execution_state_updates_made.length - 3} more</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <p className="text-green-400 mb-2">
+            This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
+          </p>
+          <div className="text-white/80 space-y-2">
+            <p>Contract: {action.contract_name}</p>
+            <p>Function: {action.function_name}</p>
+            <p>Actor: {actor.name}</p>
+            <p>Implementation will be generated during simulation setup</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
