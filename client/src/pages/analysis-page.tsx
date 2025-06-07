@@ -1602,11 +1602,18 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value.trim(), 10);
                                   if (!isNaN(val) && val >= 1 && val <= 500) {
-                                    const currentTotal = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
-                                    const otherActorsTotal = currentTotal - (actorConfig[actor.name] || 1);
-                                    const newTotal = otherActorsTotal + val;
+                                    // Get actors from analysis data
+                                    const analysisActors = getActorsFromAnalysis();
                                     
-                                    if (newTotal <= 500) {
+                                    // Calculate current total including all actors
+                                    let currentTotal = 0;
+                                    if (analysisActors && analysisActors.length > 0) {
+                                      analysisActors.forEach((a: any) => {
+                                        currentTotal += a.name === actor.name ? val : (actorConfig[a.name] || 1);
+                                      });
+                                    }
+                                    
+                                    if (currentTotal <= 500) {
                                       setActorConfig(prev => ({
                                         ...prev,
                                         [actor.name]: val
@@ -1621,7 +1628,15 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                 type="button"
                                 onClick={() => {
                                   const currentCount = actorConfig[actor.name] || 1;
-                                  const currentTotal = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
+                                  
+                                  // Get actors from analysis data and calculate proper total
+                                  const analysisActors = getActorsFromAnalysis();
+                                  let currentTotal = 0;
+                                  if (analysisActors && analysisActors.length > 0) {
+                                    analysisActors.forEach((a: any) => {
+                                      currentTotal += actorConfig[a.name] || 1;
+                                    });
+                                  }
                                   
                                   if (currentTotal < 500) {
                                     setActorConfig(prev => ({
@@ -1630,7 +1645,16 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                     }));
                                   }
                                 }}
-                                disabled={isRunningSimulation || Object.values(actorConfig).reduce((sum, count) => sum + count, 0) >= 500}
+                                disabled={isRunningSimulation || (() => {
+                                  const analysisActors = getActorsFromAnalysis();
+                                  let total = 0;
+                                  if (analysisActors && analysisActors.length > 0) {
+                                    analysisActors.forEach((a: any) => {
+                                      total += actorConfig[a.name] || 1;
+                                    });
+                                  }
+                                  return total >= 500;
+                                })()}
                                 className="bg-gray-700 border border-gray-600 rounded-r-md px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 +
@@ -1650,7 +1674,14 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                   <div className="flex items-center justify-between pt-2 border-t border-gray-700">
                     <div className="text-xs text-gray-400">
                       Total actors: {(() => {
-                        const total = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
+                        // Calculate total including all actors (both modified and default)
+                        const analysisActors = getActorsFromAnalysis();
+                        let total = 0;
+                        if (analysisActors && analysisActors.length > 0) {
+                          analysisActors.forEach((actor: any) => {
+                            total += actorConfig[actor.name] || 1;
+                          });
+                        }
                         return total > 500 ? (
                           <span className="text-red-400">{total} (max 500)</span>
                         ) : (
