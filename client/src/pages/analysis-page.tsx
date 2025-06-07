@@ -4709,7 +4709,7 @@ export default function AnalysisPage() {
                                 // Use completedSteps array as the only authoritative source
                                 return analysis?.completedSteps?.some(cs => cs.step === step) || false;
                               })();
-                              const isCurrent = step === currentStep;
+                              const isCurrent = step === analysis?.currentStep;
                               const completionDate = getStepCompletionDate(step);
                               
                               return (

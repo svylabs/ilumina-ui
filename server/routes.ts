@@ -6332,6 +6332,7 @@ export function registerRoutes(app: Express): Server {
             status, 
             steps: stepsStatus,
             completedSteps,
+            currentStep: externalSubmissionData.step, // Include current step from submission data
             submissionId: uuidSubmissionId  // Include the submission ID in the response
           });
           
