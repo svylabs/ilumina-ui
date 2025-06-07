@@ -268,6 +268,9 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
   const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
   
   console.log('ActionCodeTab COMPONENT RENDERED:', { submissionId, contractName, functionName, codeData, isLoading, error });
+  console.log('Does codeData exist?', !!codeData);
+  console.log('Does realCodeContent exist?', !!realCodeContent);
+  console.log('CodeData content preview:', realCodeContent?.substring(0, 200));
 
   if (isLoading) {
     return (
@@ -4438,34 +4441,18 @@ async function execute() {
                                                               </TabsContent>
                                                               
                                                               <TabsContent value="code" className="mt-0">
-                                                                <div className="bg-black/40 p-3 rounded text-xs">
-                                                                  <pre className="whitespace-pre-wrap text-yellow-300 font-mono text-xs">{`
-// Validation for ${action.name}
-// Contract: ${action.contract_name}
-// Function: ${action.function_name}
-
-async function validate(params) {
-  // Check actor permissions
-  const actor = await ethers.getSigner();
-  const ${action.contract_name.toLowerCase()} = await ethers.getContractAt("${action.contract_name}", "${action.contract_name.toLowerCase()}Address");
-  
-  // Verify actor has required permissions
-  const hasPermission = true; // Replace with actual permission check
-  
-  // Check parameters are valid
-  const parametersValid = true; // Replace with actual validation
-  
-  // Verify gas estimates
-  const gasEstimate = await ${action.contract_name.toLowerCase()}.estimateGas.${action.function_name.split('(')[0]}();
-  const gasWithinLimits = gasEstimate.lt(ethers.utils.parseUnits("5", "gwei"));
-  
-  return {
-    valid: hasPermission && parametersValid && gasWithinLimits,
-    errors: []
-  };
-}
-`}</pre>
-                                                                </div>
+                                                                {submissionId ? (
+                                                                  <ActionCodeTab 
+                                                                    submissionId={submissionId}
+                                                                    contractName={action.contract_name}
+                                                                    functionName={action.function_name}
+                                                                    action={action}
+                                                                  />
+                                                                ) : (
+                                                                  <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
+                                                                    Loading submission data...
+                                                                  </div>
+                                                                )}
                                                               </TabsContent>
                                                               
                                                               <TabsContent value="preview" className="mt-0">
