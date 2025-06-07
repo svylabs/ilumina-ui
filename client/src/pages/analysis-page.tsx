@@ -4274,18 +4274,28 @@ export default function AnalysisPage() {
                                                               </TabsList>
                                                               
                                                               <TabsContent value="summary" className="mt-0">
-                                                                <div className="bg-black/40 p-3 rounded text-xs">
-                                                                  <p className="text-green-400 mb-2">
-                                                                    This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
-                                                                  </p>
-                                                                  
-                                                                  <div className="text-white/80 space-y-2">
-                                                                    <p>Contract interaction: {action.contract_name}</p>
-                                                                    <p>Function: {action.function_name}</p>
-                                                                    <p>Actor: {actor.name}</p>
-                                                                    <p>Parameters will be passed according to the function specification</p>
+                                                                {submissionId ? (
+                                                                  <ActionSummaryTab 
+                                                                    submissionId={submissionId}
+                                                                    contractName={action.contract_name}
+                                                                    functionName={action.function_name}
+                                                                    action={action}
+                                                                    actor={actor}
+                                                                  />
+                                                                ) : (
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <p className="text-green-400 mb-2">
+                                                                      This action will call the <span className="font-bold">{action.function_name}</span> function on the <span className="font-bold">{action.contract_name}</span> contract.
+                                                                    </p>
+                                                                    
+                                                                    <div className="text-white/80 space-y-2">
+                                                                      <p>Contract interaction: {action.contract_name}</p>
+                                                                      <p>Function: {action.function_name}</p>
+                                                                      <p>Actor: {actor.name}</p>
+                                                                      <p>Parameters will be passed according to the function specification</p>
+                                                                    </div>
                                                                   </div>
-                                                                </div>
+                                                                )}
                                                               </TabsContent>
                                                               
                                                               <TabsContent value="code" className="mt-0">
@@ -4360,15 +4370,25 @@ async function execute() {
                                                               </TabsList>
                                                               
                                                               <TabsContent value="summary" className="mt-0">
-                                                                <div className="bg-black/40 p-3 rounded text-xs">
-                                                                  <ul className="list-disc pl-5 text-yellow-400 space-y-1">
-                                                                    <li>All required parameters must be provided and valid</li>
-                                                                    <li>Actor must have appropriate permissions/role</li>
-                                                                    <li>Actor must have sufficient balance if operations involve transfers</li>
-                                                                    <li>Contract state must allow this operation</li>
-                                                                    <li>Gas estimation must be within reasonable limits</li>
-                                                                  </ul>
-                                                                </div>
+                                                                {submissionId ? (
+                                                                  <ActionSummaryTab 
+                                                                    submissionId={submissionId}
+                                                                    contractName={action.contract_name}
+                                                                    functionName={action.function_name}
+                                                                    action={action}
+                                                                    actor={actor}
+                                                                  />
+                                                                ) : (
+                                                                  <div className="bg-black/40 p-3 rounded text-xs">
+                                                                    <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+                                                                      <li>All required parameters must be provided and valid</li>
+                                                                      <li>Actor must have appropriate permissions/role</li>
+                                                                      <li>Actor must have sufficient balance if operations involve transfers</li>
+                                                                      <li>Contract state must allow this operation</li>
+                                                                      <li>Gas estimation must be within reasonable limits</li>
+                                                                    </ul>
+                                                                  </div>
+                                                                )}
                                                               </TabsContent>
                                                               
                                                               <TabsContent value="code" className="mt-0">
