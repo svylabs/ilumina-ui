@@ -5383,7 +5383,8 @@ function validate${action.function_name.split('(')[0]}Result(result) {
                         // Show simulations component when either the step is completed OR deployment verification is completed
                         <SimulationsComponent 
                           analysis={analysis} 
-                          deploymentVerified={isDeploymentVerificationCompleted(analysis.completedSteps)} 
+                          deploymentVerified={isDeploymentVerificationCompleted(analysis.completedSteps)}
+                          submissionId={submissionId}
                         />
                       
                       ) : currentStep.id === "history" ? (
