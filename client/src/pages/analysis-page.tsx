@@ -1602,13 +1602,29 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value.trim(), 10);
                                   if (!isNaN(val) && val >= 1 && val <= 500) {
-                                    // Get actors from analysis data
-                                    const analysisActors = getActorsFromAnalysis();
+                                    // Get actors from analysis data using same logic as above
+                                    let actorsData = { actors: [] };
+                                    try {
+                                      const actorsStep = analysis?.steps?.actors;
+                                      if (actorsStep?.jsonData) {
+                                        if (typeof actorsStep.jsonData.actors_summary === 'string') {
+                                          try {
+                                            actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+                                          } catch (e) {
+                                            console.error("Failed to parse actors_summary:", e);
+                                          }
+                                        } else {
+                                          actorsData = actorsStep.jsonData;
+                                        }
+                                      }
+                                    } catch (e) {
+                                      console.error("Failed to parse actors data:", e);
+                                    }
                                     
                                     // Calculate current total including all actors
                                     let currentTotal = 0;
-                                    if (analysisActors && analysisActors.length > 0) {
-                                      analysisActors.forEach((a: any) => {
+                                    if (actorsData.actors && actorsData.actors.length > 0) {
+                                      actorsData.actors.forEach((a: any) => {
                                         currentTotal += a.name === actor.name ? val : (actorConfig[a.name] || 1);
                                       });
                                     }
@@ -1629,11 +1645,28 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                 onClick={() => {
                                   const currentCount = actorConfig[actor.name] || 1;
                                   
-                                  // Get actors from analysis data and calculate proper total
-                                  const analysisActors = getActorsFromAnalysis();
+                                  // Get actors from analysis data using same logic as above
+                                  let actorsData = { actors: [] };
+                                  try {
+                                    const actorsStep = analysis?.steps?.actors;
+                                    if (actorsStep?.jsonData) {
+                                      if (typeof actorsStep.jsonData.actors_summary === 'string') {
+                                        try {
+                                          actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+                                        } catch (e) {
+                                          console.error("Failed to parse actors_summary:", e);
+                                        }
+                                      } else {
+                                        actorsData = actorsStep.jsonData;
+                                      }
+                                    }
+                                  } catch (e) {
+                                    console.error("Failed to parse actors data:", e);
+                                  }
+                                  
                                   let currentTotal = 0;
-                                  if (analysisActors && analysisActors.length > 0) {
-                                    analysisActors.forEach((a: any) => {
+                                  if (actorsData.actors && actorsData.actors.length > 0) {
+                                    actorsData.actors.forEach((a: any) => {
                                       currentTotal += actorConfig[a.name] || 1;
                                     });
                                   }
@@ -1646,10 +1679,28 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                   }
                                 }}
                                 disabled={isRunningSimulation || (() => {
-                                  const analysisActors = getActorsFromAnalysis();
+                                  // Get actors from analysis data using same logic as above
+                                  let actorsData = { actors: [] };
+                                  try {
+                                    const actorsStep = analysis?.steps?.actors;
+                                    if (actorsStep?.jsonData) {
+                                      if (typeof actorsStep.jsonData.actors_summary === 'string') {
+                                        try {
+                                          actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+                                        } catch (e) {
+                                          console.error("Failed to parse actors_summary:", e);
+                                        }
+                                      } else {
+                                        actorsData = actorsStep.jsonData;
+                                      }
+                                    }
+                                  } catch (e) {
+                                    console.error("Failed to parse actors data:", e);
+                                  }
+                                  
                                   let total = 0;
-                                  if (analysisActors && analysisActors.length > 0) {
-                                    analysisActors.forEach((a: any) => {
+                                  if (actorsData.actors && actorsData.actors.length > 0) {
+                                    actorsData.actors.forEach((a: any) => {
                                       total += actorConfig[a.name] || 1;
                                     });
                                   }
@@ -1674,11 +1725,28 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                   <div className="flex items-center justify-between pt-2 border-t border-gray-700">
                     <div className="text-xs text-gray-400">
                       Total actors: {(() => {
-                        // Calculate total including all actors (both modified and default)
-                        const analysisActors = getActorsFromAnalysis();
+                        // Get actors from analysis data using same logic as above
+                        let actorsData = { actors: [] };
+                        try {
+                          const actorsStep = analysis?.steps?.actors;
+                          if (actorsStep?.jsonData) {
+                            if (typeof actorsStep.jsonData.actors_summary === 'string') {
+                              try {
+                                actorsData = JSON.parse(actorsStep.jsonData.actors_summary);
+                              } catch (e) {
+                                console.error("Failed to parse actors_summary:", e);
+                              }
+                            } else {
+                              actorsData = actorsStep.jsonData;
+                            }
+                          }
+                        } catch (e) {
+                          console.error("Failed to parse actors data:", e);
+                        }
+                        
                         let total = 0;
-                        if (analysisActors && analysisActors.length > 0) {
-                          analysisActors.forEach((actor: any) => {
+                        if (actorsData.actors && actorsData.actors.length > 0) {
+                          actorsData.actors.forEach((actor: any) => {
                             total += actorConfig[actor.name] || 1;
                           });
                         }
