@@ -4442,13 +4442,6 @@ export default function AnalysisPage() {
                   })()}
                 </p>
               </div>
-              <div className="text-blue-400 text-sm">
-                {(() => {
-                  const completedCount = analysisSteps.filter(step => getStepStatus(step.id) === "completed").length;
-                  const totalCount = analysisSteps.length;
-                  return `${completedCount}/${totalCount} steps completed`;
-                })()}
-              </div>
             </div>
           </div>
         )}
