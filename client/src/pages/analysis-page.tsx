@@ -4633,12 +4633,8 @@ export default function AnalysisPage() {
                     const getStepCompletionDate = (stepKey: string): string | null => {
                       if (!analysis?.completedSteps) return null;
                       
-                      const apiStepName = stepKey === "analyze_project" ? "files" : 
-                                         stepKey === "analyze_actors" ? "actors" : 
-                                         stepKey === "analyze_deployment" ? "deployment" : 
-                                         stepKey;
-                      
-                      const completedStep = analysis.completedSteps.find(step => step.step === apiStepName);
+                      // stepKey is already the API step name, so use it directly
+                      const completedStep = analysis.completedSteps.find(step => step.step === stepKey);
                       return completedStep?.updatedAt || null;
                     };
 
@@ -4727,12 +4723,12 @@ export default function AnalysisPage() {
                                   <div className="text-xs text-gray-400">
                                     {isCompleted ? (
                                       completionDate ? (
-                                        new Date(completionDate).toLocaleString('en-US', {
+                                        `Completed ${new Date(completionDate).toLocaleString('en-US', {
                                           month: 'short',
                                           day: 'numeric',
                                           hour: '2-digit',
                                           minute: '2-digit'
-                                        })
+                                        })}`
                                       ) : (
                                         'Completed'
                                       )
