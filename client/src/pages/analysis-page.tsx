@@ -4537,22 +4537,38 @@ export default function AnalysisPage() {
                       "implement_all_actions": "Creating implementations for all identified actions"
                     };
                     
-                    // Find current step from completedSteps (most recent in-progress step)
+                    // Determine current step based on analysis status
                     let currentStep = null;
                     let nextStep = null;
                     
-                    if (analysis.completedSteps && analysis.completedSteps.length > 0) {
-                      // Find the last step that's either completed or in progress
-                      const lastStep = analysis.completedSteps[analysis.completedSteps.length - 1];
-                      currentStep = lastStep.step;
-                      
-                      // Find next step in the flow
-                      const currentIndex = analysisFlow.indexOf(currentStep);
-                      if (currentIndex >= 0 && currentIndex < analysisFlow.length - 1) {
-                        nextStep = analysisFlow[currentIndex + 1];
+                    if (analysis?.status === "success" || analysis?.status === "error") {
+                      // For success/error status, show the last step in the flow
+                      currentStep = analysisFlow[analysisFlow.length - 1];
+                      nextStep = null; // No next step for completed analysis
+                    } else if (analysis?.status === "in_progress") {
+                      // For in_progress status, show the actual current step being worked on
+                      if (analysis.completedSteps && analysis.completedSteps.length > 0) {
+                        // The current step is the next one after the last completed step
+                        const lastCompletedStep = analysis.completedSteps[analysis.completedSteps.length - 1];
+                        const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
+                        
+                        if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
+                          currentStep = analysisFlow[lastCompletedIndex + 1];
+                          if (lastCompletedIndex + 2 < analysisFlow.length) {
+                            nextStep = analysisFlow[lastCompletedIndex + 2];
+                          }
+                        } else {
+                          // Last completed step, so we're done
+                          currentStep = lastCompletedStep.step;
+                          nextStep = null;
+                        }
+                      } else {
+                        // If no completed steps, we're on the first step
+                        currentStep = analysisFlow[0];
+                        nextStep = analysisFlow[1];
                       }
                     } else {
-                      // If no completed steps, we're on the first step
+                      // Default case - starting with first step
                       currentStep = analysisFlow[0];
                       nextStep = analysisFlow[1];
                     }
@@ -4573,15 +4589,28 @@ export default function AnalysisPage() {
                     return (
                       <>
                         <div>
-                          <span className="text-blue-300">Current Step:</span>{" "}
-                          <span className="text-white font-medium">
-                            {currentStep ? stepDisplayNames[currentStep] || currentStep : "Initializing..."}
-                          </span>
+                          {analysis?.status === "success" || analysis?.status === "error" ? (
+                            <>
+                              <span className={analysis?.status === "success" ? "text-green-300" : "text-red-300"}>
+                                {analysis?.status === "success" ? "Completed:" : "Failed at:"}
+                              </span>{" "}
+                              <span className="text-white font-medium">
+                                {currentStep ? stepDisplayNames[currentStep] || currentStep : "Final Step"}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-blue-300">Current Step:</span>{" "}
+                              <span className="text-white font-medium">
+                                {currentStep ? stepDisplayNames[currentStep] || currentStep : "Initializing..."}
+                              </span>
+                            </>
+                          )}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
                           {currentStep ? stepDescriptions[currentStep] : "Preparing analysis environment..."}
                         </div>
-                        {nextStep && (
+                        {nextStep && analysis?.status === "in_progress" && (
                           <div className="mt-2">
                             <span className="text-gray-400">Next Step:</span>{" "}
                             <span className="text-gray-200">
