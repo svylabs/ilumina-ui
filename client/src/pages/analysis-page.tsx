@@ -4459,8 +4459,10 @@ export default function AnalysisPage() {
 
                 if (analysis?.status === "error") {
                   return <XCircle className="h-5 w-5 text-red-400" />;
-                } else if (essentialStepsComplete && analysis?.status === "success") {
+                } else if (essentialStepsComplete) {
                   return <CheckCircle2 className="h-5 w-5 text-green-400" />;
+                } else if (analysis?.status === "success") {
+                  return <AlertCircle className="h-5 w-5 text-orange-400" />;
                 } else {
                   return <Loader2 className="h-5 w-5 animate-spin text-blue-400" />;
                 }
@@ -4481,11 +4483,18 @@ export default function AnalysisPage() {
 
                   if (analysis?.status === "error") {
                     return <h3 className="text-red-400 font-medium">Analysis Failed</h3>;
-                  } else if (essentialStepsComplete && analysis?.status === "success") {
+                  } else if (essentialStepsComplete) {
                     return (
                       <>
                         <h3 className="text-green-400 font-medium">Analysis Complete</h3>
                         <div className="text-green-300 text-sm mt-1">Ready to run simulations</div>
+                      </>
+                    );
+                  } else if (analysis?.status === "success") {
+                    return (
+                      <>
+                        <h3 className="text-orange-400 font-medium">Analysis Partially Complete</h3>
+                        <div className="text-orange-300 text-sm mt-1">Additional steps required before simulations</div>
                       </>
                     );
                   } else {
@@ -4542,9 +4551,29 @@ export default function AnalysisPage() {
                     let nextStep = null;
                     
                     if (analysis?.status === "success" || analysis?.status === "error") {
-                      // For success/error status, show the last step in the flow
-                      currentStep = analysisFlow[analysisFlow.length - 1];
-                      nextStep = null; // No next step for completed analysis
+                      // For success/error status, determine current step based on completed steps
+                      if (analysis.completedSteps && analysis.completedSteps.length > 0) {
+                        const lastCompletedStep = analysis.completedSteps[analysis.completedSteps.length - 1];
+                        const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
+                        
+                        if (essentialStepsComplete) {
+                          // All essential steps done, show final step
+                          currentStep = analysisFlow[analysisFlow.length - 1];
+                          nextStep = null;
+                        } else if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
+                          // Show next step that needs to be completed
+                          currentStep = analysisFlow[lastCompletedIndex + 1];
+                          if (lastCompletedIndex + 2 < analysisFlow.length) {
+                            nextStep = analysisFlow[lastCompletedIndex + 2];
+                          }
+                        } else {
+                          currentStep = lastCompletedStep.step;
+                          nextStep = null;
+                        }
+                      } else {
+                        currentStep = analysisFlow[0];
+                        nextStep = analysisFlow[1];
+                      }
                     } else if (analysis?.status === "in_progress") {
                       // For in_progress status, show the actual current step being worked on
                       if (analysis.completedSteps && analysis.completedSteps.length > 0) {
