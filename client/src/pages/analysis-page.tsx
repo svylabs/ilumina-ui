@@ -62,6 +62,7 @@ type SimulationRun = {
 interface SimulationsComponentProps {
   analysis?: AnalysisResponse;
   deploymentVerified?: boolean;
+  submissionId?: string;
 }
 
 // Type for history log entries
@@ -265,8 +266,11 @@ async function execute() {
   );
 }
 
-function SimulationsComponent({ analysis, deploymentVerified = false }: SimulationsComponentProps) {
-  const { id: submissionId } = useParams();
+function SimulationsComponent({ analysis, deploymentVerified = false, submissionId: propSubmissionId }: SimulationsComponentProps) {
+  const { id: projectId } = useParams();
+  
+  // Use the passed submission ID, or fall back to project ID for backward compatibility
+  const submissionId = propSubmissionId || projectId;
   
   // State for simulation runs
   const [simulationRuns, setSimulationRuns] = useState<SimulationRun[]>([]);
@@ -5076,7 +5080,7 @@ The deployment should initialize the contracts with test values and set me as th
                                                 <CollapsibleContent className="px-4 pb-4">
                                                   <div className="space-y-4">
                                                     {actor.actions.map((action: any, i: number) => (
-                                                      <Collapsible key={i} defaultOpen={i === 0}>
+                                                      <Collapsible key={i} open={i === 0}>
                                                         <CollapsibleTrigger className="flex items-center gap-2 text-gray-300 p-2 bg-gray-700/50 rounded w-full justify-between hover:bg-gray-600/50">
                                                           <div className="flex items-center gap-2">
                                                             <ChevronRight className="h-4 w-4 transform transition-transform group-data-[state=open]:rotate-90" />
