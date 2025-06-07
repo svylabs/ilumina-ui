@@ -284,14 +284,96 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
     );
   }
 
+  // Extract method sections for easy navigation
+  const extractMethods = (code: string) => {
+    if (!code) return {};
+    
+    const methods = {};
+    const lines = code.split('\n');
+    
+    // Find method start lines
+    lines.forEach((line, index) => {
+      if (line.includes('async initialize(') || line.includes('initialize(')) {
+        methods.initialize = index;
+      }
+      if (line.includes('async execute(') || line.includes('execute(')) {
+        methods.execute = index;
+      }
+      if (line.includes('async validate(') || line.includes('validate(')) {
+        methods.validate = index;
+      }
+    });
+    
+    return methods;
+  };
+
+  const methods = extractMethods(realCodeContent);
+  const codeLines = realCodeContent ? realCodeContent.split('\n') : [];
+
+  const scrollToMethod = (methodName: string) => {
+    const methodLine = methods[methodName];
+    if (methodLine !== undefined) {
+      const codeContainer = document.querySelector('#code-container-' + contractName + '-' + functionName);
+      if (codeContainer) {
+        const lineHeight = 16; // approximate line height in pixels
+        codeContainer.scrollTop = methodLine * lineHeight;
+      }
+    }
+  };
+
   return (
     <div className="bg-black/40 p-3 rounded text-xs max-h-64 overflow-y-auto">
       {realCodeContent ? (
         <>
-          <p className="text-green-400 mb-2">TypeScript Implementation:</p>
-          <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
-            {realCodeContent}
-          </pre>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-green-400">TypeScript Implementation:</p>
+            {Object.keys(methods).length > 0 && (
+              <div className="flex gap-1">
+                {methods.initialize !== undefined && (
+                  <button 
+                    onClick={() => scrollToMethod('initialize')}
+                    className="px-2 py-1 text-xs bg-blue-600/20 text-blue-300 rounded hover:bg-blue-600/40"
+                  >
+                    initialize
+                  </button>
+                )}
+                {methods.execute !== undefined && (
+                  <button 
+                    onClick={() => scrollToMethod('execute')}
+                    className="px-2 py-1 text-xs bg-green-600/20 text-green-300 rounded hover:bg-green-600/40"
+                  >
+                    execute
+                  </button>
+                )}
+                {methods.validate !== undefined && (
+                  <button 
+                    onClick={() => scrollToMethod('validate')}
+                    className="px-2 py-1 text-xs bg-yellow-600/20 text-yellow-300 rounded hover:bg-yellow-600/40"
+                  >
+                    validate
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          <div 
+            id={`code-container-${contractName}-${functionName}`}
+            className="overflow-y-auto max-h-48"
+          >
+            <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
+              {codeLines.map((line, index) => {
+                const isMethodLine = Object.values(methods).includes(index);
+                return (
+                  <div 
+                    key={index} 
+                    className={isMethodLine ? 'bg-blue-900/30 px-1 rounded' : ''}
+                  >
+                    {line}
+                  </div>
+                );
+              })}
+            </pre>
+          </div>
         </>
       ) : error ? (
         <>
