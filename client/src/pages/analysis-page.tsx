@@ -134,7 +134,7 @@ function ValidationRulesTab({ submissionId, contractName, functionName, action, 
   }
 
   return (
-    <div className="bg-black/40 p-3 rounded text-xs">
+    <div className="bg-black/40 p-3 rounded text-xs max-h-64 overflow-y-auto">
       {realActionData?.action_detail?.post_execution_contract_state_validation_rules ? (
         <div className="space-y-3">
           <p className="text-yellow-300 mb-2">Post-Execution Validation Rules:</p>
@@ -197,7 +197,7 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
   // Use the extracted real action data
   
   return (
-    <div className="bg-black/40 p-3 rounded text-xs">
+    <div className="bg-black/40 p-3 rounded text-xs max-h-64 overflow-y-auto">
       {realActionData?.action_detail ? (
         <div className="space-y-3">
           <div>
@@ -282,7 +282,7 @@ function ActionCodeTab({ submissionId, contractName, functionName, action }: {
   const realCodeContent = codeData?.content;
 
   return (
-    <div className="bg-black/40 p-3 rounded text-xs">
+    <div className="bg-black/40 p-3 rounded text-xs max-h-64 overflow-y-auto">
       {realCodeContent ? (
         <>
           <p className="text-green-400 mb-2">TypeScript Implementation:</p>
