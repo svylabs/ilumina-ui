@@ -4546,7 +4546,7 @@ export default function AnalysisPage() {
                             {analysisFlow.map((step, index) => {
                               const isCompleted = (() => {
                                 const apiStepName = step === "analyze_project" ? "files" : 
-                                                   step === "analyze_snapshot" ? "actors" : 
+                                                   step === "analyze_actors" ? "actors" : 
                                                    step === "analyze_deployment" ? "deployment" : 
                                                    step;
                                 
