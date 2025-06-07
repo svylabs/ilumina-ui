@@ -1591,7 +1591,7 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                 value={actorConfig[actor.name] || 1}
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value.trim(), 10);
-                                  if (!isNaN(val) && val >= 1 && val <= 50) {
+                                  if (!isNaN(val) && val >= 1 && val <= 500) {
                                     const currentTotal = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
                                     const otherActorsTotal = currentTotal - (actorConfig[actor.name] || 1);
                                     const newTotal = otherActorsTotal + val;
@@ -1613,14 +1613,14 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                                   const currentCount = actorConfig[actor.name] || 1;
                                   const currentTotal = Object.values(actorConfig).reduce((sum, count) => sum + count, 0);
                                   
-                                  if (currentCount < 50 && currentTotal < 500) {
+                                  if (currentTotal < 500) {
                                     setActorConfig(prev => ({
                                       ...prev,
                                       [actor.name]: currentCount + 1
                                     }));
                                   }
                                 }}
-                                disabled={isRunningSimulation || (actorConfig[actor.name] || 1) >= 50 || Object.values(actorConfig).reduce((sum, count) => sum + count, 0) >= 500}
+                                disabled={isRunningSimulation || Object.values(actorConfig).reduce((sum, count) => sum + count, 0) >= 500}
                                 className="bg-gray-700 border border-gray-600 rounded-r-md px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 +
