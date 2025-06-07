@@ -5318,29 +5318,18 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 </TabsContent>
                                                                 
                                                                 <TabsContent value="code" className="mt-0">
-                                                                  <div className="bg-black/40 p-3 rounded text-xs">
-                                                                    <pre className="whitespace-pre-wrap text-yellow-300 font-mono text-xs">{`
-// Validation for ${action.name}
-// Contract: ${action.contract_name}
-// Function: ${action.function_name}
-
-function validate${action.function_name.split('(')[0]}Result(result) {
-  // Assertion 1: Check that the transaction was successful
-  expect(result.status).to.equal(1);
-  
-  // Assertion 2: Check state changes (will depend on the function)
-  // Examples:
-  // - For token transfers: check balances changed correctly
-  // - For market creation: check market exists with correct parameters
-  
-  // Assertion 3: Check event emissions
-  // expectEvent(result, "${action.function_name.split('(')[0]}Event", {
-  //   param1: expectedValue1,
-  //   param2: expectedValue2
-  // });
-}
-`}</pre>
-                                                                  </div>
+                                                                  {submissionId ? (
+                                                                    <ActionCodeTab 
+                                                                      submissionId={submissionId}
+                                                                      contractName={action.contract_name}
+                                                                      functionName={action.function_name}
+                                                                      action={action}
+                                                                    />
+                                                                  ) : (
+                                                                    <div className="bg-black/40 p-3 rounded text-xs text-gray-400">
+                                                                      Loading submission data...
+                                                                    </div>
+                                                                  )}
                                                                 </TabsContent>
                                                                 
                                                                 <TabsContent value="preview" className="mt-0">
