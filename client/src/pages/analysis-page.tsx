@@ -112,6 +112,53 @@ function useActionFile(submissionId: string | undefined, contractName: string, f
   });
 }
 
+// Component for displaying validation rules from real JSON data
+function ValidationRulesTab({ submissionId, contractName, functionName, action, actor }: {
+  submissionId: string | undefined;
+  contractName: string;
+  functionName: string;
+  action: any;
+  actor: any;
+}) {
+  const { data: validationData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'json');
+
+  const realActionData = validationData?.content;
+
+  if (isLoading) {
+    return (
+      <div className="bg-black/40 p-3 rounded text-xs flex items-center">
+        <Loader2 className="h-3 w-3 animate-spin mr-2" />
+        <span className="text-white/60">Loading validation rules...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-black/40 p-3 rounded text-xs">
+      {realActionData?.action_detail?.pre_execution_parameter_generation_rules ? (
+        <div className="space-y-2">
+          <p className="text-yellow-300 mb-2">Parameter Generation Rules:</p>
+          <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+            {realActionData.action_detail.pre_execution_parameter_generation_rules.map((rule, index) => (
+              <li key={index} className="text-xs">{rule}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div>
+          <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+            <li>All required parameters must be provided and valid</li>
+            <li>Actor must have appropriate permissions/role</li>
+            <li>Actor must have sufficient balance if operations involve transfers</li>
+            <li>Contract state must allow this operation</li>
+            <li>Gas estimation must be within reasonable limits</li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Component for displaying action summary from real JSON data
 function ActionSummaryTab({ submissionId, contractName, functionName, action, actor }: {
   submissionId: string | undefined;
@@ -175,22 +222,16 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
             <div>
               <p className="text-purple-300 mb-1">State Changes:</p>
               <div className="ml-2 space-y-1">
-                {realActionData.action_detail.on_execution_state_updates_made.slice(0, 3).map((update, index) => (
+                {realActionData.action_detail.on_execution_state_updates_made.map((update, index) => (
                   <div key={index} className="text-xs text-gray-300 mb-1">
                     <p className="font-semibold text-purple-200">• {update.category}:</p>
                     <div className="ml-4 space-y-1">
-                      {update.state_update_descriptions?.slice(0, 2).map((desc, descIndex) => (
+                      {update.state_update_descriptions?.map((desc, descIndex) => (
                         <p key={descIndex} className="text-gray-400">- {desc}</p>
                       ))}
-                      {update.state_update_descriptions?.length > 2 && (
-                        <p className="text-gray-500">... and {update.state_update_descriptions.length - 2} more updates</p>
-                      )}
                     </div>
                   </div>
                 ))}
-                {realActionData.action_detail.on_execution_state_updates_made.length > 3 && (
-                  <p className="text-xs text-gray-400">... and {realActionData.action_detail.on_execution_state_updates_made.length - 3} more</p>
-                )}
               </div>
             </div>
           )}
@@ -4371,7 +4412,7 @@ async function execute() {
                                                               
                                                               <TabsContent value="summary" className="mt-0">
                                                                 {submissionId ? (
-                                                                  <ActionSummaryTab 
+                                                                  <ValidationRulesTab 
                                                                     submissionId={submissionId}
                                                                     contractName={action.contract_name}
                                                                     functionName={action.function_name}
@@ -5262,16 +5303,26 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 </TabsList>
                                                                 
                                                                 <TabsContent value="summary" className="mt-0">
-                                                                  <div className="bg-black/40 p-3 rounded text-xs">
-                                                                    <ul className="list-disc pl-5 text-yellow-400 space-y-1">
-                                                                      <li>All required parameters must be provided and valid</li>
-                                                                      <li>Actor must have appropriate permissions/role</li>
-                                                                      <li>Actor must have sufficient balance if operations involve transfers</li>
-                                                                      <li>Contract state must allow this operation</li>
-                                                                      <li>Gas estimation must be within reasonable limits</li>
-                                                                      <li>Operation must not violate any business logic constraints</li>
-                                                                    </ul>
-                                                                  </div>
+                                                                  {submissionId ? (
+                                                                    <ValidationRulesTab 
+                                                                      submissionId={submissionId}
+                                                                      contractName={action.contract_name}
+                                                                      functionName={action.function_name}
+                                                                      action={action}
+                                                                      actor={actor}
+                                                                    />
+                                                                  ) : (
+                                                                    <div className="bg-black/40 p-3 rounded text-xs">
+                                                                      <ul className="list-disc pl-5 text-yellow-400 space-y-1">
+                                                                        <li>All required parameters must be provided and valid</li>
+                                                                        <li>Actor must have appropriate permissions/role</li>
+                                                                        <li>Actor must have sufficient balance if operations involve transfers</li>
+                                                                        <li>Contract state must allow this operation</li>
+                                                                        <li>Gas estimation must be within reasonable limits</li>
+                                                                        <li>Operation must not violate any business logic constraints</li>
+                                                                      </ul>
+                                                                    </div>
+                                                                  )}
                                                                 </TabsContent>
                                                                 
                                                                 <TabsContent value="code" className="mt-0">
