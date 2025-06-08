@@ -73,6 +73,20 @@ export const planFeatures = pgTable("plan_features", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Table to track credit purchases for free users
+export const creditPurchases = pgTable("credit_purchases", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  credits: integer("credits").notNull(), // Number of credits purchased (50 or 100)
+  price: integer("price").notNull(), // Price in cents (500 for $5, 1000 for $10)
+  status: text("status", { enum: ["pending", "completed", "failed"] })
+    .default("pending")
+    .notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -262,6 +276,11 @@ export type InsertPricingPlan = typeof pricingPlans.$inferInsert;
 export type SelectPricingPlan = typeof pricingPlans.$inferSelect;
 export type InsertPlanFeature = typeof planFeatures.$inferInsert;
 export type SelectPlanFeature = typeof planFeatures.$inferSelect;
+
+export const insertCreditPurchaseSchema = createInsertSchema(creditPurchases);
+export const selectCreditPurchaseSchema = createSelectSchema(creditPurchases);
+export type InsertCreditPurchase = typeof creditPurchases.$inferInsert;
+export type SelectCreditPurchase = typeof creditPurchases.$inferSelect;
 
 // Define relations between tables
 export const usersRelations = relations(users, ({ many }) => ({
