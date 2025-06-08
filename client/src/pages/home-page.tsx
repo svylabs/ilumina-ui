@@ -265,8 +265,8 @@ export default function HomePage() {
                       )}
                       {plan.name === 'Teams' && (
                         <div className="mt-1 text-xs text-primary/80">
-                          3-month commitment ($649/month) or<br />
-                          Monthly subscription: $799/month
+                          3-month commitment ($1000/month) or<br />
+                          Monthly subscription: $1200/month
                         </div>
                       )}
                       <p className="mt-2 text-white/70">
