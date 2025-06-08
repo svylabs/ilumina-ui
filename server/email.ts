@@ -44,15 +44,7 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
             <p>Your AI-powered smart contract testing platform</p>
           </div>
           <div class="content">
-            <div style="margin-bottom: 30px; text-align: center;">
-              <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 3px; border-radius: 50%; margin-bottom: 35px; width: 70px; height: 70px;">
-                <div style="width: 64px; height: 64px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #667eea; font-family: Arial, sans-serif; line-height: 1;">
-                  SG
-                </div>
-              </div>
-              <h2 style="margin: 0 0 8px 0; font-size: 24px; color: #1a1a1a;">Hello ${user.name || user.email}!</h2>
-              <p style="margin: 0; color: #667eea; font-weight: 600; font-size: 16px;">Sridhar G, Founder & CEO of Ilumina</p>
-            </div>
+            <h2 style="margin: 0 0 20px 0; font-size: 24px; color: #1a1a1a;">Hello ${user.name || user.email}!</h2>
             
             <p>Thank you for joining our platform! I'm excited to have you on this journey with Ilumina.</p>
             
@@ -85,9 +77,20 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
             
             <p>Need help getting started? Our AI assistant is ready to guide you through every step of the process.</p>
             
-            <p>Best regards,<br>
-            Sridhar, Founder & CEO<br>
-            Ilumina</p>
+            <p>Best regards,</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+              <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2px; border-radius: 50%; margin-right: 15px; width: 50px; height: 50px; vertical-align: top;">
+                <div style="width: 46px; height: 46px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #667eea; font-family: Arial, sans-serif; line-height: 1;">
+                  SG
+                </div>
+              </div>
+              <div style="display: inline-block; vertical-align: top; margin-top: 5px;">
+                <div style="font-weight: bold; color: #1a1a1a; margin-bottom: 2px;">Sridhar G</div>
+                <div style="color: #667eea; font-size: 14px; margin-bottom: 2px;">Founder & CEO</div>
+                <div style="color: #667eea; font-size: 14px;">Ilumina</div>
+              </div>
+            </div>
           </div>
         </div>
       </body>
