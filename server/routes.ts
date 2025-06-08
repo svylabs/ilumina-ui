@@ -6285,14 +6285,21 @@ export function registerRoutes(app: Express): Server {
             }
           }
           
-          // Override with the overall status from external API if available
-          const status = externalSubmissionData.status || "completed";
+          // Check for failed steps and determine overall status
+          const hasFailedSteps = externalSubmissionData.completed_steps && 
+            externalSubmissionData.completed_steps.some(step => step.status === "error" || step.status === "failed");
+          
+          let status = externalSubmissionData.status || "completed";
+          if (hasFailedSteps) {
+            status = "failed";
+          }
           
           // Include the completed_steps from the external API if available
           const completedSteps = externalSubmissionData.completed_steps ? 
             externalSubmissionData.completed_steps.map(step => ({
               step: step.step,
-              updatedAt: step.updated_at
+              updatedAt: step.updated_at,
+              status: step.status // Preserve the status field from external API
             })) : [];
             
           return res.json({ 
@@ -6375,14 +6382,15 @@ export function registerRoutes(app: Express): Server {
         }
 
         const hasInProgressStep = steps.some(step => step.status === "in_progress");
-        const status = hasInProgressStep ? "in_progress" : "completed";
+        const hasFailedStep = steps.some(step => step.status === "failed");
+        const status = hasFailedStep ? "failed" : (hasInProgressStep ? "in_progress" : "completed");
         
-        // Format completed steps from database data
+        // Format completed steps from database data (include all steps, not just completed ones)
         const completedSteps = steps
-          .filter(step => step.status === "completed")
           .map(step => ({
             step: step.stepId,
-            updatedAt: step.updatedAt?.toISOString() || step.createdAt.toISOString()
+            updatedAt: step.updatedAt?.toISOString() || step.createdAt.toISOString(),
+            status: step.status // Include status from database
           }));
         
         res.json({ 
