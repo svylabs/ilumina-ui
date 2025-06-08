@@ -41,7 +41,7 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
         <div class="container">
           <div class="header">
             <h1>Welcome to Ilumina!</h1>
-            <p>Your AI-powered smart contract analysis platform</p>
+            <p>Your AI-powered smart contract testing platform</p>
           </div>
           <div class="content">
             <div style="margin-bottom: 30px; text-align: center;">
