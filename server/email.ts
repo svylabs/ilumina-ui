@@ -69,12 +69,15 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
               </div>
             </div>
             
-            <p><strong>Your Free Plan includes:</strong></p>
-            <ul>
-              <li>1 repository analysis</li>
-              <li>10 AI assistant credits per month</li>
-              <li>Access to the complete 9-step analysis pipeline</li>
-            </ul>
+            <div style="background: #f8f9ff; border-radius: 12px; padding: 25px; margin: 25px 0; border-left: 4px solid #667eea;">
+              <h3 style="margin: 0 0 15px 0; color: #667eea; font-size: 18px;">Your Free Plan includes:</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #555;">
+                <li style="margin-bottom: 8px;"><strong>1 project</strong></li>
+                <li style="margin-bottom: 8px;"><strong>10 AI assistant credits per month</strong></li>
+                <li style="margin-bottom: 8px;"><strong>Access to the complete analysis pipeline</strong> for creating simulations</li>
+                <li style="margin-bottom: 0;"><strong>1 free simulation run per day</strong></li>
+              </ul>
+            </div>
             
             <div style="text-align: center;">
               <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}" class="button">Start Your First Analysis</a>
