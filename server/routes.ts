@@ -240,14 +240,6 @@ export function registerRoutes(app: Express): Server {
   
   // Endpoint to create a new conversation session
   app.post("/api/chat/session/:submission_id", isAuthenticated, async (req, res) => {
-    // Check if user has access to chat feature based on their plan
-    if (req.user!.plan === 'free') {
-      return res.status(403).json({
-        error: "Feature restricted",
-        message: "AI chat assistance is only available for Pro and Teams plans",
-        requiresUpgrade: true
-      });
-    }
     try {
       const submissionId = req.params.submission_id;
       const section = req.query.section as string || 'general';
@@ -284,14 +276,6 @@ export function registerRoutes(app: Express): Server {
   
   // Endpoint to get chat messages history
   app.get("/api/chat/history/:submission_id", isAuthenticated, async (req, res) => {
-    // Check if user has access to chat feature based on their plan
-    if (req.user!.plan === 'free') {
-      return res.status(403).json({
-        error: "Feature restricted",
-        message: "AI chat assistance is only available for Pro and Teams plans",
-        requiresUpgrade: true
-      });
-    }
     try {
       const submissionId = req.params.submission_id;
       const section = req.query.section as string || 'general';
