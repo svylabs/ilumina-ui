@@ -130,12 +130,12 @@ export default function HomePage() {
               </div>
             </div>
             <h1 className="text-5xl font-bold">
-              <span className="text-white font-bold">AI-Powered</span>{" "}
-              Smart Contract Security Testing
+              <span className="text-white font-bold">Create & Run</span>{" "}
+              Smart Contract Simulations
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Discover vulnerabilities and ensure robust deployments with 
-              intelligent simulation and comprehensive audit tools
+              AI-powered simulation generation and on-demand execution to uncover 
+              vulnerabilities and validate smart contract behavior
             </p>
           </div>
 
