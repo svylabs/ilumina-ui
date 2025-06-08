@@ -201,7 +201,7 @@ export default function HomePage() {
               <CardContent className="p-8">
                 <div className="text-5xl mb-6">🔍</div>
                 <h3 className="text-xl font-semibold mb-4 text-white">
-                  Independent Smart Contract Auditors
+                  Smart Contract Auditors
                 </h3>
                 <p className="text-white/70 leading-relaxed">
                   Accelerate your audit process with automated test generation and comprehensive 
