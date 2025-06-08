@@ -4516,11 +4516,15 @@ export default function AnalysisPage() {
                     "implement_snapshots",
                     "implement_all_actions"
                   ];
+                  // Check if any step has failed
+                  const hasFailedSteps = analysis?.completedSteps?.some(cs => cs.status === 'error') || false;
+
                   const allStepsComplete = analysisFlow.every(step => {
-                    return analysis?.completedSteps?.some(cs => cs.step === step) || false;
+                    const stepInfo = analysis?.completedSteps?.find(cs => cs.step === step);
+                    return stepInfo && stepInfo.status === 'success';
                   });
 
-                  if (analysis?.status === "error") {
+                  if (analysis?.status === "error" || hasFailedSteps) {
                     return <h3 className="text-red-400 font-medium">Analysis Failed</h3>;
                   } else if (allStepsComplete) {
                     return (
@@ -4741,20 +4745,22 @@ export default function AnalysisPage() {
                           <div className="mt-3 pt-3 border-t border-blue-500/30 space-y-2">
                             <div className="text-xs font-medium text-blue-300 mb-2">Analysis Pipeline Progress</div>
                             {analysisFlow.map((step, index) => {
-                              const isCompleted = (() => {
-                                // Use completedSteps array as the only authoritative source
-                                return analysis?.completedSteps?.some(cs => cs.step === step) || false;
-                              })();
+                              // Check the actual status of this step from completedSteps array
+                              const stepInfo = analysis?.completedSteps?.find(cs => cs.step === step);
+                              const isCompleted = stepInfo && stepInfo.status === 'success';
+                              const isFailedStep = stepInfo && stepInfo.status === 'error';
                               const isCurrent = step === analysis?.currentStep;
                               const completionDate = getStepCompletionDate(step);
                               
                               return (
                                 <div key={step} className={`text-xs flex items-center justify-between py-1 ${
+                                  isFailedStep ? 'text-red-400' :
                                   isCompleted ? 'text-green-400' : 
                                   isCurrent ? 'text-blue-300 font-medium' : 'text-gray-500'
                                 }`}>
                                   <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${
+                                      isFailedStep ? 'bg-red-400' :
                                       isCompleted ? 'bg-green-400' : 
                                       isCurrent ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'
                                     }`} />
