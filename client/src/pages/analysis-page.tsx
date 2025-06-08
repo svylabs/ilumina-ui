@@ -2712,6 +2712,7 @@ type AnalysisStepStatus = {
 type CompletedStep = {
   step: string;
   updatedAt: string;
+  status?: string; // Optional field that may be present in some API responses
 };
 
 type AnalysisResponse = {
@@ -4521,7 +4522,8 @@ export default function AnalysisPage() {
 
                   const allStepsComplete = analysisFlow.every(step => {
                     const stepInfo = analysis?.completedSteps?.find(cs => cs.step === step);
-                    return stepInfo && stepInfo.status === 'success';
+                    // If no status field exists, treat the presence of the step as success (backward compatibility)
+                    return stepInfo && (stepInfo.status === 'success' || !stepInfo.status);
                   });
 
                   if (analysis?.status === "error" || hasFailedSteps) {
@@ -4747,7 +4749,8 @@ export default function AnalysisPage() {
                             {analysisFlow.map((step, index) => {
                               // Check the actual status of this step from completedSteps array
                               const stepInfo = analysis?.completedSteps?.find(cs => cs.step === step);
-                              const isCompleted = stepInfo && stepInfo.status === 'success';
+                              // If no status field exists, treat the presence of the step as success (backward compatibility)
+                              const isCompleted = stepInfo && (stepInfo.status === 'success' || !stepInfo.status);
                               const isFailedStep = stepInfo && stepInfo.status === 'error';
                               const isCurrent = step === analysis?.currentStep;
                               const completionDate = getStepCompletionDate(step);
