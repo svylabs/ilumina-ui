@@ -4233,8 +4233,6 @@ export function registerRoutes(app: Express): Server {
       }
     }
 
-    console.log('Starting project creation transaction...');
-    
     // Start a transaction to create both project and submission
     const [project, submission] = await db.transaction(async (tx) => {
       // Handle team ID logic - if "personal" or not specified, set to null
@@ -4315,18 +4313,10 @@ export function registerRoutes(app: Express): Server {
       return [project, submission];
     });
 
-    console.log('Transaction completed, project and submission created');
-    console.log('Project:', project);
-    console.log('Submission:', submission);
-
     // Call the external analysis API
     try {
       const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
       const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
-      
-      console.log(`Making begin_analysis call to: ${joinPath(baseUrl, "begin_analysis")}`);
-      console.log(`Using API key: ${apiKey.substring(0, 8)}...`);
-      console.log(`Payload:`, { github_repository_url: submission.githubUrl, submission_id: submission.id });
       
       const analysisResponse = await fetch(joinPath(baseUrl, "begin_analysis"), {
         method: 'POST',
@@ -4339,15 +4329,9 @@ export function registerRoutes(app: Express): Server {
           submission_id: submission.id
         })
       });
-
-      console.log(`Analysis API response status: ${analysisResponse.status}`);
       
       if (!analysisResponse.ok) {
-        const errorText = await analysisResponse.text();
-        console.error('Analysis API Error:', errorText);
-      } else {
-        const responseText = await analysisResponse.text();
-        console.log('Analysis API Success:', responseText);
+        console.error('Analysis API Error:', await analysisResponse.text());
       }
     } catch (error) {
       console.error('Failed to call analysis API:', error);
