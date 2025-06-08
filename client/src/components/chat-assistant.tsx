@@ -214,12 +214,32 @@ export default function ChatAssistant({
       // Get the submission ID from props or try to get it via project ID
       const subId = submissionId || await getSubmissionIdFromProjectId();
       if (!subId) {
-        // Add a greeting if we don't have a submission ID yet
+        // Add a comprehensive greeting if we don't have a submission ID yet
         if (messages.length === 0) {
           const creditsRemaining = 10 - (user?.chatMessagesUsed || 0);
+          const systemInfo = `**About Ilumina:**
+Ilumina is an AI agent for creating and running smart contract simulations. You provide a GitHub link to your smart contract repository, and the agent executes a comprehensive analysis pipeline.
+
+**Analysis Pipeline Steps:**
+
+1. **Analyze Project** (analyze_project): Understands the project from README, contract list, and codebase structure
+2. **Analyze Actors** (analyze_actors): Identifies market participants and actions they can take in the system
+3. **Analyze Deployment** (analyze_deployment): Requires user input to describe the correct sequence for deploying contracts for testing
+4. **Implement Deployment Script** (implement_deployment_script): Creates deployment scripts based on the analysis
+5. **Verify Deployment** (verify_deployment_script): Validates that deployment scripts run correctly
+6. **Analyze Actions** (analyze_all_actions): Analyzes identified actions, state updates, and validation requirements
+7. **Analyze Snapshot** (analyze_all_snapshots): Determines how to capture contract state based on deployments and actions
+8. **Implement Snapshot** (implement_snapshots): Creates snapshot logic for contract state capture
+9. **Implement Action** (implement_all_actions): Implements all actions with parameter generation and validation rules
+
+**Subscription Tiers:**
+- **Free**: 1 repo, 10 AI assistant credits/month, additional credits at $1 per 10 credits
+- **Pro**: 1 repo, unlimited AI assistant credits, 20 simulation runs/day  
+- **Teams**: 1 repo, unlimited AI assistant credits, unlimited simulation runs/day`;
+
           const greetingContent = isFreeUser 
-            ? `Hello! I'm your Ilumina assistant. You have ${creditsRemaining} free messages remaining this month. I can help you analyze your smart contracts, answer questions about your project, and suggest improvements. How can I help you today?`
-            : `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`;
+            ? `${systemInfo}\n\n**Your Account:** You have ${creditsRemaining} free messages remaining this month.\n\nHow can I help you with your smart contract analysis today?`
+            : `${systemInfo}\n\nHow can I help you with your smart contract analysis today?`;
             
           setMessages([
             {
