@@ -4694,19 +4694,30 @@ export default function AnalysisPage() {
                     } else if (analysis?.status === "in_progress") {
                       // For in_progress status, show the actual current step being worked on
                       if (analysis.completedSteps && analysis.completedSteps.length > 0) {
-                        // The current step is the next one after the last completed step
-                        const lastCompletedStep = analysis.completedSteps[analysis.completedSteps.length - 1];
-                        const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
+                        // Check if any step is currently in_progress
+                        const inProgressStep = analysis.completedSteps.find(step => step.status === "in_progress");
                         
-                        if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
-                          currentStep = analysisFlow[lastCompletedIndex + 1];
-                          if (lastCompletedIndex + 2 < analysisFlow.length) {
-                            nextStep = analysisFlow[lastCompletedIndex + 2];
+                        if (inProgressStep) {
+                          // Show the step that's currently in progress
+                          currentStep = inProgressStep.step;
+                          const currentIndex = analysisFlow.indexOf(inProgressStep.step);
+                          if (currentIndex >= 0 && currentIndex < analysisFlow.length - 1) {
+                            nextStep = analysisFlow[currentIndex + 1];
                           }
                         } else {
-                          // Last completed step, so we're done
-                          currentStep = lastCompletedStep.step;
-                          nextStep = null;
+                          // No in_progress step found, use last completed + 1
+                          const lastCompletedStep = analysis.completedSteps[analysis.completedSteps.length - 1];
+                          const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
+                          
+                          if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
+                            currentStep = analysisFlow[lastCompletedIndex + 1];
+                            if (lastCompletedIndex + 2 < analysisFlow.length) {
+                              nextStep = analysisFlow[lastCompletedIndex + 2];
+                            }
+                          } else {
+                            currentStep = lastCompletedStep.step;
+                            nextStep = null;
+                          }
                         }
                       } else {
                         // If no completed steps, we're on the first step
