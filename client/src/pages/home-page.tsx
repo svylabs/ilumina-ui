@@ -19,6 +19,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertContactSchema, type InsertContact } from "@db/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   Accordion,
   AccordionContent,
@@ -181,14 +182,16 @@ export default function HomePage() {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              {pricingData?.map((plan: {
-                name: string;
-                price: number;
-                period: string;
-                description: string;
-                features: string[];
-              }) => (
+            <div className="space-y-12">
+              {/* Main Subscription Plans */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                {pricingData?.map((plan: {
+                  name: string;
+                  price: number;
+                  period: string;
+                  description: string;
+                  features: string[];
+                }) => (
                 <Card
                   key={plan.name}
                   className={`border-2 ${
@@ -286,6 +289,113 @@ export default function HomePage() {
                   </Button>
                 </CardContent>
               </Card>
+            </div>
+
+              {/* Credit Purchase Options for Free Users */}
+              <div className="mt-16">
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    Need More Credits?
+                  </h3>
+                  <p className="text-white/70">
+                    Free users get 10 chatbot message credits per month. Purchase additional credits as needed.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                  {/* 50 Credits Option */}
+                  <Card className="border-2 border-primary/30 bg-black/50 backdrop-blur">
+                    <CardContent className="p-6">
+                      <div className="text-center mb-6">
+                        <h4 className="text-lg font-semibold mb-2 text-white">
+                          50 Credits
+                        </h4>
+                        <div className="text-2xl font-bold text-white mb-1">
+                          $5
+                        </div>
+                        <div className="text-sm text-white/70">
+                          One-time purchase
+                        </div>
+                        <p className="mt-2 text-white/70 text-sm">
+                          Perfect for occasional use
+                        </p>
+                      </div>
+                      <ul className="space-y-2 mb-6">
+                        <li className="flex items-center text-white/90 text-sm">
+                          <Check className="h-3 w-3 text-primary mr-2" />
+                          50 AI assistant messages
+                        </li>
+                        <li className="flex items-center text-white/90 text-sm">
+                          <Check className="h-3 w-3 text-primary mr-2" />
+                          Never expires
+                        </li>
+                        <li className="flex items-center text-white/90 text-sm">
+                          <Check className="h-3 w-3 text-primary mr-2" />
+                          Instant activation
+                        </li>
+                      </ul>
+                      <Button
+                        className="w-full bg-primary/20 hover:bg-primary/30 text-white"
+                        onClick={() => {
+                          // TODO: Implement Stripe checkout for credits
+                          console.log('Purchase 50 credits');
+                        }}
+                      >
+                        Buy 50 Credits
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* 100 Credits Option */}
+                  <Card className="border-2 border-primary/50 bg-black/50 backdrop-blur relative">
+                    <CardContent className="p-6">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary px-3 py-1 rounded-full text-xs font-semibold text-black">
+                        Best Value
+                      </div>
+                      <div className="text-center mb-6">
+                        <h4 className="text-lg font-semibold mb-2 text-white">
+                          100 Credits
+                        </h4>
+                        <div className="text-2xl font-bold text-white mb-1">
+                          $10
+                        </div>
+                        <div className="text-sm text-white/70">
+                          One-time purchase
+                        </div>
+                        <div className="mt-1 text-xs text-primary/80">
+                          Save $0.10 per credit
+                        </div>
+                        <p className="mt-2 text-white/70 text-sm">
+                          Great for regular users
+                        </p>
+                      </div>
+                      <ul className="space-y-2 mb-6">
+                        <li className="flex items-center text-white/90 text-sm">
+                          <Check className="h-3 w-3 text-primary mr-2" />
+                          100 AI assistant messages
+                        </li>
+                        <li className="flex items-center text-white/90 text-sm">
+                          <Check className="h-3 w-3 text-primary mr-2" />
+                          Never expires
+                        </li>
+                        <li className="flex items-center text-white/90 text-sm">
+                          <Check className="h-3 w-3 text-primary mr-2" />
+                          Instant activation
+                        </li>
+                      </ul>
+                      <Button
+                        className="w-full bg-primary hover:bg-primary/90 text-black"
+                        onClick={() => {
+                          // TODO: Implement Stripe checkout for credits
+                          console.log('Purchase 100 credits');
+                        }}
+                      >
+                        Buy 100 Credits
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </div>
           )}
         </div>

@@ -6,7 +6,7 @@ import {
   submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
   pricingPlans, planFeatures, teams, teamMembers, teamInvitations,
-  chatMessages, analysisSteps
+  chatMessages, analysisSteps, creditPurchases
 } from "@db/schema";
 import { eq, sql, desc, asc, and, or } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
@@ -6519,6 +6519,99 @@ export function registerRoutes(app: Express): Server {
     } catch (err) {
       console.error('Error fetching pricing:', err);
       res.status(500).json({ message: "Failed to fetch pricing information" });
+    }
+  });
+
+  // Create payment intent for credit purchase
+  app.post("/api/create-credit-payment", isAuthenticated, async (req, res) => {
+    try {
+      const { credits } = req.body;
+      
+      // Validate credit amounts and pricing
+      const validCredits = { 50: 500, 100: 1000 }; // 50 credits = $5, 100 credits = $10
+      if (!validCredits[credits]) {
+        return res.status(400).json({ error: "Invalid credit amount" });
+      }
+
+      const price = validCredits[credits];
+      const userId = req.user.id;
+
+      // Create credit purchase record
+      const [purchase] = await db
+        .insert(creditPurchases)
+        .values({
+          userId,
+          credits,
+          price,
+          status: "pending"
+        })
+        .returning();
+
+      // TODO: Create Stripe payment intent here when Stripe is configured
+      // For now, just return success for demonstration
+      res.json({ 
+        success: true, 
+        purchaseId: purchase.id,
+        message: "Credit purchase initiated" 
+      });
+    } catch (err) {
+      console.error('Error creating credit payment:', err);
+      res.status(500).json({ error: "Failed to create credit payment" });
+    }
+  });
+
+  // Get user's credit purchases
+  app.get("/api/credit-purchases", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      
+      const purchases = await db
+        .select()
+        .from(creditPurchases)
+        .where(eq(creditPurchases.userId, userId))
+        .orderBy(desc(creditPurchases.createdAt));
+
+      res.json(purchases);
+    } catch (err) {
+      console.error('Error fetching credit purchases:', err);
+      res.status(500).json({ error: "Failed to fetch credit purchases" });
+    }
+  });
+
+  // Get user's total available credits
+  app.get("/api/user-credits", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Calculate total purchased credits
+      const completedPurchases = await db
+        .select()
+        .from(creditPurchases)
+        .where(and(
+          eq(creditPurchases.userId, userId),
+          eq(creditPurchases.status, "completed")
+        ));
+
+      const purchasedCredits = completedPurchases.reduce((total, purchase) => total + purchase.credits, 0);
+      
+      // TODO: Calculate used credits from chat messages
+      // For now, assume 0 used credits
+      const usedCredits = 0;
+      
+      // Free users get 10 credits per month
+      const freeCredits = req.user.plan === 'free' ? 10 : 0;
+      
+      const totalAvailable = freeCredits + purchasedCredits - usedCredits;
+
+      res.json({
+        freeCredits,
+        purchasedCredits,
+        usedCredits,
+        totalAvailable
+      });
+    } catch (err) {
+      console.error('Error fetching user credits:', err);
+      res.status(500).json({ error: "Failed to fetch user credits" });
     }
   });
 
