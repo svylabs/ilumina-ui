@@ -337,14 +337,6 @@ export function registerRoutes(app: Express): Server {
   
   // AI Assistant chat endpoint with request classification and action handling
   app.post("/api/assistant/chat", isAuthenticated, async (req, res) => {
-    // Check if user has access to chat feature based on their plan
-    if (req.user!.plan === 'free') {
-      return res.status(403).json({
-        error: "Feature restricted",
-        message: "AI chat assistance is only available for Pro and Teams plans",
-        requiresUpgrade: true
-      });
-    }
     try {
       const { messages, projectId, section, analysisStep, conversationId } = req.body;
       
