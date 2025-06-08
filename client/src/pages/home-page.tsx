@@ -150,6 +150,62 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Who Is This For Section */}
+      <section className="py-24 px-6 bg-gradient-to-b from-black to-black/95">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Built for Smart Contract Professionals
+            </h2>
+            <p className="text-lg text-white/70 max-w-3xl mx-auto">
+              Ilumina empowers security experts and development teams with AI-driven testing tools
+              to identify vulnerabilities and ensure robust smart contract deployments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="border border-primary/20 bg-black/50 backdrop-blur text-center">
+              <CardContent className="p-8">
+                <div className="text-5xl mb-6">🔍</div>
+                <h3 className="text-xl font-semibold mb-4 text-white">
+                  Independent Smart Contract Auditors
+                </h3>
+                <p className="text-white/70 leading-relaxed">
+                  Accelerate your audit process with automated test generation and comprehensive 
+                  vulnerability detection. Generate detailed reports for clients with confidence.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-primary/20 bg-black/50 backdrop-blur text-center">
+              <CardContent className="p-8">
+                <div className="text-5xl mb-6">🏢</div>
+                <h3 className="text-xl font-semibold mb-4 text-white">
+                  Protocol Development Teams
+                </h3>
+                <p className="text-white/70 leading-relaxed">
+                  Integrate rigorous testing into your development workflow. Catch issues early 
+                  and ensure your protocol launches with maximum security and reliability.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-primary/20 bg-black/50 backdrop-blur text-center">
+              <CardContent className="p-8">
+                <div className="text-5xl mb-6">🎯</div>
+                <h3 className="text-xl font-semibold mb-4 text-white">
+                  Bug Bounty Hunters
+                </h3>
+                <p className="text-white/70 leading-relaxed">
+                  Discover vulnerabilities faster with intelligent simulation tools. Generate 
+                  comprehensive test scenarios to maximize your bug discovery potential.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="scroll-mt-20 py-24 px-6 bg-black/95">
         <div className="max-w-4xl mx-auto">
