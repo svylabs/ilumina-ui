@@ -6,6 +6,9 @@ import dotenv from "dotenv";
 // Load environment variables from .env file
 dotenv.config();
 
+// Debug: Log the API key being used (first 8 characters only for security)
+console.log(`Loaded ILUMINA_API_KEY: ${(process.env.ILUMINA_API_KEY || 'not_set').substring(0, 8)}...`);
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
