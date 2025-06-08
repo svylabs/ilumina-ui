@@ -709,12 +709,12 @@ export function registerRoutes(app: Express): Server {
         // Otherwise, generate a normal response via Gemini
         // First, try to fetch relevant logs that might help answer the question
         let submissionLogs = null;
+        let submissionDetails = null;
         
         // For all requests, try to fetch relevant data from the submission
         if (submission) {
           try {
             // First, get the overall submission details to check step status and get completed_steps
-            let submissionDetails = null;
             let stepStatus = null;
             let stepData = null;
             let stepLog = null;
