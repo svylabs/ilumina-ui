@@ -4181,12 +4181,8 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    console.log(`Project creation request from user: ${req.user.email}, plan: ${req.user.plan}, userId: ${req.user.id}`);
-
     const maxProjects = req.user.plan === 'teams' ? Infinity :
                        req.user.plan === 'pro' ? 3 : 1;
-
-    console.log(`Max projects allowed for ${req.user.plan} plan: ${maxProjects}`);
 
     // Get current project count (exclude deleted projects)
     const projectCount = await db
@@ -4195,16 +4191,11 @@ export function registerRoutes(app: Express): Server {
       .where(and(eq(projects.userId, req.user.id), eq(projects.isDeleted, false)))
       .then(result => result[0].count);
 
-    console.log(`Current project count for user ${req.user.id}: ${projectCount}`);
-
     if (projectCount >= maxProjects) {
-      console.log(`Project creation blocked: ${projectCount} >= ${maxProjects}`);
       return res.status(403).json({
         message: `You've reached the maximum number of projects for your ${req.user.plan} plan`
       });
     }
-
-    console.log(`Project creation allowed: ${projectCount} < ${maxProjects}`);
 
     // REMOVED: GitHub URL duplication check as requested by user
 
