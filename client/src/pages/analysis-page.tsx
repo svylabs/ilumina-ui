@@ -4584,8 +4584,8 @@ export default function AnalysisPage() {
                         const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
                         
                         if (essentialStepsComplete) {
-                          // All essential steps done, show final step
-                          currentStep = analysisFlow[analysisFlow.length - 1];
+                          // All essential steps done, show the actual last completed step
+                          currentStep = lastCompletedStep.step;
                           nextStep = null;
                         } else if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
                           // Show next step that needs to be completed
