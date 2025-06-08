@@ -164,7 +164,7 @@ export default function HomePage() {
               </div>
             </div>
             <h1 className="text-5xl font-bold text-white">
-              Create and run simulations for smart contract protocols in a day
+              Create and run smart contract simulations in a day
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
               AI-powered simulation generation and on-demand execution to uncover 
