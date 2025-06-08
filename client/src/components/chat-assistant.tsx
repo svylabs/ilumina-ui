@@ -583,7 +583,7 @@ export default function ChatAssistant({
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {/* Chat toggle button with tooltip */}
-      <div className="relative">
+      <div className="relative group">
         <Button
           onClick={toggleChat}
           size="icon"
@@ -592,18 +592,24 @@ export default function ChatAssistant({
           {isOpen ? <X className="h-6 w-6" /> : isFreeUser ? <Lock className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
         </Button>
         
-        {/* Always visible tooltip when there's a message */}
-        {tooltipMessage && (
-          <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-popover text-popover-foreground px-3 py-2 rounded-md shadow-lg border max-w-xs z-50">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm flex-1">{tooltipMessage}</p>
-              <button
-                onClick={() => setTooltipDismissed(true)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-0.5 -mt-0.5 -mr-0.5"
-                aria-label="Close tooltip"
-              >
-                <X className="h-3 w-3" />
-              </button>
+        {/* Tooltip - visible on hover or when there's a guidance message */}
+        {(tooltipMessage || (!tooltipDismissed && currentSection === 'actors')) && (
+          <div className={`absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-popover text-popover-foreground px-4 py-3 rounded-md shadow-lg border w-80 z-50 transition-opacity duration-200 ${
+            tooltipMessage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          }`}>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm flex-1 leading-relaxed">
+                {tooltipMessage || "You can refine the analysis with our AI assistant by describing what you want"}
+              </p>
+              {tooltipMessage && (
+                <button
+                  onClick={() => setTooltipDismissed(true)}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 -mt-0.5 -mr-0.5 flex-shrink-0"
+                  aria-label="Close tooltip"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
             {/* Arrow pointing to the button */}
             <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-popover"></div>
