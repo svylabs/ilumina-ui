@@ -6592,8 +6592,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Hash new password and update user
-      const { hashPassword } = await import('./auth');
-      const hashedPassword = await hashPassword(newPassword);
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
 
       await db
         .update(users)
