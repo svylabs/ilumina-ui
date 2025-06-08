@@ -578,14 +578,25 @@ export default function ChatAssistant({
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Chat toggle button */}
-      <Button
-        onClick={toggleChat}
-        size="icon"
-        className="h-12 w-12 rounded-full shadow-lg bg-primary hover:bg-primary/90"
-      >
-        {isOpen ? <X className="h-6 w-6" /> : isFreeUser ? <Lock className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
-      </Button>
+      {/* Chat toggle button with tooltip */}
+      <TooltipProvider>
+        <Tooltip open={tooltipMessage ? undefined : false}>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={toggleChat}
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+            >
+              {isOpen ? <X className="h-6 w-6" /> : isFreeUser ? <Lock className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+            </Button>
+          </TooltipTrigger>
+          {tooltipMessage && (
+            <TooltipContent side="left" className="max-w-xs">
+              <p>{tooltipMessage}</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Chat window */}
       {isOpen && (
