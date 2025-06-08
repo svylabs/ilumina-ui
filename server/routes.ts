@@ -6312,11 +6312,12 @@ export function registerRoutes(app: Express): Server {
           
         } catch (error) {
           console.error("Error fetching additional data from external API:", error);
-          // Continue with database data as fallback
+          return res.status(500).send("Failed to fetch analysis data from external API");
         }
       }
       
-      // Check if there are any database entries for this submission
+      // If no external API data is available, return an error
+      return res.status(404).send("No analysis data available for this submission");
       if (steps.length > 0) {
         console.log("Using database entries for submission:", uuidSubmissionId);
         
