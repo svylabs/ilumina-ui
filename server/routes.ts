@@ -2247,42 +2247,29 @@ export function registerRoutes(app: Express): Server {
         
         if (submission.length > 0) {
           // Save the step with the name the API uses
+          // Update or create analyze_deployment step
           await db
-            .insert(analysisSteps)
-            .values({
-              submissionId: submission_id,
-              stepId: 'analyze_deployment',
+            .update(analysisSteps)
+            .set({
               status: 'completed',
-              details: 'Deployment analysis initiated',
-              updatedAt: new Date()
+              details: 'Deployment analysis initiated'
             })
-            .onConflictDoUpdate({
-              target: [analysisSteps.submissionId, analysisSteps.stepId],
-              set: {
-                status: 'completed',
-                details: 'Deployment analysis updated',
-                updatedAt: new Date()
-              }
-            });
+            .where(and(
+              eq(analysisSteps.submissionId, submission_id),
+              eq(analysisSteps.stepId, 'analyze_deployment')
+            ));
           
-          // Also save it with the name the frontend expects
+          // Also update the frontend-expected deployment step
           await db
-            .insert(analysisSteps)
-            .values({
-              submissionId: submission_id,
-              stepId: 'deployment',
+            .update(analysisSteps)
+            .set({
               status: 'completed',
-              details: 'Deployment analysis completed',
-              updatedAt: new Date()
+              details: 'Deployment analysis completed'
             })
-            .onConflictDoUpdate({
-              target: [analysisSteps.submissionId, analysisSteps.stepId],
-              set: {
-                status: 'completed',
-                details: 'Deployment analysis updated',
-                updatedAt: new Date()
-              }
-            });
+            .where(and(
+              eq(analysisSteps.submissionId, submission_id),
+              eq(analysisSteps.stepId, 'deployment')
+            ));
             
           console.log("Deployment step saved to database with both names for compatibility");
         }
@@ -5207,46 +5194,34 @@ export function registerRoutes(app: Express): Server {
           // If we got external data, let's use it to update our database
           if (projectSummaryData) {
             console.log(`Successfully fetched project_summary data from external API, updating database...`);
-            // Update analysis steps with the data we got
+            // Update existing analysis step with the data we got
             await db
-              .insert(analysisSteps)
-              .values({
-                submissionId: submission[0].id,
-                stepId: 'files',
+              .update(analysisSteps)
+              .set({
                 status: 'completed',
                 details: 'Completed via external API',
                 jsonData: projectSummaryData,
               })
-              .onConflictDoUpdate({
-                target: [analysisSteps.submissionId, analysisSteps.stepId],
-                set: {
-                  status: 'completed',
-                  details: 'Updated via external API',
-                  jsonData: projectSummaryData,
-                }
-              });
+              .where(and(
+                eq(analysisSteps.submissionId, submission[0].id),
+                eq(analysisSteps.stepId, 'files')
+              ));
           }
           
           if (actorsSummaryData) {
             console.log(`Successfully fetched actors_summary data from external API, updating database...`);
-            // Update analysis steps with the data we got
+            // Update existing analysis step with the data we got
             await db
-              .insert(analysisSteps)
-              .values({
-                submissionId: submission[0].id,
-                stepId: 'actors',
+              .update(analysisSteps)
+              .set({
                 status: 'completed',
                 details: 'Completed via external API',
                 jsonData: actorsSummaryData,
               })
-              .onConflictDoUpdate({
-                target: [analysisSteps.submissionId, analysisSteps.stepId],
-                set: {
-                  status: 'completed',
-                  details: 'Updated via external API',
-                  jsonData: actorsSummaryData,
-                }
-              });
+              .where(and(
+                eq(analysisSteps.submissionId, submission[0].id),
+                eq(analysisSteps.stepId, 'actors')
+              ));
           }
         } catch (error) {
           console.error(`Error fetching or updating data from external API:`, error);
