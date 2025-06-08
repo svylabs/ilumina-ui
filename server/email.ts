@@ -57,7 +57,7 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
                 <strong>🚀 Run Simulations on Demand:</strong> Once simulations are created, you can run simulations on demand in the cloud and get access to the dashboard where you can see the report.
               </div>
               <div class="feature">
-                <strong>🤖 AI Assistant:</strong> Get personalized guidance throughout your analysis journey with our intelligent chatbot.
+                <strong>🤖 AI Assistant:</strong> Refine the simulations / analysis with our intelligent chatbot.
               </div>
             </div>
             
