@@ -4774,6 +4774,7 @@ export function registerRoutes(app: Express): Server {
       const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
 
       const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
+      console.log(`Using API key: ${apiKey.substring(0, 8)}...`);
       const response = await fetch(`${baseUrl}/${endpoint}/${submissionId}`, {
         method: 'GET',
         headers: {
