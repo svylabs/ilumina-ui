@@ -78,14 +78,26 @@ export default function AuthPage() {
     }
   };
 
-  const handleRegisterSubmit = async (data: RegisterForm) => {
-    console.log("Form data:", data);
-    console.log("Form errors:", registerForm.formState.errors);
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+
+    // Simple validation
+    const newErrors: { [key: string]: string } = {};
+    if (!registerData.name.trim()) newErrors.name = "Name is required";
+    if (!registerData.email.trim()) newErrors.email = "Email is required";
+    if (!registerData.password.trim()) newErrors.password = "Password is required";
+    if (registerData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     try {
-      await register(data.email, data.name, data.password);
+      await register(registerData.email, registerData.name, registerData.password);
       // Redirect is handled in the useEffect above
     } catch (error) {
-      // Error handling is done in the auth context
       console.error("Registration error:", error);
     }
   };
@@ -166,75 +178,57 @@ export default function AuthPage() {
                   </form>
                 </Form>
               ) : (
-                <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="space-y-4">
-                    <FormField
-                      control={registerForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                              onBlur={field.onBlur}
-                              name={field.name}
-                              type="text"
-                              placeholder="Enter your name"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                              autoComplete="name"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-white">Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={registerData.name}
+                      onChange={(e) => setRegisterData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter your name"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                      autoComplete="name"
                     />
-                    <FormField
-                      control={registerForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="email"
-                              placeholder="Enter your email"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    {errors.name && <p className="text-red-400 text-sm">{errors.name}</p>}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-white">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={registerData.email}
+                      onChange={(e) => setRegisterData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter your email"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                      autoComplete="email"
                     />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder="Choose a password"
-                              className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    {errors.email && <p className="text-red-400 text-sm">{errors.email}</p>}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-white">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Choose a password"
+                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                      autoComplete="new-password"
                     />
-                    <Button 
-                      type="submit"
-                      disabled={registerForm.formState.isSubmitting}
-                      className="w-full bg-primary hover:bg-primary/90 text-black"
-                    >
-                      {registerForm.formState.isSubmitting ? "Creating Account..." : "Sign Up"}
-                    </Button>
-                  </form>
-                </Form>
+                    {errors.password && <p className="text-red-400 text-sm">{errors.password}</p>}
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-primary/90 text-black"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating Account..." : "Sign Up"}
+                  </Button>
+                </form>
               )}
 
               <div className="mt-4 text-center">
