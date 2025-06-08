@@ -114,7 +114,6 @@ export default function HomePage() {
       features: [
         "1 project",
         "1 simulation run per day",
-        "One time simulation autogeneration per month",
         "10 monthly credits for AI assisted edits",
         "Export / Import simulation code to / from GitHub"
       ]
@@ -127,7 +126,6 @@ export default function HomePage() {
       features: [
         "3 projects",
         "20 simulation runs per day",
-        "One time simulation autogeneration",
         "AI assisted edits",
         "Export / Import simulation code to / from GitHub",
         "Priority support"
