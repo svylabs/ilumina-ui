@@ -4112,10 +4112,12 @@ export default function AnalysisPage() {
     }
   }, [project]);
 
-  const { data: analysis, isLoading, refetch } = useQuery<AnalysisResponse>({
+  const { data: analysis, isLoading, refetch, error } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
-    // Removed auto-refresh interval to prevent constant page refreshing
+    enabled: !!id, // Only run query when we have an ID
     refetchInterval: false,
+    retry: 3,
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   // Set the selected step to the current in-progress step or the first completed one
@@ -4145,6 +4147,8 @@ export default function AnalysisPage() {
   // Store the submission ID whenever analysis data is updated
   useEffect(() => {
     console.log("Analysis data received:", analysis);
+    console.log("Analysis loading state:", isLoading);
+    console.log("Analysis error:", error);
     
     // Debug completedSteps structure
     if (analysis?.completedSteps) {
@@ -4169,7 +4173,7 @@ export default function AnalysisPage() {
     } else {
       console.log("No submission ID found in analysis data");
     }
-  }, [analysis, submissionId]);
+  }, [analysis, submissionId, isLoading, error]);
   
   // Fetch simulation repository details when the user is viewing the test_setup step
   useEffect(() => {
