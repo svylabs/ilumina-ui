@@ -10,6 +10,7 @@ import AnalysisPage from "@/pages/analysis-page";
 import ProjectsPage from "@/pages/projects-page";
 import NewProjectPage from "@/pages/new-project";
 import AuthPage from "@/pages/auth-page";
+import ResetPasswordPage from "@/pages/reset-password";
 import TeamsPage, { TeamDetailPage } from "@/pages/teams-page";
 import RootLayout from "@/components/layout/root-layout";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -20,6 +21,8 @@ function Router() {
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
+        <Route path="/forgot-password" component={ResetPasswordPage} />
         <ProtectedRoute path="/projects" component={ProjectsPage} />
         <ProtectedRoute path="/new-project" component={NewProjectPage} />
         <ProtectedRoute path="/results/:id" component={ResultsPage} />

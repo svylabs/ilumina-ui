@@ -154,6 +154,16 @@ export default function AuthPage() {
                     >
                       {loginForm.formState.isSubmitting ? "Signing In..." : "Sign In"}
                     </Button>
+                    
+                    <div className="text-center mt-2">
+                      <Button
+                        variant="link"
+                        className="text-primary text-sm"
+                        onClick={() => setLocation("/forgot-password")}
+                      >
+                        Forgot your password?
+                      </Button>
+                    </div>
                   </form>
                 </Form>
               ) : (
