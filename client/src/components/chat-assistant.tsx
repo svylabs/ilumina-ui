@@ -216,11 +216,16 @@ export default function ChatAssistant({
       if (!subId) {
         // Add a greeting if we don't have a submission ID yet
         if (messages.length === 0) {
+          const creditsRemaining = 10 - (user?.chatMessagesUsed || 0);
+          const greetingContent = isFreeUser 
+            ? `Hello! I'm your Ilumina assistant. You have ${creditsRemaining} free messages remaining this month. I can help you analyze your smart contracts, answer questions about your project, and suggest improvements. How can I help you today?`
+            : `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`;
+            
           setMessages([
             {
               id: crypto.randomUUID(),
               role: 'assistant',
-              content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
+              content: greetingContent,
               timestamp: new Date(),
             },
           ]);
@@ -541,11 +546,16 @@ export default function ChatAssistant({
         }
       } else if (messages.length === 0) {
         // If no submission ID or we're already loading, just show the greeting
+        const creditsRemaining = 10 - (user?.chatMessagesUsed || 0);
+        const greetingContent = isFreeUser 
+          ? `Hello! I'm your Ilumina assistant. You have ${creditsRemaining} free messages remaining this month. I can help you analyze your smart contracts, answer questions about your project, and suggest improvements. How can I help you today?`
+          : `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`;
+          
         setMessages([
           {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `Hello! I'm your Ilumina assistant. You can ask questions about the analysis done by Ilumina on your project and suggest improvements on the simulation or refinements. How can I help you today?`,
+            content: greetingContent,
             timestamp: new Date(),
           },
         ]);
@@ -565,7 +575,7 @@ export default function ChatAssistant({
           size="icon"
           className="h-12 w-12 rounded-full shadow-lg bg-primary hover:bg-primary/90"
         >
-          {isOpen ? <X className="h-6 w-6" /> : isFreeUser ? <Lock className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+          {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
         </Button>
         
         {/* Tooltip - always available on hover, with special guidance messages when appropriate */}
@@ -597,7 +607,14 @@ export default function ChatAssistant({
           {/* Chat header */}
           <div className="p-3 border-b bg-primary text-primary-foreground">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Ilumina Assistant</h3>
+              <div className="flex flex-col">
+                <h3 className="font-medium">Ilumina Assistant</h3>
+                {isFreeUser && (
+                  <div className="text-xs text-primary-foreground/70">
+                    {user?.chatMessagesUsed || 0}/10 messages used
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {/* Plus button to start a new conversation */}
                 <Button 
@@ -638,23 +655,7 @@ export default function ChatAssistant({
 
           {/* Messages area */}
           <div className="flex-grow overflow-y-auto p-3 space-y-4">
-            {isFreeUser ? (
-              <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <Lock className="h-16 w-16 mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">AI Chat Assistance</h3>
-                <p className="text-muted-foreground mb-2">
-                  This feature is available exclusively for Pro and Teams plans.
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Upgrade your plan to get personalized assistance with analyzing and improving your smart contracts.
-                </p>
-                <Button variant="default" onClick={() => window.location.href = '/pricing'}>
-                  Upgrade Your Plan
-                </Button>
-              </div>
-            ) : (
-              <>
-                {messages.map(message => (
+            {messages.map(message => (
                   <div
                     key={message.id}
                     className={cn(
@@ -711,44 +712,28 @@ export default function ChatAssistant({
                   </div>
                 )}
                 <div ref={messagesEndRef} />
-              </>
-            )}
           </div>
 
           {/* Input area */}
           <div className="p-3 border-t">
-            {isFreeUser ? (
-              <div className="text-center text-sm text-muted-foreground px-4 py-2">
-                <p>Upgrade to a Pro or Teams plan to access AI chat assistance</p>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => window.location.href = '/pricing'}
-                >
-                  View Pricing Plans
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-end gap-2">
-                <Textarea
-                  value={inputValue}
-                  onChange={e => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask a question..."
-                  className="resize-none min-h-[60px] max-h-[120px]"
-                  disabled={isLoading}
-                />
-                <Button
-                  size="icon"
-                  className="shrink-0 h-10 w-10"
-                  onClick={handleSendMessage}
-                  disabled={isLoading || !inputValue.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            <div className="flex items-end gap-2">
+              <Textarea
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask a question..."
+                className="resize-none min-h-[60px] max-h-[120px]"
+                disabled={isLoading}
+              />
+              <Button
+                size="icon"
+                className="shrink-0 h-10 w-10"
+                onClick={handleSendMessage}
+                disabled={isLoading || !inputValue.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </Card>
       )}
