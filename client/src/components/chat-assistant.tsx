@@ -164,6 +164,22 @@ export default function ChatAssistant({
   const createConversationSession = async () => {
     if (!projectId || loadingHistory) return;
     
+    // Check if user has access to chat feature based on their plan
+    if (user?.plan === 'free') {
+      // For free users, show an upgrade prompt instead of trying to create a session
+      if (messages.length === 0) {
+        setMessages([
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Hello! I'm your Ilumina AI assistant. AI chat assistance is available for Pro and Teams plans. Upgrade your plan to get personalized help with your project analysis, ask questions about your smart contracts, and receive suggestions for improvements.`,
+            timestamp: new Date(),
+          },
+        ]);
+      }
+      return;
+    }
+    
     // If we already have a conversation ID, skip creating a new one
     if (conversationId) {
       await loadChatHistory();
@@ -261,6 +277,28 @@ export default function ChatAssistant({
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
+
+    // Check if user has access to chat feature based on their plan
+    if (user?.plan === 'free') {
+      // For free users, show upgrade message instead of processing the request
+      const userMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: inputValue,
+        timestamp: new Date(),
+      };
+
+      const upgradeMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `I'd love to help you with that! AI chat assistance is available for Pro and Teams plans. Upgrade your plan to get personalized help with your project analysis, ask questions about your smart contracts, and receive suggestions for improvements.`,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, userMessage, upgradeMessage]);
+      setInputValue('');
+      return;
+    }
 
     // Generate a unique ID for the message
     const messageId = crypto.randomUUID();
