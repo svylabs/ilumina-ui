@@ -402,6 +402,9 @@ export async function generateChatResponse(
 **About Ilumina:**
 Ilumina is an AI agent that helps users analyze their smart contract repositories. Users provide a GitHub link to their smart contract repository, and Ilumina executes a comprehensive analysis pipeline to understand the project, create simulations, and validate functionality.
 
+**Technical Framework:**
+Ilumina uses an open source framework called @svylabs/ilumina developed by the team to create simulations. A simulation repository (in TypeScript) is created in GitHub, and the Ilumina analysis pipeline analyzes and implements various actors, actions, and snapshots. Snapshots are used to validate any modifications to contract state during execution of various actions. Once implemented, users can run simulations based on what their plan supports.
+
 **Ilumina Analysis Pipeline Steps:**
 1. **Analyze Project** (analyze_project): Understands the project from README, contract list, and codebase structure
 2. **Analyze Actors** (analyze_actors): Identifies market participants and actions they can take in the system
@@ -448,9 +451,6 @@ You must only answer questions related to the user's current project, Ilumina's 
               systemPrompt += `\n${index + 1}. **${contract.name}** (${contract.type})`;
               systemPrompt += `\n   - Path: ${contract.path}`;
               systemPrompt += `\n   - Summary: ${contract.summary}`;
-              if (contract.functions && contract.functions.length > 0) {
-                systemPrompt += `\n   - Key Functions: ${contract.functions.slice(0, 3).map((f: any) => f.name).join(', ')}${contract.functions.length > 3 ? '...' : ''}`;
-              }
             });
           }
         } catch (error) {
