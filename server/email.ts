@@ -45,8 +45,8 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
           </div>
           <div class="content">
             <div style="margin-bottom: 30px; text-align: center;">
-              <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4px; border-radius: 50%; margin-bottom: 35px; width: 88px; height: 88px;">
-                <div style="width: 80px; height: 80px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #667eea; box-sizing: border-box;">
+              <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 3px; border-radius: 50%; margin-bottom: 35px; width: 70px; height: 70px;">
+                <div style="width: 64px; height: 64px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #667eea; font-family: Arial, sans-serif; line-height: 1;">
                   SG
                 </div>
               </div>
