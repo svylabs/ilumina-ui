@@ -46,6 +46,7 @@ export default function AuthPage() {
       email: "",
       password: "",
     },
+    mode: "onChange",
   });
 
   // Check if pending submission exists in session storage
@@ -82,6 +83,8 @@ export default function AuthPage() {
   };
 
   const handleRegisterSubmit = async (data: RegisterForm) => {
+    console.log("Form data:", data);
+    console.log("Form errors:", registerForm.formState.errors);
     try {
       await register(data.email, data.name, data.password);
       // Redirect is handled in the useEffect above
@@ -178,8 +181,10 @@ export default function AuthPage() {
                           <FormControl>
                             <Input
                               {...field}
+                              type="text"
                               placeholder="Enter your name"
                               className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                              autoComplete="name"
                             />
                           </FormControl>
                           <FormMessage />
