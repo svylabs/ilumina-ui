@@ -199,19 +199,6 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="border border-primary/20 bg-black/50 backdrop-blur text-center">
               <CardContent className="p-8">
-                <div className="text-5xl mb-6">🔍</div>
-                <h3 className="text-xl font-semibold mb-4 text-white">
-                  Smart Contract Auditors
-                </h3>
-                <p className="text-white/70 leading-relaxed">
-                  Accelerate your audit process with automated test generation and comprehensive 
-                  vulnerability detection. Generate detailed reports for clients with confidence.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-primary/20 bg-black/50 backdrop-blur text-center">
-              <CardContent className="p-8">
                 <div className="text-5xl mb-6">🏢</div>
                 <h3 className="text-xl font-semibold mb-4 text-white">
                   Protocol Development Teams
@@ -219,6 +206,19 @@ export default function HomePage() {
                 <p className="text-white/70 leading-relaxed">
                   Integrate rigorous testing into your development workflow. Catch issues early 
                   and ensure your protocol launches with maximum security and reliability.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-primary/20 bg-black/50 backdrop-blur text-center">
+              <CardContent className="p-8">
+                <div className="text-5xl mb-6">🔍</div>
+                <h3 className="text-xl font-semibold mb-4 text-white">
+                  Smart Contract Auditors
+                </h3>
+                <p className="text-white/70 leading-relaxed">
+                  Accelerate your audit process with automated test generation and comprehensive 
+                  vulnerability detection. Generate detailed reports for clients with confidence.
                 </p>
               </CardContent>
             </Card>
