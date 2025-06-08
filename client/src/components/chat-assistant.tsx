@@ -593,7 +593,7 @@ export default function ChatAssistant({
         </Button>
         
         {/* Tooltip - visible on hover or when there's a guidance message */}
-        {(tooltipMessage || (!tooltipDismissed && currentSection === 'actors')) && (
+        {(tooltipMessage || currentSection === 'actors') && (
           <div className={`absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-popover text-popover-foreground px-4 py-3 rounded-md shadow-lg border w-80 z-50 transition-opacity duration-200 ${
             tooltipMessage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           }`}>
