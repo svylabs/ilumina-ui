@@ -4481,7 +4481,7 @@ export default function AnalysisPage() {
         </div>
 
         {/* Progress Indicator - Show for all analysis statuses */}
-        {analysis && (analysis.status === "in_progress" || analysis.status === "success" || analysis.status === "error") && (
+        {analysis && (analysis.status === "in_progress" || analysis.status === "success" || analysis.status === "error" || analysis.status === "failed") && (
           <div className="mb-6 bg-blue-900/30 border border-blue-500/50 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               {(() => {
@@ -4498,7 +4498,7 @@ export default function AnalysisPage() {
                   return completedInArray || completedInSteps;
                 });
 
-                if (analysis?.status === "error") {
+                if (analysis?.status === "error" || analysis?.status === "failed") {
                   return <XCircle className="h-5 w-5 text-red-400" />;
                 } else if (essentialStepsComplete) {
                   return <CheckCircle2 className="h-5 w-5 text-green-400" />;
