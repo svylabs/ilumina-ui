@@ -1201,6 +1201,7 @@ export function registerRoutes(app: Express): Server {
           projectName: projectDetails.projectName,
           section,
           analysisStep: classification.step !== 'unknown' ? classification.step : analysisStep,
+          submissionData: submissionDetails, // Include full submission analysis data
           projectMetadata: {
             githubUrl: projectDetails.githubUrl,
             classification: `${classification.step}/${classification.action} (${Math.round(classification.confidence * 100)}%)`,

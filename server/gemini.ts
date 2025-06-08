@@ -392,6 +392,7 @@ export async function generateChatResponse(
     section?: string;
     analysisStep?: string;
     projectMetadata?: Record<string, any>;
+    submissionData?: any;
   }
 ): Promise<string> {
   try {
@@ -424,6 +425,74 @@ You must only answer questions related to the user's current project, Ilumina's 
 - User's project: ${context?.projectName || 'Unknown'}
 - Current section: ${context?.section || 'Main Analysis'}
 - Current analysis step: ${context?.analysisStep || 'Unknown'}`;
+
+    // Add submission analysis data if available
+    if (context?.submissionData) {
+      systemPrompt += '\n\n**Project Analysis Data:**';
+      
+      // Add project summary
+      if (context.submissionData.project_summary) {
+        try {
+          const projectSummary = typeof context.submissionData.project_summary === 'string' 
+            ? JSON.parse(context.submissionData.project_summary)
+            : context.submissionData.project_summary;
+          
+          systemPrompt += `\n\n**Project Summary:**`;
+          systemPrompt += `\n- Name: ${projectSummary.name || 'Unknown'}`;
+          systemPrompt += `\n- Type: ${projectSummary.type || 'Unknown'}`;
+          systemPrompt += `\n- Summary: ${projectSummary.summary || 'No summary available'}`;
+          
+          if (projectSummary.contracts && Array.isArray(projectSummary.contracts)) {
+            systemPrompt += `\n\n**Smart Contracts (${projectSummary.contracts.length}):**`;
+            projectSummary.contracts.forEach((contract: any, index: number) => {
+              systemPrompt += `\n${index + 1}. **${contract.name}** (${contract.type})`;
+              systemPrompt += `\n   - Path: ${contract.path}`;
+              systemPrompt += `\n   - Summary: ${contract.summary}`;
+              if (contract.functions && contract.functions.length > 0) {
+                systemPrompt += `\n   - Key Functions: ${contract.functions.slice(0, 3).map((f: any) => f.name).join(', ')}${contract.functions.length > 3 ? '...' : ''}`;
+              }
+            });
+          }
+        } catch (error) {
+          systemPrompt += `\n- Project Summary: ${context.submissionData.project_summary}`;
+        }
+      }
+
+      // Add actors analysis
+      if (context.submissionData.actors_summary) {
+        try {
+          const actorsSummary = typeof context.submissionData.actors_summary === 'string'
+            ? JSON.parse(context.submissionData.actors_summary)
+            : context.submissionData.actors_summary;
+          
+          if (actorsSummary.actors && Array.isArray(actorsSummary.actors)) {
+            systemPrompt += `\n\n**System Actors (${actorsSummary.actors.length}):**`;
+            actorsSummary.actors.forEach((actor: any, index: number) => {
+              systemPrompt += `\n${index + 1}. **${actor.name}**`;
+              systemPrompt += `\n   - Role: ${actor.summary}`;
+              if (actor.actions && actor.actions.length > 0) {
+                systemPrompt += `\n   - Actions: ${actor.actions.slice(0, 3).map((a: any) => a.name).join(', ')}${actor.actions.length > 3 ? '...' : ''}`;
+              }
+            });
+          }
+        } catch (error) {
+          systemPrompt += `\n- Actors Summary: ${context.submissionData.actors_summary}`;
+        }
+      }
+
+      // Add deployment instructions if available
+      if (context.submissionData.deployment_instructions) {
+        systemPrompt += `\n\n**Deployment Instructions:**\n${context.submissionData.deployment_instructions}`;
+      }
+
+      // Add completed analysis steps
+      if (context.submissionData.completed_steps && Array.isArray(context.submissionData.completed_steps)) {
+        systemPrompt += `\n\n**Completed Analysis Steps:**`;
+        context.submissionData.completed_steps.forEach((step: any) => {
+          systemPrompt += `\n- ${step.step} (completed ${step.updatedAt})`;
+        });
+      }
+    }
 
     // Add metadata if available
     if (context?.projectMetadata) {
