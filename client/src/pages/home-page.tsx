@@ -794,9 +794,9 @@ export default function HomePage() {
                 &copy; 2025 Ilumina. All rights reserved.
               </p>
               <div className="flex items-center space-x-2">
-                <a href="mailto:contact@ilumina.io" className="flex items-center text-white/50 hover:text-primary transition-colors text-sm">
+                <a href="mailto:contact@ilumina.dev" className="flex items-center text-white/50 hover:text-primary transition-colors text-sm">
                   <Mail className="h-4 w-4 mr-1" />
-                  contact@ilumina.io
+                  contact@ilumina.dev
                 </a>
               </div>
             </div>
