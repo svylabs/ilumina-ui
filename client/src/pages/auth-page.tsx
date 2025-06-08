@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SunDim } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,23 +31,18 @@ export default function AuthPage() {
   const [location, setLocation] = useLocation();
   const { login, register, user, isLoading } = useAuth();
   
-  // Form handling with react-hook-form
+  // Simple form state
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  
+  // Form handling with react-hook-form (keeping for login only)
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
-  });
-  
-  const registerForm = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-    },
-    mode: "onChange",
   });
 
   // Check if pending submission exists in session storage
@@ -180,7 +176,10 @@ export default function AuthPage() {
                           <FormLabel className="text-white">Name</FormLabel>
                           <FormControl>
                             <Input
-                              {...field}
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              name={field.name}
                               type="text"
                               placeholder="Enter your name"
                               className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
