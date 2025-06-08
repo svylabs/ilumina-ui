@@ -592,29 +592,27 @@ export default function ChatAssistant({
           {isOpen ? <X className="h-6 w-6" /> : isFreeUser ? <Lock className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
         </Button>
         
-        {/* Tooltip - visible on hover or when there's a guidance message */}
-        {(tooltipMessage || currentSection === 'actors') && (
-          <div className={`absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-popover text-popover-foreground px-4 py-3 rounded-md shadow-lg border w-80 z-50 transition-opacity duration-200 ${
-            tooltipMessage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-          }`}>
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm flex-1 leading-relaxed">
-                {tooltipMessage || "You can refine the analysis with our AI assistant by describing what you want"}
-              </p>
-              {tooltipMessage && (
-                <button
-                  onClick={() => setTooltipDismissed(true)}
-                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 -mt-0.5 -mr-0.5 flex-shrink-0"
-                  aria-label="Close tooltip"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            {/* Arrow pointing to the button */}
-            <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-popover"></div>
+        {/* Tooltip - always available on hover, with special guidance messages when appropriate */}
+        <div className={`absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-popover text-popover-foreground px-4 py-3 rounded-md shadow-lg border w-80 z-50 transition-opacity duration-200 ${
+          tooltipMessage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm flex-1 leading-relaxed">
+              {tooltipMessage || "You can refine the analysis with our AI assistant by describing what you want"}
+            </p>
+            {tooltipMessage && (
+              <button
+                onClick={() => setTooltipDismissed(true)}
+                className="text-muted-foreground hover:text-foreground transition-colors p-0.5 -mt-0.5 -mr-0.5 flex-shrink-0"
+                aria-label="Close tooltip"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
-        )}
+          {/* Arrow pointing to the button */}
+          <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-popover"></div>
+        </div>
       </div>
 
       {/* Chat window */}
