@@ -72,7 +72,7 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
             </div>
             
             <div style="text-align: center;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}" class="button">Start Your First Analysis</a>
+              <a href="https://ilumina.dev" class="button">Start Your First Analysis</a>
             </div>
             
             <p>Need help getting started? Our AI assistant is ready to guide you through every step of the process.</p>
