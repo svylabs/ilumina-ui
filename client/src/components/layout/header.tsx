@@ -61,7 +61,7 @@ export default function Header() {
                 <span className="text-white font-bold">i</span><span className="text-primary">lumina</span>
               </span>
               <span className="text-sm text-white/70 hidden sm:block">
-                Agent based simulations for your protocol
+                AI-powered smart contract simulations
               </span>
             </div>
           </div>
