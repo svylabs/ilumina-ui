@@ -4497,6 +4497,29 @@ export default function AnalysisPage() {
                     return analysis?.completedSteps?.some(cs => cs.step === step.original) || false;
                   });
 
+                  // Check if deployment verification is complete (allows early access to simulations)
+                  const deploymentVerificationComplete = analysis?.completedSteps?.some(cs => 
+                    cs.step === 'verify_deployment_script' || cs.step === 'debug_deployment_script'
+                  ) || false;
+
+                  // Check if ALL steps in the full pipeline are complete (true analysis completion)
+                  const analysisFlow = [
+                    "analyze_project",
+                    "analyze_actors", 
+                    "analyze_deployment",
+                    "implement_deployment_script",
+                    "verify_deployment_script",
+                    "debug_deployment_script",
+                    "scaffold",
+                    "analyze_all_actions",
+                    "analyze_all_snapshots",
+                    "implement_snapshots",
+                    "implement_all_actions"
+                  ];
+                  const allStepsComplete = analysisFlow.every(step => {
+                    return analysis?.completedSteps?.some(cs => cs.step === step) || false;
+                  });
+
                   if (analysis?.status === "error") {
                     return <h3 className="text-red-400 font-medium">Analysis Failed</h3>;
                   } else if (allStepsComplete) {
