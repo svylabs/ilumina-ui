@@ -4115,9 +4115,19 @@ export default function AnalysisPage() {
   const { data: analysis, isLoading, refetch, error } = useQuery<AnalysisResponse>({
     queryKey: [`/api/analysis/${id}`],
     enabled: !!id, // Only run query when we have an ID
+    queryFn: async () => {
+      const response = await fetch(`/api/analysis/${id}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analysis: ${response.status}`);
+      }
+      return response.json();
+    },
     refetchInterval: false,
-    retry: 3,
-    staleTime: 30000, // Consider data fresh for 30 seconds
+    retry: 2,
+    staleTime: 0, // Always fresh data for analysis
+    cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
   // Set the selected step to the current in-progress step or the first completed one
@@ -4150,6 +4160,15 @@ export default function AnalysisPage() {
     console.log("Analysis loading state:", isLoading);
     console.log("Analysis error:", error);
     
+    // Force refetch if stuck in loading state
+    if (isLoading && !analysis && !error) {
+      const timer = setTimeout(() => {
+        console.log("Forcing refetch due to stuck loading state");
+        refetch();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    
     // Debug completedSteps structure
     if (analysis?.completedSteps) {
       console.log("CompletedSteps array:", analysis.completedSteps);
@@ -4173,7 +4192,7 @@ export default function AnalysisPage() {
     } else {
       console.log("No submission ID found in analysis data");
     }
-  }, [analysis, submissionId, isLoading, error]);
+  }, [analysis, submissionId, isLoading, error, refetch]);
   
   // Fetch simulation repository details when the user is viewing the test_setup step
   useEffect(() => {
