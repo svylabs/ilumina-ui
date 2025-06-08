@@ -20,7 +20,7 @@ const createTransporter = (isNoReply = false) => {
 // Email templates
 const getWelcomeEmailTemplate = (user: SelectUser) => {
   return {
-    subject: 'Welcome to Ilumina - Smart Testing of Your Smart Contracts Begins!',
+    subject: 'Welcome to Ilumina - Create and Run simulations with ease',
     html: `
       <!DOCTYPE html>
       <html>
