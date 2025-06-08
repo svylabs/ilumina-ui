@@ -104,17 +104,51 @@ export default function HomePage() {
     creditPurchaseMutation.mutate(credits);
   };
 
-  // Add pricing data query
-  const { data: pricingData, isLoading: isPricingLoading } = useQuery({
-    queryKey: ["/api/pricing"],
-    queryFn: async () => {
-      const response = await fetch("/api/pricing");
-      if (!response.ok) {
-        throw new Error("Failed to fetch pricing data");
-      }
-      return response.json();
+  // Static pricing data
+  const pricingData = [
+    {
+      name: "Free",
+      price: 0,
+      period: "forever",
+      description: "Perfect for getting started",
+      features: [
+        "1 project",
+        "1 simulation run per day",
+        "One time simulation autogeneration per month",
+        "10 monthly credits for AI assisted edits",
+        "Export / Import simulation code to / from GitHub"
+      ]
     },
-  });
+    {
+      name: "Pro",
+      price: 99,
+      period: "per month",
+      description: "For professional developers",
+      features: [
+        "3 projects",
+        "20 simulation runs per day",
+        "One time simulation autogeneration",
+        "AI assisted edits",
+        "Export / Import simulation code to / from GitHub",
+        "Priority support"
+      ]
+    },
+    {
+      name: "Teams",
+      price: 999,
+      period: "per month",
+      description: "For development teams",
+      features: [
+        "10 projects",
+        "Unlimited simulation runs",
+        "AI assisted edits",
+        "10 hours of manual test plan analysis/creation support per month",
+        "Export / Import simulation code to / from GitHub",
+        "< 24 hour support turnaround"
+      ]
+    }
+  ];
+  const isPricingLoading = false;
 
   return (
     <div className="min-h-screen bg-black pt-20">
