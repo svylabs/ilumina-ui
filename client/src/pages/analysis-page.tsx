@@ -4499,11 +4499,18 @@ export default function AnalysisPage() {
 
                   if (analysis?.status === "error") {
                     return <h3 className="text-red-400 font-medium">Analysis Failed</h3>;
-                  } else if (essentialStepsComplete) {
+                  } else if (allStepsComplete) {
                     return (
                       <>
                         <h3 className="text-green-400 font-medium">Analysis Complete</h3>
                         <div className="text-green-300 text-sm mt-1">Ready to run simulations</div>
+                      </>
+                    );
+                  } else if (deploymentVerificationComplete) {
+                    return (
+                      <>
+                        <h3 className="text-orange-400 font-medium">Deployment Verified</h3>
+                        <div className="text-orange-300 text-sm mt-1">Basic simulations available, full pipeline in progress</div>
                       </>
                     );
                   } else if (analysis?.status === "success") {
@@ -4573,6 +4580,16 @@ export default function AnalysisPage() {
                       return analysis?.completedSteps?.some(cs => cs.step === step.original) || false;
                     });
 
+                    // Check if deployment verification is complete (allows early access to simulations)
+                    const deploymentVerificationComplete = analysis?.completedSteps?.some(cs => 
+                      cs.step === 'verify_deployment_script' || cs.step === 'debug_deployment_script'
+                    ) || false;
+
+                    // Check if ALL steps in the full pipeline are complete (true analysis completion)
+                    const allStepsComplete = analysisFlow.every(step => {
+                      return analysis?.completedSteps?.some(cs => cs.step === step) || false;
+                    });
+
                     // Determine current step based on analysis status
                     let currentStep = null;
                     let nextStep = null;
@@ -4583,8 +4600,8 @@ export default function AnalysisPage() {
                         const lastCompletedStep = analysis.completedSteps[analysis.completedSteps.length - 1];
                         const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
                         
-                        if (essentialStepsComplete) {
-                          // All essential steps done, show the actual last completed step
+                        if (allStepsComplete) {
+                          // All pipeline steps done, show the actual last completed step
                           currentStep = lastCompletedStep.step;
                           nextStep = null;
                         } else if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
@@ -4650,7 +4667,7 @@ export default function AnalysisPage() {
                             </>
                           ) : analysis?.status === "success" ? (
                             <>
-                              {essentialStepsComplete ? (
+                              {allStepsComplete ? (
                                 <>
                                   <span className="text-green-300">Completed:</span>{" "}
                                   <span className="text-white font-medium">
