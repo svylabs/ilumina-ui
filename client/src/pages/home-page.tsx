@@ -29,6 +29,15 @@ import {
 
 export default function HomePage() {
   const { toast } = useToast();
+  
+  // Use optional chaining to handle cases where auth context might not be available
+  let user = null;
+  try {
+    const authContext = useAuth();
+    user = authContext?.user || null;
+  } catch (error) {
+    console.log('Auth context not available on homepage');
+  }
   const {
     register,
     handleSubmit,
@@ -59,8 +68,40 @@ export default function HomePage() {
     },
   });
 
+  const creditPurchaseMutation = useMutation({
+    mutationFn: async (credits: number) => {
+      const res = await apiRequest("POST", "/api/create-credit-payment", { credits });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Purchase Initiated",
+        description: data.message || "Credit purchase has been initiated successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Purchase Failed",
+        description: "Failed to initiate credit purchase. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertContact) => {
     contactMutation.mutate(data);
+  };
+
+  const handleCreditPurchase = (credits: number) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to purchase credits.",
+        variant: "destructive",
+      });
+      return;
+    }
+    creditPurchaseMutation.mutate(credits);
   };
 
   // Add pricing data query
@@ -336,12 +377,17 @@ export default function HomePage() {
                       </ul>
                       <Button
                         className="w-full bg-primary/20 hover:bg-primary/30 text-white"
-                        onClick={() => {
-                          // TODO: Implement Stripe checkout for credits
-                          console.log('Purchase 50 credits');
-                        }}
+                        onClick={() => handleCreditPurchase(50)}
+                        disabled={creditPurchaseMutation.isPending}
                       >
-                        Buy 50 Credits
+                        {creditPurchaseMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Processing...
+                          </>
+                        ) : (
+                          'Buy 50 Credits'
+                        )}
                       </Button>
                     </CardContent>
                   </Card>
@@ -385,12 +431,17 @@ export default function HomePage() {
                       </ul>
                       <Button
                         className="w-full bg-primary hover:bg-primary/90 text-black"
-                        onClick={() => {
-                          // TODO: Implement Stripe checkout for credits
-                          console.log('Purchase 100 credits');
-                        }}
+                        onClick={() => handleCreditPurchase(100)}
+                        disabled={creditPurchaseMutation.isPending}
                       >
-                        Buy 100 Credits
+                        {creditPurchaseMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Processing...
+                          </>
+                        ) : (
+                          'Buy 100 Credits'
+                        )}
                       </Button>
                     </CardContent>
                   </Card>
