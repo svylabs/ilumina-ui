@@ -4658,25 +4658,34 @@ export default function AnalysisPage() {
                     let currentStep = null;
                     let nextStep = null;
                     
-                    if (analysis?.status === "success" || analysis?.status === "error") {
-                      // For success/error status, determine current step based on completed steps
+                    if (analysis?.status === "success" || analysis?.status === "error" || analysis?.status === "failed") {
+                      // For success/error/failed status, determine current step based on completed steps
                       if (analysis.completedSteps && analysis.completedSteps.length > 0) {
-                        const lastCompletedStep = analysis.completedSteps[analysis.completedSteps.length - 1];
-                        const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
+                        // Check if there's a failed step
+                        const failedStep = analysis.completedSteps.find(step => step.status === "error" || step.status === "failed");
                         
-                        if (allStepsComplete) {
-                          // All pipeline steps done, show the actual last completed step
-                          currentStep = lastCompletedStep.step;
+                        if (failedStep && (analysis?.status === "error" || analysis?.status === "failed")) {
+                          // Show the step that failed
+                          currentStep = failedStep.step;
                           nextStep = null;
-                        } else if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
-                          // Show next step that needs to be completed
-                          currentStep = analysisFlow[lastCompletedIndex + 1];
-                          if (lastCompletedIndex + 2 < analysisFlow.length) {
-                            nextStep = analysisFlow[lastCompletedIndex + 2];
-                          }
                         } else {
-                          currentStep = lastCompletedStep.step;
-                          nextStep = null;
+                          const lastCompletedStep = analysis.completedSteps[analysis.completedSteps.length - 1];
+                          const lastCompletedIndex = analysisFlow.indexOf(lastCompletedStep.step);
+                          
+                          if (allStepsComplete) {
+                            // All pipeline steps done, show the actual last completed step
+                            currentStep = lastCompletedStep.step;
+                            nextStep = null;
+                          } else if (lastCompletedIndex >= 0 && lastCompletedIndex < analysisFlow.length - 1) {
+                            // Show next step that needs to be completed
+                            currentStep = analysisFlow[lastCompletedIndex + 1];
+                            if (lastCompletedIndex + 2 < analysisFlow.length) {
+                              nextStep = analysisFlow[lastCompletedIndex + 2];
+                            }
+                          } else {
+                            currentStep = lastCompletedStep.step;
+                            nextStep = null;
+                          }
                         }
                       } else {
                         currentStep = analysisFlow[0];
@@ -4722,7 +4731,7 @@ export default function AnalysisPage() {
                     return (
                       <>
                         <div>
-                          {analysis?.status === "error" ? (
+                          {analysis?.status === "error" || analysis?.status === "failed" ? (
                             <>
                               <span className="text-red-300">Failed at:</span>{" "}
                               <span className="text-white font-medium">
