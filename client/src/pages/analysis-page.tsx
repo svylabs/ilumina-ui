@@ -6051,28 +6051,14 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 variant="ghost" 
                                                                 className="mt-2 text-xs text-blue-400 hover:text-blue-300"
                                                                 onClick={() => {
-                                                                  if (isFreeUser) {
-                                                                    toast({
-                                                                      title: "Feature restricted",
-                                                                      description: "AI chat assistance is only available for Pro and Teams plans",
-                                                                      variant: "destructive"
-                                                                    });
-                                                                    // Redirect to pricing page after a short delay
-                                                                    setTimeout(() => window.location.href = '/pricing', 2000);
-                                                                  } else {
-                                                                    setOpenChats(prev => ({ 
-                                                                      ...prev, 
-                                                                      [`implementation-${actor.id}-${action.id}`]: true 
-                                                                    }));
-                                                                  }
+                                                                  setOpenChats(prev => ({ 
+                                                                    ...prev, 
+                                                                    [`implementation-${actor.id}-${action.id}`]: true 
+                                                                  }));
                                                                 }}
                                                               >
-                                                                {isFreeUser ? (
-                                                                  <Lock className="h-3.5 w-3.5 mr-1" />
-                                                                ) : (
-                                                                  <MessageSquare className="h-3.5 w-3.5 mr-1" />
-                                                                )}
-                                                                {isFreeUser ? "Pro Feature" : "Modify Implementation"}
+                                                                <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                                                                Modify Implementation
                                                               </Button>
                                                               
                                                               {openChats[`implementation-${actor.id}-${action.id}`] && (
@@ -6182,28 +6168,14 @@ The deployment should initialize the contracts with test values and set me as th
                                                                 variant="ghost" 
                                                                 className="mt-2 text-xs text-yellow-400 hover:text-yellow-300"
                                                                 onClick={() => {
-                                                                  if (isFreeUser) {
-                                                                    toast({
-                                                                      title: "Feature restricted",
-                                                                      description: "AI chat assistance is only available for Pro and Teams plans",
-                                                                      variant: "destructive"
-                                                                    });
-                                                                    // Redirect to pricing page after a short delay
-                                                                    setTimeout(() => window.location.href = '/pricing', 2000);
-                                                                  } else {
-                                                                    setOpenChats(prev => ({ 
-                                                                      ...prev, 
-                                                                      [`validation-${actor.id}-${action.id}`]: true 
-                                                                    }));
-                                                                  }
+                                                                  setOpenChats(prev => ({ 
+                                                                    ...prev, 
+                                                                    [`validation-${actor.id}-${action.id}`]: true 
+                                                                  }));
                                                                 }}
                                                               >
-                                                                {isFreeUser ? (
-                                                                  <Lock className="h-3.5 w-3.5 mr-1" />
-                                                                ) : (
-                                                                  <MessageSquare className="h-3.5 w-3.5 mr-1" />
-                                                                )}
-                                                                {isFreeUser ? "Pro Feature" : "Modify Validation Rules"}
+                                                                <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                                                                Modify Validation Rules
                                                               </Button>
                                                               
                                                               {openChats[`validation-${actor.id}-${action.id}`] && (
