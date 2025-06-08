@@ -44,13 +44,13 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
             <p>Your AI-powered smart contract analysis platform</p>
           </div>
           <div class="content">
-            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 20px;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 20px; flex-wrap: wrap;">
               <img src="https://www.stablebase.org/static/media/sridhar.0f88d01bba2539ee4dba.jpeg" 
                    alt="Sridhar G" 
-                   style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
-              <div>
-                <h2 style="margin: 0;">Hello ${user.name || user.email}!</h2>
-                <p style="margin: 5px 0 0 0; color: #667eea; font-weight: 600;">Sridhar G, Founder & CEO</p>
+                   style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: block; border: 3px solid #667eea;">
+              <div style="flex: 1; min-width: 200px;">
+                <h2 style="margin: 0; font-size: 24px; color: #1a1a1a;">Hello ${user.name || user.email}!</h2>
+                <p style="margin: 5px 0 0 0; color: #667eea; font-weight: 600; font-size: 16px;">Sridhar G, Founder & CEO</p>
               </div>
             </div>
             

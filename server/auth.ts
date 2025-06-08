@@ -75,12 +75,22 @@ export function setupAuth(app: Express) {
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
-    done(null, user);
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+      
+      if (!user) {
+        return done(null, false);
+      }
+      
+      done(null, user);
+    } catch (error) {
+      console.error('Error deserializing user:', error);
+      done(null, false);
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {
