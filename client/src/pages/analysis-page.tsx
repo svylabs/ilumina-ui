@@ -6621,7 +6621,7 @@ The deployment should initialize the contracts with test values and set me as th
         </div>
       </div>
       {/* Add context-aware AI Chat Assistant */}
-      <ChatAssistant projectId={id} currentSection={currentStep.id} submissionId={submissionId} analysisData={analysis} />
+      <ChatAssistant projectId={id} currentSection={selectedStep} submissionId={submissionId} analysisData={analysis} />
     </div>
   );
 }
