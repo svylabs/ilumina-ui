@@ -5,10 +5,12 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { users, insertUserSchema, type SelectUser } from "@db/schema";
+import { users, passwordResetTokens, insertUserSchema, type SelectUser } from "@db/schema";
 import { db, pool } from "@db";
-import { eq } from "drizzle-orm";
+import { eq, and, gt } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
+import { sendWelcomeEmail } from "./email";
+import { v4 as uuidv4 } from 'uuid';
 
 declare global {
   namespace Express {
@@ -100,6 +102,11 @@ export function setupAuth(app: Express) {
         password: await hashPassword(result.data.password),
       })
       .returning();
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user).catch(error => {
+      console.error('Failed to send welcome email:', error);
+    });
 
     req.login(user, (err) => {
       if (err) return next(err);
