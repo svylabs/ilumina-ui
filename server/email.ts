@@ -80,16 +80,9 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
             <p>Best regards,</p>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-              <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2px; border-radius: 50%; margin-right: 15px; width: 50px; height: 50px; vertical-align: top;">
-                <div style="width: 46px; height: 46px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #667eea; font-family: Arial, sans-serif; line-height: 1;">
-                  SG
-                </div>
-              </div>
-              <div style="display: inline-block; vertical-align: top; margin-top: 5px;">
-                <div style="font-weight: bold; color: #1a1a1a; margin-bottom: 2px;">Sridhar G</div>
-                <div style="color: #667eea; font-size: 14px; margin-bottom: 2px;">Founder & CEO</div>
-                <div style="color: #667eea; font-size: 14px;">Ilumina</div>
-              </div>
+              <div style="font-weight: bold; color: #1a1a1a; margin-bottom: 5px;">Sridhar G</div>
+              <div style="color: #667eea; font-size: 14px; margin-bottom: 2px;">Founder & CEO</div>
+              <div style="color: #667eea; font-size: 14px;">Ilumina</div>
             </div>
           </div>
         </div>
