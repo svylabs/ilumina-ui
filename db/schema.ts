@@ -19,6 +19,14 @@ export const users = pgTable("users", {
   chatMessagesResetDate: timestamp("chat_messages_reset_date").defaultNow().notNull(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  token: text("token").unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Define teams table for team management
 export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
