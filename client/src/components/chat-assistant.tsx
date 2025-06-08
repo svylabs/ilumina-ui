@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Loader2, RefreshCw, PlusCircle, Lock } from 'lu
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card } from './ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +33,7 @@ type ChatAssistantProps = {
   currentSection?: string;
   currentStep?: string;
   submissionId?: string;
+  analysisData?: any; // Analysis data to check step completion status
 };
 
 export default function ChatAssistant({
@@ -39,6 +41,7 @@ export default function ChatAssistant({
   currentSection,
   currentStep,
   submissionId,
+  analysisData,
 }: ChatAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -48,7 +51,38 @@ export default function ChatAssistant({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { user } = useAuth(); // Get current authenticated user
+  const { user } = useAuth();
+
+  // Function to determine if tooltip should be shown and what message
+  const getTooltipMessage = () => {
+    // Only show tooltip in actors section
+    if (currentSection !== 'actors') return null;
+    
+    // Check if we have analysis data and completed steps
+    if (!analysisData?.completedSteps) return null;
+    
+    const completedSteps = analysisData.completedSteps || [];
+    const actorsCompleted = completedSteps.some((step: any) => 
+      step.step === 'analyze_actors' && (step.status === 'completed' || step.status === 'success')
+    );
+    const deploymentStarted = completedSteps.some((step: any) => 
+      step.step === 'analyze_deployment'
+    );
+    
+    // Show tooltip when analyze_deployment hasn't started
+    if (!deploymentStarted) {
+      return "You can refine the analysis with our AI assistant by describing what you want";
+    }
+    
+    // Show tooltip when analyze actors is completed but analyze deployment is not complete
+    if (actorsCompleted && !deploymentStarted) {
+      return "You can refine the analysis with our AI assistant by describing what you want";
+    }
+    
+    return null;
+  };
+
+  const tooltipMessage = getTooltipMessage(); // Get current authenticated user
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
