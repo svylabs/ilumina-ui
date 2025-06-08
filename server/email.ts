@@ -44,23 +44,28 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
             <p>Your AI-powered smart contract analysis platform</p>
           </div>
           <div class="content">
-            <h2>Hello ${user.name || user.email}!</h2>
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 20px;">
+              <img src="https://www.stablebase.org/static/media/sridhar.0f88d01bba2539ee4dba.jpeg" 
+                   alt="Sridhar G" 
+                   style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+              <div>
+                <h2 style="margin: 0;">Hello ${user.name || user.email}!</h2>
+                <p style="margin: 5px 0 0 0; color: #667eea; font-weight: 600;">Sridhar G, Founder & CEO</p>
+              </div>
+            </div>
             
-            <p>Thank you for joining Ilumina! You're now ready to revolutionize how you analyze and test smart contracts.</p>
+            <p>Thank you for joining our platform! I'm excited to have you on this journey with Ilumina.</p>
             
             <div class="features">
               <h3>What you can do with Ilumina:</h3>
               <div class="feature">
-                <strong>🔍 Comprehensive Analysis:</strong> Our 9-step pipeline analyzes your smart contracts, identifies actors, and creates deployment strategies.
+                <strong>🔍 Simulation Generation:</strong> Built on @svylabs/ilumina framework, we generate TypeScript code for simulations for thorough testing of your smart contracts.
               </div>
               <div class="feature">
-                <strong>🚀 Automated Simulations:</strong> Built on @svylabs/ilumina framework, we generate TypeScript simulation repositories for thorough testing.
+                <strong>🚀 Run Simulations on Demand:</strong> Once simulations are created, you can run simulations on demand in the cloud and get access to the dashboard where you can see the report.
               </div>
               <div class="feature">
                 <strong>🤖 AI Assistant:</strong> Get personalized guidance throughout your analysis journey with our intelligent chatbot.
-              </div>
-              <div class="feature">
-                <strong>📊 Validation & Testing:</strong> Snapshots validate contract state changes during action execution.
               </div>
             </div>
             
@@ -78,7 +83,8 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
             <p>Need help getting started? Our AI assistant is ready to guide you through every step of the process.</p>
             
             <p>Best regards,<br>
-            The Ilumina Team</p>
+            Sridhar, Founder & CEO<br>
+            Ilumina</p>
           </div>
         </div>
       </body>
@@ -88,13 +94,15 @@ const getWelcomeEmailTemplate = (user: SelectUser) => {
     
 Hello ${user.name || user.email}!
 
-Thank you for joining Ilumina! You're now ready to revolutionize how you analyze and test smart contracts.
+I am Sridhar, Founder and CEO of Ilumina. Thank you for joining our platform!
 
 What you can do with Ilumina:
-- Comprehensive Analysis: Our 9-step pipeline analyzes your smart contracts, identifies actors, and creates deployment strategies
-- Automated Simulations: Built on @svylabs/ilumina framework, we generate TypeScript simulation repositories for thorough testing
-- AI Assistant: Get personalized guidance throughout your analysis journey with our intelligent chatbot
-- Validation & Testing: Snapshots validate contract state changes during action execution
+
+🔍 Simulation Generation: Built on @svylabs/ilumina framework, we generate TypeScript code for simulations for thorough testing of your smart contracts.
+
+🚀 Run Simulations on Demand: Once simulations are created, you can run simulations on demand in the cloud and get access to the dashboard where you can see the report.
+
+🤖 AI Assistant: Get personalized guidance throughout your analysis journey with our intelligent chatbot.
 
 Your Free Plan includes:
 - 1 repository analysis
@@ -106,7 +114,8 @@ Get started: ${process.env.FRONTEND_URL || 'http://localhost:5000'}
 Need help getting started? Our AI assistant is ready to guide you through every step of the process.
 
 Best regards,
-The Ilumina Team`
+Sridhar, Founder & CEO
+Ilumina`
   };
 };
 
