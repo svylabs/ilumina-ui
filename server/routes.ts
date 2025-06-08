@@ -349,6 +349,37 @@ export function registerRoutes(app: Express): Server {
       if (latestUserMessage.role !== 'user') {
         return res.status(400).json({ error: "The last message must be from the user" });
       }
+
+      // Check chat message limits for free users
+      const user = req.user!;
+      if (user.plan === 'free') {
+        // Check if we need to reset the monthly counter
+        const now = new Date();
+        const resetDate = new Date(user.chatMessagesResetDate);
+        const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        
+        if (resetDate < oneMonthAgo) {
+          // Reset the counter
+          await db
+            .update(users)
+            .set({
+              chatMessagesUsed: 0,
+              chatMessagesResetDate: now
+            })
+            .where(eq(users.id, user.id));
+          user.chatMessagesUsed = 0;
+        }
+        
+        // Check if user has exceeded the limit
+        if (user.chatMessagesUsed >= 10) {
+          return res.status(429).json({ 
+            error: "Monthly chat limit reached", 
+            limit: 10,
+            used: user.chatMessagesUsed,
+            resetDate: user.chatMessagesResetDate
+          });
+        }
+      }
       
       // For tracking whether we've merged deployment script data with deployment instructions
       let mergedDeploymentData = false;
@@ -1234,7 +1265,22 @@ export function registerRoutes(app: Express): Server {
         // Continue even if there's an error saving to DB
       }
 
-      // 5. Return the response with classification metadata, confirmation status, and conversation ID
+      // 5. Increment chat message count for free users
+      if (user.plan === 'free') {
+        try {
+          await db
+            .update(users)
+            .set({
+              chatMessagesUsed: user.chatMessagesUsed + 1
+            })
+            .where(eq(users.id, user.id));
+        } catch (updateError) {
+          console.error('Error updating chat message count:', updateError);
+          // Continue even if there's an error updating the count
+        }
+      }
+
+      // 6. Return the response with classification metadata, confirmation status, and conversation ID
       
       return res.json({ 
         response: finalResponse,

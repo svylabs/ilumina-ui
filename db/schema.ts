@@ -14,6 +14,9 @@ export const users = pgTable("users", {
   simulationsUsed: integer("simulations_used").default(0).notNull(),
   // Field to track the last date simulations were used for daily limit reset
   lastSimulationDate: timestamp("last_simulation_date"),
+  // Chat messages for free plan users (10 messages per month)
+  chatMessagesUsed: integer("chat_messages_used").default(0).notNull(),
+  chatMessagesResetDate: timestamp("chat_messages_reset_date").defaultNow().notNull(),
 });
 
 // Define teams table for team management
