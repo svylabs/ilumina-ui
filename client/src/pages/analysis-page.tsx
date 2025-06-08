@@ -6516,22 +6516,8 @@ The deployment should initialize the contracts with test values and set me as th
           </div>
         </div>
       </div>
-      {/* Add context-aware AI Chat Assistant - only for Pro and Teams users */}
-      {isFreeUser ? (
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Lock className="h-4 w-4 text-yellow-500" />
-            <p className="text-sm font-medium text-yellow-500">AI Chat Assistant is only available on Pro and Teams plans</p>
-          </div>
-          <Button 
-            onClick={() => window.location.href = '/pricing'}
-            className="bg-yellow-600 hover:bg-yellow-700 text-white">
-            Upgrade to Pro
-          </Button>
-        </div>
-      ) : (
-        <ChatAssistant projectId={id} currentSection={currentStep.id} submissionId={submissionId} />
-      )}
+      {/* Add context-aware AI Chat Assistant */}
+      <ChatAssistant projectId={id} currentSection={currentStep.id} submissionId={submissionId} />
     </div>
   );
 }
