@@ -6285,13 +6285,18 @@ export function registerRoutes(app: Express): Server {
             }
           }
           
-          // Check for failed steps and determine overall status
+          // Check for failed steps and in-progress steps to determine overall status
           const hasFailedSteps = externalSubmissionData.completed_steps && 
             externalSubmissionData.completed_steps.some(step => step.status === "error" || step.status === "failed");
+          
+          const hasInProgressSteps = externalSubmissionData.completed_steps && 
+            externalSubmissionData.completed_steps.some(step => step.status === "in_progress");
           
           let status = externalSubmissionData.status || "completed";
           if (hasFailedSteps) {
             status = "failed";
+          } else if (hasInProgressSteps) {
+            status = "in_progress";
           }
           
           // Include the completed_steps from the external API if available
@@ -6318,126 +6323,6 @@ export function registerRoutes(app: Express): Server {
       
       // If no external API data is available, return an error
       return res.status(404).send("No analysis data available for this submission");
-      if (steps.length > 0) {
-        console.log("Using database entries for submission:", uuidSubmissionId);
-        
-        // Update our step data with anything that exists in the database
-        steps.forEach(step => {
-          if (stepsStatus[step.stepId]) {
-            // If the step exists in the database, override our sample data
-            stepsStatus[step.stepId] = {
-              status: step.status,
-              details: step.details,
-              startTime: step.status === 'in_progress' ? step.createdAt.toISOString() : null,
-              // Keep the jsonData from our sample if there's none in the database
-              jsonData: step.jsonData || stepsStatus[step.stepId].jsonData
-            };
-          }
-        });
-
-        // Special handling for files step
-        // If files step is "in_progress", fetch from the projectFiles table
-        if (stepsStatus.files.status === "in_progress") {
-          try {
-            // Try to fetch from projectFiles table
-            // We're using the uuidSubmissionId that was validated earlier
-            let actualSubmissionId = uuidSubmissionId;
-
-            // If we don't have a valid submission ID, log and continue
-            if (!actualSubmissionId) {
-              console.warn(`No valid submission ID for this request`);
-              // If there is sample data, use it
-              if (sampleData?.files?.jsonData) {
-                stepsStatus.files.jsonData = sampleData.files.jsonData;
-                return;
-              }
-            }
-
-            const projectFilesData = await db
-              .select()
-              .from(projectFiles)
-              .where(eq(projectFiles.submissionId, actualSubmissionId))
-              .limit(1);
-            
-            if (projectFilesData.length > 0) {
-              // Use data from projectFiles table
-              stepsStatus.files.jsonData = {
-                projectName: projectFilesData[0].projectName,
-                projectSummary: projectFilesData[0].projectSummary,
-                devEnvironment: projectFilesData[0].devEnvironment,
-                compiler: projectFilesData[0].compiler,
-                contracts: projectFilesData[0].contracts,
-                dependencies: projectFilesData[0].dependencies
-              };
-            } else if (sampleData.files.jsonData) {
-              // Fallback to sample data if needed
-              stepsStatus.files.jsonData = sampleData.files.jsonData;
-            }
-          } catch (error) {
-            console.error("Error fetching project files data:", error);
-            // Use sample data as fallback
-            if (sampleData.files.jsonData) {
-              stepsStatus.files.jsonData = sampleData.files.jsonData;
-            }
-          }
-        }
-
-        const hasInProgressStep = steps.some(step => step.status === "in_progress");
-        const hasFailedStep = steps.some(step => step.status === "failed");
-        const status = hasFailedStep ? "failed" : (hasInProgressStep ? "in_progress" : "completed");
-        
-        // Format completed steps from database data (include all steps, not just completed ones)
-        const completedSteps = steps
-          .map(step => ({
-            step: step.stepId,
-            updatedAt: step.updatedAt?.toISOString() || step.createdAt.toISOString(),
-            status: step.status // Include status from database
-          }));
-        
-        res.json({ 
-          status, 
-          steps: stepsStatus,
-          completedSteps,
-          submissionId: uuidSubmissionId 
-        });
-      } else {
-        console.log("No database entries found, using sample data for submission:", uuidSubmissionId);
-        
-        // If no actual steps at all, use our sample data with all steps marked completed
-        stepsStatus.files.status = "completed";
-        stepsStatus.actors.status = "completed";
-        stepsStatus.test_setup.status = "completed";
-        stepsStatus.simulations.status = "completed";
-        
-        // Create sample completed steps with timestamps
-        const completedSteps = [
-          {
-            step: "files",
-            updatedAt: new Date().toISOString()
-          },
-          {
-            step: "actors",
-            updatedAt: new Date().toISOString()
-          },
-          {
-            step: "test_setup",
-            updatedAt: new Date().toISOString()
-          },
-          {
-            step: "simulations",
-            updatedAt: new Date().toISOString()
-          }
-        ];
-        
-        // Send the response with sample data
-        console.log(`Returning analysis data with submissionId: ${uuidSubmissionId}`);
-        res.json({ 
-          status: "completed", 
-          steps: stepsStatus,
-          completedSteps,
-          submissionId: uuidSubmissionId 
-        });
-      }
     } catch (error) {
       console.error('Error in analysis endpoint:', error);
       res.status(500).send("Internal server error");
