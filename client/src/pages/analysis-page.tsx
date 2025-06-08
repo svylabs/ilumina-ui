@@ -4389,9 +4389,20 @@ export default function AnalysisPage() {
       return "completed";
     }
     
-    // ONLY use the completedSteps array to determine if a step is completed
-    if (isStepActuallyCompleted(stepId)) {
-      return "completed";
+    // Check if this step has failed by looking at completedSteps array
+    const apiStepName = getApiStepName(stepId);
+    const stepInfo = analysis.completedSteps?.find(step => step.step === apiStepName);
+    
+    if (stepInfo) {
+      // Step is in completedSteps array
+      if (stepInfo.status === "error" || stepInfo.status === "failed") {
+        return "failed";
+      } else if (stepInfo.status === "in_progress") {
+        return "in_progress";
+      } else {
+        // Default to completed if no explicit status or status is success
+        return "completed";
+      }
     }
     
     // Check if the step is explicitly marked as in_progress from the API
@@ -4408,12 +4419,13 @@ export default function AnalysisPage() {
     // First, determine the index of the current step in our analysis steps array
     const stepIndex = analysisSteps.findIndex(step => step.id === stepId);
     if (stepIndex >= 0) {
-      // Count how many steps are completed so far
-      const completedCount = analysis.completedSteps?.length || 0;
+      // Count how many successful steps are completed so far
+      const successfulStepsCount = analysis.completedSteps?.filter(step => 
+        step.status !== "error" && step.status !== "failed"
+      ).length || 0;
       
-      // If this step's index matches the completed count, it should be the next in progress
-      // This assumes steps must be completed in sequential order
-      if (stepIndex === completedCount) {
+      // If this step's index matches the successful completed count, it should be the next in progress
+      if (stepIndex === successfulStepsCount) {
         return "in_progress";
       }
     }
