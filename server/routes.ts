@@ -6,13 +6,15 @@ import {
   submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
   pricingPlans, planFeatures, teams, teamMembers, teamInvitations,
-  chatMessages, analysisSteps, creditPurchases
+  chatMessages, analysisSteps, creditPurchases, passwordResetTokens
 } from "@db/schema";
-import { eq, sql, desc, asc, and, or } from "drizzle-orm";
+import { eq, sql, desc, asc, and, or, gt } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { generateChatResponse, classifyUserRequest, generateChecklist, classifyConversationType } from "./gemini";
 import { parseVerificationLogs, extractErrorMessage, explainVerificationError } from "./verification";
+import { sendPasswordResetEmail } from "./email";
+import { v4 as uuidv4 } from 'uuid';
 
 // Authentication middleware
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -6493,6 +6495,120 @@ export function registerRoutes(app: Express): Server {
     } catch (err) {
       console.error('Error saving contact:', err);
       res.status(500).json({ message: "Failed to save contact information" });
+    }
+  });
+
+  // Password reset endpoints
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Find user by email
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (!user) {
+        // Return success even if user not found for security
+        return res.status(200).json({ message: "If an account with that email exists, a password reset link has been sent" });
+      }
+
+      // Clean up any existing tokens for this user
+      await db
+        .delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.userId, user.id));
+
+      // Generate reset token
+      const resetToken = uuidv4();
+      const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Store reset token
+      await db
+        .insert(passwordResetTokens)
+        .values({
+          userId: user.id,
+          token: resetToken,
+          expiresAt
+        });
+
+      // Send password reset email using noreply@ilumina.dev
+      const emailSent = await sendPasswordResetEmail(user, resetToken);
+
+      if (!emailSent) {
+        console.error('Failed to send password reset email to:', user.email);
+        return res.status(500).json({ error: "Failed to send password reset email" });
+      }
+
+      res.status(200).json({ message: "If an account with that email exists, a password reset link has been sent" });
+    } catch (error) {
+      console.error('Error in forgot password:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters long" });
+      }
+
+      // Find valid reset token
+      const [resetToken] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.token, token),
+            gt(passwordResetTokens.expiresAt, new Date())
+          )
+        )
+        .limit(1);
+
+      if (!resetToken) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      // Get user
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, resetToken.userId))
+        .limit(1);
+
+      if (!user) {
+        return res.status(400).json({ error: "User not found" });
+      }
+
+      // Hash new password and update user
+      const { hashPassword } = await import('./auth');
+      const hashedPassword = await hashPassword(newPassword);
+
+      await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, user.id));
+
+      // Delete the used reset token
+      await db
+        .delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token));
+
+      res.status(200).json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error('Error in reset password:', error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
