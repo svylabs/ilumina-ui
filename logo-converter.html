@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ilumina Logo Download</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        .logo-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        button {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2563EB;
+        }
+        canvas {
+            border: 1px solid #333;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ilumina Logo Download</h1>
+    
+    <div class="logo-container">
+        <svg id="logo" width="300" height="80" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
+                </linearGradient>
+                <radialGradient id="iconGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+                </radialGradient>
+            </defs>
+            
+            <rect width="300" height="80" fill="white"/>
+            
+            <g transform="translate(25, 40)">
+                <circle cx="0" cy="0" r="18" fill="none" stroke="url(#iconGradient)" stroke-width="2" opacity="0.3"/>
+                
+                <g stroke="url(#iconGradient)" stroke-width="2" stroke-linecap="round" opacity="0.6">
+                    <line x1="0" y1="-25" x2="0" y2="-20"/>
+                    <line x1="18" y1="-18" x2="14" y2="-14"/>
+                    <line x1="25" y1="0" x2="20" y2="0"/>
+                    <line x1="18" y1="18" x2="14" y2="14"/>
+                    <line x1="0" y1="25" x2="0" y2="20"/>
+                    <line x1="-18" y1="18" x2="-14" y2="14"/>
+                    <line x1="-25" y1="0" x2="-20" y2="0"/>
+                    <line x1="-18" y1="-18" x2="-14" y2="-14"/>
+                </g>
+                
+                <circle cx="0" cy="0" r="8" fill="url(#iconGradient)"/>
+                <circle cx="0" cy="0" r="4" fill="#ffffff" opacity="0.9"/>
+            </g>
+            
+            <text x="70" y="35" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="700" fill="url(#primaryGradient)">
+                Ilumina
+            </text>
+            
+            <text x="70" y="55" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" font-weight="400" fill="#6B7280">
+                Smart Contract Analysis
+            </text>
+        </svg>
+    </div>
+
+    <button onclick="downloadPNG()">Download PNG Logo</button>
+    <button onclick="downloadHighRes()">Download High-Res PNG (600x160)</button>
+    
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        function downloadPNG() {
+            convertAndDownload(300, 80, 'ilumina-logo.png');
+        }
+        
+        function downloadHighRes() {
+            convertAndDownload(600, 160, 'ilumina-logo-highres.png');
+        }
+        
+        function convertAndDownload(width, height, filename) {
+            const svg = document.getElementById('logo');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            };
+            img.src = url;
+        }
+    </script>
+</body>
+</html>
