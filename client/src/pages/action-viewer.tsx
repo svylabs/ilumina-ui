@@ -250,26 +250,18 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
   action: any;
   sectionContext: string;
 }) {
-  // Add line numbers to code with proper indentation preserved
-  const formatCodeWithLineNumbers = (code: string, title: string) => {
-    const lines = code.split('\n');
-    return (
-      <div className="mb-6">
-        <h4 className="text-blue-400 font-medium mb-3">{title}</h4>
-        <div className="bg-gray-900/50 p-4 rounded overflow-x-auto">
-          <pre className="font-mono text-sm">
-            {lines.map((line, index) => (
-              <div key={index} className="flex">
-                <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right shrink-0">
-                  {index + 1}
-                </span>
-                <span className="text-green-400 whitespace-pre">{line}</span>
-              </div>
-            ))}
-          </pre>
-        </div>
-      </div>
-    );
+  // Custom style for Solidity syntax highlighting
+  const solidityStyle = {
+    ...vscDarkPlus,
+    'pre[class*="language-"]': {
+      ...vscDarkPlus['pre[class*="language-"]'],
+      background: 'rgba(17, 24, 39, 0.5)',
+      margin: 0,
+    },
+    'code[class*="language-"]': {
+      ...vscDarkPlus['code[class*="language-"]'],
+      background: 'transparent',
+    }
   };
 
   const { data: actionJsonData } = useActionFile(submissionId, contractName, functionName, 'json');
@@ -348,17 +340,18 @@ function SimulationCodeTab({ submissionId, contractName, functionName, action, s
 }) {
   const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
 
-  // Add line numbers to code with proper indentation preserved
-  const formatCodeWithLineNumbers = (code: string) => {
-    const lines = code.split('\n');
-    return lines.map((line, index) => (
-      <div key={index} className="flex">
-        <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right shrink-0">
-          {index + 1}
-        </span>
-        <span className="text-gray-200 whitespace-pre">{line}</span>
-      </div>
-    ));
+  // Custom style for syntax highlighter to match dark theme
+  const customStyle = {
+    ...vscDarkPlus,
+    'pre[class*="language-"]': {
+      ...vscDarkPlus['pre[class*="language-"]'],
+      background: 'rgba(17, 24, 39, 0.5)',
+      margin: 0,
+    },
+    'code[class*="language-"]': {
+      ...vscDarkPlus['code[class*="language-"]'],
+      background: 'transparent',
+    }
   };
 
   if (isLoading) {
@@ -386,10 +379,28 @@ function SimulationCodeTab({ submissionId, contractName, functionName, action, s
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
       <h3 className="text-orange-400 text-lg font-semibold mb-4">Simulation Implementation</h3>
-      <div className="bg-gray-900/50 p-4 rounded overflow-x-auto">
-        <pre className="font-mono text-sm">
-          {formatCodeWithLineNumbers(codeContent)}
-        </pre>
+      <div className="bg-gray-900/50 rounded overflow-x-auto">
+        <SyntaxHighlighter
+          language="typescript"
+          style={customStyle}
+          showLineNumbers={true}
+          lineNumberStyle={{
+            color: '#6b7280',
+            fontSize: '12px',
+            minWidth: '3rem',
+            textAlign: 'right',
+            paddingRight: '1rem',
+            userSelect: 'none'
+          }}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            background: 'rgba(17, 24, 39, 0.5)',
+            fontSize: '14px'
+          }}
+        >
+          {codeContent}
+        </SyntaxHighlighter>
       </div>
     </div>
   );
