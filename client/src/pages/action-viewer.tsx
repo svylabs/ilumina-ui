@@ -77,29 +77,66 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
 
   return (
     <div className="bg-black/40 p-6 rounded text-base">
-      {realActionData?.action_detail ? (
+      {realActionData ? (
         <div className="space-y-6">
           <div>
             <h4 className="text-green-400 text-lg font-semibold mb-3">Action Overview</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white/80">
               <div>
                 <span className="text-gray-400">Contract:</span>
-                <p className="font-medium">{realActionData.action_detail.contract_name}</p>
+                <p className="font-medium">{realActionData.action?.contract_name || contractName}</p>
               </div>
               <div>
                 <span className="text-gray-400">Function:</span>
-                <p className="font-medium">{realActionData.action_detail.function_name}</p>
+                <p className="font-medium">{realActionData.action?.function_name || functionName}</p>
               </div>
               <div>
                 <span className="text-gray-400">Actor:</span>
-                <p className="font-medium">{realActionData.action_detail.actor_name}</p>
+                <p className="font-medium">{actor.name}</p>
               </div>
               <div>
-                <span className="text-gray-400">Action Type:</span>
-                <p className="font-medium">{realActionData.action_detail.action_type}</p>
+                <span className="text-gray-400">Action:</span>
+                <p className="font-medium">{realActionData.action?.name || action.name}</p>
               </div>
             </div>
           </div>
+          
+          {(realActionData.action?.summary || action.summary) && (
+            <div>
+              <h5 className="text-blue-400 font-medium mb-2">Description</h5>
+              <p className="text-white/90">{realActionData.action?.summary || action.summary}</p>
+            </div>
+          )}
+
+          {realActionData.action_detail?.pre_execution_parameter_generation_rules && (
+            <div>
+              <h5 className="text-yellow-400 font-medium mb-3">Parameter Generation Rules</h5>
+              <div className="space-y-2">
+                {realActionData.action_detail.pre_execution_parameter_generation_rules.map((rule: string, index: number) => (
+                  <div key={index} className="bg-gray-800/50 p-3 rounded">
+                    <p className="text-sm text-gray-200">{rule}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {realActionData.action_detail?.on_execution_state_updates_made && (
+            <div>
+              <h5 className="text-green-400 font-medium mb-3">State Updates</h5>
+              <div className="space-y-2">
+                {realActionData.action_detail.on_execution_state_updates_made.map((update: any, index: number) => (
+                  <div key={index} className="bg-gray-800/50 p-3 rounded">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-green-300">{update.variable_name}</span>
+                      <Badge variant="outline" className="text-xs">{update.update_type}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-200">{update.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           {realActionData.action_detail.description && (
             <div>
@@ -181,48 +218,46 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
   action: any;
   sectionContext: string;
 }) {
-  const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
-
-  if (isLoading) {
+  // Add line numbers to code
+  const formatCodeWithLineNumbers = (code: string, title: string) => {
+    const lines = code.split('\n');
     return (
-      <div className="bg-black/40 p-6 rounded text-base flex items-center justify-center min-h-[300px]">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <span className="text-white/60">Loading implementation code...</span>
+      <div className="mb-6">
+        <h4 className="text-blue-400 font-medium mb-3">{title}</h4>
+        <div className="bg-gray-900/50 p-4 rounded">
+          {lines.map((line, index) => (
+            <div key={index} className="flex">
+              <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right">
+                {index + 1}
+              </span>
+              <span className="flex-1 text-green-400">{line}</span>
+            </div>
+          ))}
         </div>
       </div>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-900/20 border border-red-800 p-6 rounded text-base">
-        <p className="text-red-400 mb-2">Error loading implementation code:</p>
-        <p className="text-red-300 text-sm">{error.message}</p>
-      </div>
-    );
-  }
-
-  const codeContent = codeData?.content || 'No implementation code available yet.';
-
-  // Add line numbers to code
-  const formatCodeWithLineNumbers = (code: string) => {
-    const lines = code.split('\n');
-    return lines.map((line, index) => (
-      <div key={index} className="flex">
-        <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right">
-          {index + 1}
-        </span>
-        <span className="flex-1">{line}</span>
-      </div>
-    ));
   };
 
+  // Get code snippets from action context
+  const codeSnippets = action.code_snippet || {};
+  
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
-      <pre className="text-green-400 font-mono whitespace-pre-wrap">
-        {formatCodeWithLineNumbers(codeContent)}
-      </pre>
+      {Object.keys(codeSnippets).length > 0 ? (
+        <div className="space-y-6">
+          <h3 className="text-green-400 text-lg font-semibold mb-4">Contract Code</h3>
+          {Object.entries(codeSnippets).map(([contractName, code]) => 
+            formatCodeWithLineNumbers(code as string, `${contractName}.sol`)
+          )}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-lg mb-2">No Contract Code Available</div>
+          <p className="text-gray-500 text-sm">
+            Code snippets will appear here once the contracts are implemented.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
