@@ -577,7 +577,7 @@ export default function ActionViewer() {
                 className="border-gray-700 hover:bg-gray-800"
                 asChild
               >
-                <Link href={`/analysis/${submissionId}#test_setup`}>
+                <Link href={`/analysis/${projectId}#test_setup`}>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Back to Simulation
                 </Link>
