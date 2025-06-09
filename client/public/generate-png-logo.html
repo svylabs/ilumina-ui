@@ -28,88 +28,66 @@
     </style>
 </head>
 <body>
-    <h1>Ilumina Logo Generator</h1>
-    <canvas id="logoCanvas" width="600" height="160"></canvas>
+    <h1>Ilumina Icon Generator</h1>
+    <canvas id="logoCanvas" width="120" height="120"></canvas>
     <br>
-    <button onclick="downloadPNG()">Download PNG Logo</button>
-    <button onclick="downloadHighRes()">Download High-Res PNG (1200x320)</button>
+    <button onclick="downloadPNG()">Download Icon PNG (120x120)</button>
+    <button onclick="downloadHighRes()">Download High-Res Icon PNG (240x240)</button>
 
     <script>
         function drawLogo(canvas, scale = 1) {
             const ctx = canvas.getContext('2d');
-            canvas.width = 600 * scale;
-            canvas.height = 160 * scale;
+            canvas.width = 120 * scale;
+            canvas.height = 120 * scale;
             ctx.scale(scale, scale);
             
-            // White background
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, 600, 160);
+            // Transparent background
+            ctx.clearRect(0, 0, 120, 120);
             
-            // Draw illumination icon
+            // Draw the homepage logo layout
             ctx.save();
-            ctx.translate(50, 80);
+            ctx.translate(60, 60); // Center the icon
             
-            // Create gradients
-            const iconGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 36);
-            iconGradient.addColorStop(0, '#60A5FA');
-            iconGradient.addColorStop(1, '#3B82F6');
-            
-            // Outer ring
-            ctx.strokeStyle = iconGradient;
-            ctx.globalAlpha = 0.3;
-            ctx.lineWidth = 4;
+            // Outer circle background (primary/10 equivalent)
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
             ctx.beginPath();
-            ctx.arc(0, 0, 36, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            // Sun rays
-            ctx.globalAlpha = 0.6;
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-            const rays = [
-                [0, -50, 0, -40], [36, -36, 28, -28], [50, 0, 40, 0], [36, 36, 28, 28],
-                [0, 50, 0, 40], [-36, 36, -28, 28], [-50, 0, -40, 0], [-36, -36, -28, -28]
-            ];
-            
-            rays.forEach(([x1, y1, x2, y2]) => {
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            });
-            
-            // Central core
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = iconGradient;
-            ctx.beginPath();
-            ctx.arc(0, 0, 16, 0, Math.PI * 2);
+            ctx.arc(0, 0, 32, 0, Math.PI * 2);
             ctx.fill();
             
-            // Inner white circle
-            ctx.globalAlpha = 0.9;
-            ctx.fillStyle = '#ffffff';
+            // Inner circle (primary background)
+            ctx.fillStyle = '#3B82F6';
+            ctx.beginPath();
+            ctx.arc(0, 0, 24, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw SunDim icon (simplified version)
+            ctx.strokeStyle = '#000000';
+            ctx.fillStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            
+            // Central circle
             ctx.beginPath();
             ctx.arc(0, 0, 8, 0, Math.PI * 2);
             ctx.fill();
             
+            // Sun rays (8 rays like SunDim)
+            const rayLength = 6;
+            const rayDistance = 12;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI * 2) / 8;
+                const startX = Math.cos(angle) * rayDistance;
+                const startY = Math.sin(angle) * rayDistance;
+                const endX = Math.cos(angle) * (rayDistance + rayLength);
+                const endY = Math.sin(angle) * (rayDistance + rayLength);
+                
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+            
             ctx.restore();
-            
-            // Draw text
-            ctx.globalAlpha = 1;
-            
-            // Main title gradient
-            const textGradient = ctx.createLinearGradient(140, 0, 400, 0);
-            textGradient.addColorStop(0, '#3B82F6');
-            textGradient.addColorStop(1, '#6366F1');
-            
-            ctx.fillStyle = textGradient;
-            ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
-            ctx.fillText('Ilumina', 140, 70);
-            
-            // Tagline
-            ctx.fillStyle = '#6B7280';
-            ctx.font = '24px system-ui, -apple-system, sans-serif';
-            ctx.fillText('Smart Contract Analysis', 140, 110);
         }
         
         function downloadPNG() {
