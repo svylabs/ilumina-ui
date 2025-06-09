@@ -268,8 +268,11 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
     );
   };
 
-  // Get code snippets from action context
-  const codeSnippets = action.code_snippet || {};
+  const { data: actionJsonData } = useActionFile(submissionId, contractName, functionName, 'json');
+  
+  // Get code snippets from JSON data
+  const realActionData = actionJsonData?.content;
+  const codeSnippets = realActionData?.action_detail?.code_snippet || action.code_snippet || {};
   
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
