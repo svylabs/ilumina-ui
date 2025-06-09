@@ -301,7 +301,7 @@ export default function ActionViewer() {
     enabled: !!submissionId
   });
 
-  const [activeTab, setActiveTab] = useState("summary");
+  const [activeTab, setActiveTab] = useState("action-summary");
 
   // Debug logging
   console.log('ActionViewer params:', { submissionId, actorIndex, actionIndex });
@@ -419,27 +419,31 @@ export default function ActionViewer() {
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="border-b border-gray-800 px-6 py-4">
-                <TabsList className="grid w-full max-w-md grid-cols-3 bg-gray-800/50">
-                  <TabsTrigger value="summary" className="text-sm">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Summary
+                <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-gray-800/50">
+                  <TabsTrigger value="action-summary" className="text-sm">
+                    <FileText className="h-4 w-4 mr-1" />
+                    Action Summary
                   </TabsTrigger>
-                  <TabsTrigger value="implementation" className="text-sm">
-                    <Code2 className="h-4 w-4 mr-2" />
-                    Implementation
+                  <TabsTrigger value="contract-code" className="text-sm">
+                    <Code2 className="h-4 w-4 mr-1" />
+                    Contract Code
                   </TabsTrigger>
-                  <TabsTrigger value="validation" className="text-sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Validation
+                  <TabsTrigger value="validation-rules" className="text-sm">
+                    <Settings className="h-4 w-4 mr-1" />
+                    Validation Rules
+                  </TabsTrigger>
+                  <TabsTrigger value="simulation-code" className="text-sm">
+                    <Box className="h-4 w-4 mr-1" />
+                    Simulation Code
                   </TabsTrigger>
                 </TabsList>
               </div>
               
               <div className="p-6">
-                <TabsContent value="summary" className="mt-0">
+                <TabsContent value="action-summary" className="mt-0">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Action Overview</h3>
+                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Action Summary</h3>
                       <ActionSummaryTab 
                         submissionId={submissionId}
                         contractName={contractName}
@@ -451,27 +455,28 @@ export default function ActionViewer() {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="implementation" className="mt-0">
+                <TabsContent value="contract-code" className="mt-0">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Implementation Code</h3>
-                      <div className="bg-black/60 rounded-lg p-6">
-                        <ActionCodeTab 
-                          submissionId={submissionId}
-                          contractName={contractName}
-                          functionName={functionName}
-                          action={action}
-                          sectionContext={`implementation-${actorIndex}-${actionIndex}`}
-                        />
+                      <h3 className="text-xl font-semibold text-green-400 mb-4">Contract Code</h3>
+                      <div className="bg-black/40 p-6 rounded text-base">
+                        <p className="text-gray-400 mb-4">Smart contract source code for {contractName}</p>
+                        <div className="bg-gray-900/80 p-4 rounded border border-gray-700">
+                          <code className="text-green-400 text-sm">
+                            // Contract code will be loaded from simulation repository<br/>
+                            // Function: {functionName}()<br/>
+                            // This tab will show the actual smart contract implementation
+                          </code>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="validation" className="mt-0">
-                  <div className="space-y-8">
+                <TabsContent value="validation-rules" className="mt-0">
+                  <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Validation Rules</h3>
+                      <h3 className="text-xl font-semibold text-purple-400 mb-4">Validation Rules</h3>
                       <ValidationRulesTab 
                         submissionId={submissionId}
                         contractName={contractName}
@@ -480,16 +485,20 @@ export default function ActionViewer() {
                         actor={actor}
                       />
                     </div>
-                    
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="simulation-code" className="mt-0">
+                  <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-yellow-400 mb-4">Validation Implementation</h3>
+                      <h3 className="text-xl font-semibold text-orange-400 mb-4">Simulation Code</h3>
                       <div className="bg-black/60 rounded-lg p-6">
                         <ActionCodeTab 
                           submissionId={submissionId}
                           contractName={contractName}
                           functionName={functionName}
                           action={action}
-                          sectionContext={`validation-${actorIndex}-${actionIndex}`}
+                          sectionContext={`implementation-${actorIndex}-${actionIndex}`}
                         />
                       </div>
                     </div>
