@@ -205,10 +205,23 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
 
   const codeContent = codeData?.content || 'No implementation code available yet.';
 
+  // Add line numbers to code
+  const formatCodeWithLineNumbers = (code: string) => {
+    const lines = code.split('\n');
+    return lines.map((line, index) => (
+      <div key={index} className="flex">
+        <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right">
+          {index + 1}
+        </span>
+        <span className="flex-1">{line}</span>
+      </div>
+    ));
+  };
+
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
       <pre className="text-green-400 font-mono whitespace-pre-wrap">
-        {codeContent}
+        {formatCodeWithLineNumbers(codeContent)}
       </pre>
     </div>
   );
