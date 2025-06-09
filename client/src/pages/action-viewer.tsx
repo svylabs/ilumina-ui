@@ -275,21 +275,47 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
   // Get code snippets from JSON data - extract from action_context.contract_context
   const realActionData = actionJsonData?.content;
   console.log('ActionCodeTab - realActionData:', realActionData);
+  console.log('ActionCodeTab - action_context:', realActionData?.action_context);
+  console.log('ActionCodeTab - contract_context:', realActionData?.action_context?.contract_context);
   
   let codeSnippets: Record<string, string> = {};
   
-  // Extract contract code from action_context.contract_context
+  // Extract contract code from action_context.contract_context (array format)
   if (realActionData?.action_context?.contract_context) {
     const contractContext = realActionData.action_context.contract_context;
-    // Each contract in contract_context has a code_snippet field
-    Object.entries(contractContext).forEach(([contractName, contractData]: [string, any]) => {
-      if (contractData?.code_snippet) {
-        codeSnippets[contractName] = contractData.code_snippet;
-      }
-    });
+    console.log('ActionCodeTab - contractContext type:', Array.isArray(contractContext) ? 'array' : 'object');
+    console.log('ActionCodeTab - contractContext:', contractContext);
+    
+    // Handle array format
+    if (Array.isArray(contractContext)) {
+      contractContext.forEach((contract: any, index: number) => {
+        console.log(`ActionCodeTab - processing array contract ${index}:`, contract);
+        console.log(`ActionCodeTab - contract_name: "${contract?.contract_name}", has code_snippet: ${!!contract?.code_snippet}`);
+        if (contract?.contract_name && contract?.code_snippet) {
+          codeSnippets[contract.contract_name] = contract.code_snippet;
+          console.log(`ActionCodeTab - added code for "${contract.contract_name}", length:`, contract.code_snippet.length);
+        } else {
+          console.log(`ActionCodeTab - no code_snippet found for array contract ${index}, contract_name: "${contract?.contract_name}"`);
+        }
+      });
+    } else {
+      // Handle object format (fallback)
+      Object.entries(contractContext).forEach(([contractName, contractData]: [string, any]) => {
+        console.log(`ActionCodeTab - processing object contract ${contractName}:`, contractData);
+        if (contractData?.code_snippet) {
+          codeSnippets[contractName] = contractData.code_snippet;
+          console.log(`ActionCodeTab - added code for ${contractName}, length:`, contractData.code_snippet.length);
+        } else {
+          console.log(`ActionCodeTab - no code_snippet found for ${contractName}`);
+        }
+      });
+    }
+  } else {
+    console.log('ActionCodeTab - no contract_context found');
   }
   
   console.log('ActionCodeTab - extracted codeSnippets:', codeSnippets);
+  console.log('ActionCodeTab - codeSnippets keys:', Object.keys(codeSnippets));
   
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
