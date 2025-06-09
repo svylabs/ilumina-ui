@@ -5176,7 +5176,7 @@ export default function AnalysisPage() {
                                                             {action.contract_name}
                                                           </span>
                                                           <a 
-                                                            href={`/action/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
+                                                            href={`/action/${id}/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="text-xs bg-gray-600 hover:bg-gray-500 border border-gray-500 px-2 py-1 rounded text-gray-200 cursor-pointer inline-flex items-center gap-1"
