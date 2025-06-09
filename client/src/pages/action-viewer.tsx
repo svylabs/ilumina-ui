@@ -461,6 +461,7 @@ export default function ActionViewer() {
   const [location] = useLocation();
   
   // Extract parameters from URL
+  const projectId = params.projectId;
   const submissionId = params.submissionId;
   const actorIndex = params.actorIndex;
   const actionIndex = params.actionIndex;
@@ -517,7 +518,7 @@ export default function ActionViewer() {
                 asChild
                 className="border-gray-700 hover:bg-gray-800"
               >
-                <Link href={`/analysis/${submissionId}`}>
+                <Link href={`/analysis/${projectId}`}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Analysis
                 </Link>
