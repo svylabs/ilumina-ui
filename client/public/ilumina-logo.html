@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ilumina Logo Download</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            background: #f8f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        .logo-display {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 1rem 0;
+        }
+        .download-info {
+            text-align: center;
+            max-width: 500px;
+        }
+        button {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0.5rem;
+        }
+        button:hover {
+            background: #2563EB;
+        }
+        #logoCanvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ilumina Logo</h1>
+    
+    <div class="download-info">
+        <p>Right-click on the logo below and select "Save image as..." to download, or use the download buttons.</p>
+    </div>
+    
+    <div class="logo-display">
+        <canvas id="logoCanvas" width="300" height="80"></canvas>
+    </div>
+
+    <div>
+        <button onclick="downloadPNG(300, 80, 'ilumina-logo.png')">Download Standard (300x80)</button>
+        <button onclick="downloadPNG(600, 160, 'ilumina-logo-hd.png')">Download HD (600x160)</button>
+        <button onclick="downloadPNG(900, 240, 'ilumina-logo-4k.png')">Download 4K (900x240)</button>
+    </div>
+
+    <script>
+        function drawLogo(canvas, scale = 1) {
+            const ctx = canvas.getContext('2d');
+            const baseWidth = 300;
+            const baseHeight = 80;
+            
+            canvas.width = baseWidth * scale;
+            canvas.height = baseHeight * scale;
+            ctx.scale(scale, scale);
+            
+            // Clear canvas with white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, baseWidth, baseHeight);
+            
+            // Draw the sun/illumination icon
+            ctx.save();
+            ctx.translate(25, 40);
+            
+            // Create gradients
+            const iconGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 18);
+            iconGradient.addColorStop(0, '#60A5FA');
+            iconGradient.addColorStop(1, '#3B82F6');
+            
+            // Outer ring
+            ctx.strokeStyle = iconGradient;
+            ctx.globalAlpha = 0.3;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, 18, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Sun rays
+            ctx.globalAlpha = 0.6;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            const rays = [
+                [0, -25, 0, -20],
+                [18, -18, 14, -14],
+                [25, 0, 20, 0],
+                [18, 18, 14, 14],
+                [0, 25, 0, 20],
+                [-18, 18, -14, 14],
+                [-25, 0, -20, 0],
+                [-18, -18, -14, -14]
+            ];
+            
+            rays.forEach(([x1, y1, x2, y2]) => {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            });
+            
+            // Central core
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = iconGradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner white circle
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Draw text
+            ctx.globalAlpha = 1;
+            
+            // Main title gradient
+            const textGradient = ctx.createLinearGradient(70, 0, 200, 0);
+            textGradient.addColorStop(0, '#3B82F6');
+            textGradient.addColorStop(1, '#6366F1');
+            
+            ctx.fillStyle = textGradient;
+            ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
+            ctx.fillText('Ilumina', 70, 35);
+            
+            // Tagline
+            ctx.fillStyle = '#6B7280';
+            ctx.font = '12px system-ui, -apple-system, sans-serif';
+            ctx.fillText('Smart Contract Analysis', 70, 55);
+        }
+        
+        function downloadPNG(width, height, filename) {
+            const tempCanvas = document.createElement('canvas');
+            const scale = width / 300;
+            drawLogo(tempCanvas, scale);
+            
+            tempCanvas.toBlob(function(blob) {
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+        
+        // Draw the initial logo
+        window.onload = function() {
+            const canvas = document.getElementById('logoCanvas');
+            drawLogo(canvas, 1);
+        };
+    </script>
+</body>
+</html>

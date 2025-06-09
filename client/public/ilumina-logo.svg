@@ -1,0 +1,40 @@
+<svg width="600" height="160" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="iconGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <rect width="600" height="160" fill="white"/>
+  
+  <g transform="translate(50, 80)">
+    <circle cx="0" cy="0" r="36" fill="none" stroke="url(#iconGradient)" stroke-width="4" opacity="0.3"/>
+    
+    <g stroke="url(#iconGradient)" stroke-width="4" stroke-linecap="round" opacity="0.6">
+      <line x1="0" y1="-50" x2="0" y2="-40"/>
+      <line x1="36" y1="-36" x2="28" y2="-28"/>
+      <line x1="50" y1="0" x2="40" y2="0"/>
+      <line x1="36" y1="36" x2="28" y2="28"/>
+      <line x1="0" y1="50" x2="0" y2="40"/>
+      <line x1="-36" y1="36" x2="-28" y2="28"/>
+      <line x1="-50" y1="0" x2="-40" y2="0"/>
+      <line x1="-36" y1="-36" x2="-28" y2="-28"/>
+    </g>
+    
+    <circle cx="0" cy="0" r="16" fill="url(#iconGradient)"/>
+    <circle cx="0" cy="0" r="8" fill="#ffffff" opacity="0.9"/>
+  </g>
+  
+  <text x="140" y="70" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="56" font-weight="700" fill="url(#primaryGradient)">
+    Ilumina
+  </text>
+  
+  <text x="140" y="110" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="24" font-weight="400" fill="#6B7280">
+    Smart Contract Analysis
+  </text>
+</svg>

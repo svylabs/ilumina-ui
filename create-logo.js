@@ -1,0 +1,88 @@
+const fs = require('fs');
+const { createCanvas } = require('canvas');
+
+// Create a 600x160 canvas for high quality
+const canvas = createCanvas(600, 160);
+const ctx = canvas.getContext('2d');
+
+// White background
+ctx.fillStyle = 'white';
+ctx.fillRect(0, 0, 600, 160);
+
+// Draw the illumination icon
+ctx.save();
+ctx.translate(50, 80);
+
+// Create icon gradient effect
+const iconGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 36);
+iconGradient.addColorStop(0, '#60A5FA');
+iconGradient.addColorStop(1, '#3B82F6');
+
+// Outer ring
+ctx.strokeStyle = iconGradient;
+ctx.globalAlpha = 0.3;
+ctx.lineWidth = 4;
+ctx.beginPath();
+ctx.arc(0, 0, 36, 0, Math.PI * 2);
+ctx.stroke();
+
+// Sun rays
+ctx.globalAlpha = 0.6;
+ctx.lineWidth = 4;
+ctx.lineCap = 'round';
+const rays = [
+    [0, -50, 0, -40],
+    [36, -36, 28, -28],
+    [50, 0, 40, 0],
+    [36, 36, 28, 28],
+    [0, 50, 0, 40],
+    [-36, 36, -28, 28],
+    [-50, 0, -40, 0],
+    [-36, -36, -28, -28]
+];
+
+rays.forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+});
+
+// Central core
+ctx.globalAlpha = 1;
+ctx.fillStyle = iconGradient;
+ctx.beginPath();
+ctx.arc(0, 0, 16, 0, Math.PI * 2);
+ctx.fill();
+
+// Inner white circle
+ctx.globalAlpha = 0.9;
+ctx.fillStyle = '#ffffff';
+ctx.beginPath();
+ctx.arc(0, 0, 8, 0, Math.PI * 2);
+ctx.fill();
+
+ctx.restore();
+
+// Draw text
+ctx.globalAlpha = 1;
+
+// Main title gradient
+const textGradient = ctx.createLinearGradient(140, 0, 400, 0);
+textGradient.addColorStop(0, '#3B82F6');
+textGradient.addColorStop(1, '#6366F1');
+
+ctx.fillStyle = textGradient;
+ctx.font = 'bold 56px Arial, sans-serif';
+ctx.fillText('Ilumina', 140, 70);
+
+// Tagline
+ctx.fillStyle = '#6B7280';
+ctx.font = '24px Arial, sans-serif';
+ctx.fillText('Smart Contract Analysis', 140, 110);
+
+// Save as PNG
+const buffer = canvas.toBuffer('image/png');
+fs.writeFileSync('ilumina-logo-final.png', buffer);
+
+console.log('Logo saved as ilumina-logo-final.png');
