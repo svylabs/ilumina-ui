@@ -76,7 +76,7 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
   }
 
   return (
-    <div className="bg-black/40 p-6 rounded text-base max-h-96 overflow-y-auto">
+    <div className="bg-black/40 p-6 rounded text-base">
       {realActionData?.action_detail ? (
         <div className="space-y-6">
           <div>
@@ -207,7 +207,7 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
 
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
-      <pre className="overflow-auto max-h-96 text-green-400 font-mono whitespace-pre-wrap">
+      <pre className="text-green-400 font-mono whitespace-pre-wrap">
         {codeContent}
       </pre>
     </div>
