@@ -124,19 +124,19 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
           {realActionData.action_detail?.on_execution_state_updates_made && realActionData.action_detail.on_execution_state_updates_made.length > 0 && (
             <div>
               <h5 className="text-green-400 font-medium mb-3">State Updates</h5>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {realActionData.action_detail.on_execution_state_updates_made.map((update: any, index: number) => (
-                  <div key={index} className="bg-gray-800/50 p-3 rounded">
+                  <div key={index} className="bg-gray-800/50 p-4 rounded">
                     {typeof update === 'string' ? (
                       <p className="text-sm text-gray-200">{update}</p>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-green-300">{update.variable_name || update.name || 'State Variable'}</span>
-                          {update.update_type && <Badge variant="outline" className="text-xs">{update.update_type}</Badge>}
-                          {update.type && <Badge variant="outline" className="text-xs">{update.type}</Badge>}
-                        </div>
-                        <p className="text-sm text-gray-200">{update.description || update.details || JSON.stringify(update)}</p>
+                        <h6 className="font-medium text-green-300 mb-2">{update.category}</h6>
+                        <ul className="list-disc list-inside space-y-1">
+                          {update.state_update_descriptions?.map((description: string, descIndex: number) => (
+                            <li key={descIndex} className="text-sm text-gray-200">{description}</li>
+                          ))}
+                        </ul>
                       </>
                     )}
                   </div>
