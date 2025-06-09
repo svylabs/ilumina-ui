@@ -121,17 +121,47 @@ function ActionSummaryTab({ submissionId, contractName, functionName, action, ac
             </div>
           )}
 
-          {realActionData.action_detail?.on_execution_state_updates_made && (
+          {realActionData.action_detail?.on_execution_state_updates_made && realActionData.action_detail.on_execution_state_updates_made.length > 0 && (
             <div>
               <h5 className="text-green-400 font-medium mb-3">State Updates</h5>
               <div className="space-y-2">
                 {realActionData.action_detail.on_execution_state_updates_made.map((update: any, index: number) => (
                   <div key={index} className="bg-gray-800/50 p-3 rounded">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-green-300">{update.variable_name}</span>
-                      <Badge variant="outline" className="text-xs">{update.update_type}</Badge>
-                    </div>
-                    <p className="text-sm text-gray-200">{update.description}</p>
+                    {typeof update === 'string' ? (
+                      <p className="text-sm text-gray-200">{update}</p>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-green-300">{update.variable_name || update.name || 'State Variable'}</span>
+                          {update.update_type && <Badge variant="outline" className="text-xs">{update.update_type}</Badge>}
+                          {update.type && <Badge variant="outline" className="text-xs">{update.type}</Badge>}
+                        </div>
+                        <p className="text-sm text-gray-200">{update.description || update.details || JSON.stringify(update)}</p>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {realActionData.action_detail?.expected_state_changes && realActionData.action_detail.expected_state_changes.length > 0 && (
+            <div>
+              <h5 className="text-purple-400 font-medium mb-3">Expected State Changes</h5>
+              <div className="space-y-2">
+                {realActionData.action_detail.expected_state_changes.map((change: any, index: number) => (
+                  <div key={index} className="bg-purple-900/20 p-3 rounded border border-purple-700/30">
+                    {typeof change === 'string' ? (
+                      <p className="text-sm text-gray-200">{change}</p>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-purple-300">{change.variable || change.field || 'Variable'}</span>
+                          {change.change_type && <Badge variant="outline" className="text-xs">{change.change_type}</Badge>}
+                        </div>
+                        <p className="text-sm text-gray-200">{change.description || change.expected_value || JSON.stringify(change)}</p>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
