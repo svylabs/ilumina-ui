@@ -270,21 +270,21 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
 
   const { data: actionJsonData } = useActionFile(submissionId, contractName, functionName, 'json');
   
-  // Get code snippets from JSON data - check multiple possible locations
+  // Get code snippets from JSON data - extract from action_context.contract_context
   const realActionData = actionJsonData?.content;
   console.log('ActionCodeTab - realActionData:', realActionData);
   
   let codeSnippets = {};
   
-  // Try different locations for contract code
-  if (realActionData?.action_context?.contracts) {
-    codeSnippets = realActionData.action_context.contracts;
-  } else if (realActionData?.action_detail?.code_snippet) {
-    codeSnippets = realActionData.action_detail.code_snippet;
-  } else if (realActionData?.action_context?.code) {
-    codeSnippets = realActionData.action_context.code;
-  } else if (action.code_snippet) {
-    codeSnippets = action.code_snippet;
+  // Extract contract code from action_context.contract_context
+  if (realActionData?.action_context?.contract_context) {
+    const contractContext = realActionData.action_context.contract_context;
+    // Each contract in contract_context has a code_snippet field
+    Object.entries(contractContext).forEach(([contractName, contractData]: [string, any]) => {
+      if (contractData?.code_snippet) {
+        codeSnippets[contractName] = contractData.code_snippet;
+      }
+    });
   }
   
   console.log('ActionCodeTab - extracted codeSnippets:', codeSnippets);
