@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import ResultsPage from "@/pages/results-page";
 import AnalysisPage from "@/pages/analysis-page";
+import ActionViewer from "@/pages/action-viewer";
 import ProjectsPage from "@/pages/projects-page";
 import NewProjectPage from "@/pages/new-project";
 import AuthPage from "@/pages/auth-page";
@@ -27,6 +28,7 @@ function Router() {
         <ProtectedRoute path="/new-project" component={NewProjectPage} />
         <ProtectedRoute path="/results/:id" component={ResultsPage} />
         <ProtectedRoute path="/analysis/:id" component={AnalysisPage} />
+        <ProtectedRoute path="/action/:submissionId/:actorIndex/:actionIndex" component={ActionViewer} />
         <ProtectedRoute path="/teams" component={TeamsPage} />
         <ProtectedRoute path="/teams/:id" component={TeamDetailPage} />
         <Route component={NotFound} />
