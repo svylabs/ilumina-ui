@@ -295,6 +295,62 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
   );
 }
 
+function SimulationCodeTab({ submissionId, contractName, functionName, action, sectionContext }: {
+  submissionId: string | undefined;
+  contractName: string;
+  functionName: string;
+  action: any;
+  sectionContext: string;
+}) {
+  const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
+
+  // Add line numbers to code
+  const formatCodeWithLineNumbers = (code: string) => {
+    const lines = code.split('\n');
+    return lines.map((line, index) => (
+      <div key={index} className="flex">
+        <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right">
+          {index + 1}
+        </span>
+        <span className="flex-1">{line}</span>
+      </div>
+    ));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-black/40 p-6 rounded text-base flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <span className="text-white/60">Loading simulation code...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-900/20 border border-red-800 p-6 rounded text-base">
+        <p className="text-red-400 mb-2">Error loading simulation code:</p>
+        <p className="text-red-300 text-sm">{error.message}</p>
+      </div>
+    );
+  }
+
+  const codeContent = codeData?.content || 'No simulation code available yet.';
+
+  return (
+    <div className="bg-black/40 p-6 rounded text-sm">
+      <h3 className="text-orange-400 text-lg font-semibold mb-4">Simulation Implementation</h3>
+      <div className="bg-gray-900/50 p-4 rounded">
+        <pre className="text-orange-400 font-mono whitespace-pre-wrap">
+          {formatCodeWithLineNumbers(codeContent)}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
 function ValidationRulesTab({ submissionId, contractName, functionName, action, actor }: {
   submissionId: string | undefined;
   contractName: string;
@@ -539,17 +595,13 @@ export default function ActionViewer() {
                 <TabsContent value="contract-code" className="mt-0">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-green-400 mb-4">Contract Code</h3>
-                      <div className="bg-black/40 p-6 rounded text-base">
-                        <p className="text-gray-400 mb-4">Smart contract source code for {contractName}</p>
-                        <div className="bg-gray-900/80 p-4 rounded border border-gray-700">
-                          <code className="text-green-400 text-sm">
-                            // Contract code will be loaded from simulation repository<br/>
-                            // Function: {functionName}()<br/>
-                            // This tab will show the actual smart contract implementation
-                          </code>
-                        </div>
-                      </div>
+                      <ActionCodeTab 
+                        submissionId={submissionId}
+                        contractName={contractName}
+                        functionName={functionName}
+                        action={action}
+                        sectionContext={`contract-${actorIndex}-${actionIndex}`}
+                      />
                     </div>
                   </div>
                 </TabsContent>
@@ -572,16 +624,13 @@ export default function ActionViewer() {
                 <TabsContent value="simulation-code" className="mt-0">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-orange-400 mb-4">Simulation Code</h3>
-                      <div className="bg-black/60 rounded-lg p-6">
-                        <ActionCodeTab 
-                          submissionId={submissionId}
-                          contractName={contractName}
-                          functionName={functionName}
-                          action={action}
-                          sectionContext={`implementation-${actorIndex}-${actionIndex}`}
-                        />
-                      </div>
+                      <SimulationCodeTab 
+                        submissionId={submissionId}
+                        contractName={contractName}
+                        functionName={functionName}
+                        action={action}
+                        sectionContext={`implementation-${actorIndex}-${actionIndex}`}
+                      />
                     </div>
                   </div>
                 </TabsContent>
