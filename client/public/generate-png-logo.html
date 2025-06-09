@@ -44,24 +44,12 @@
             // Transparent background
             ctx.clearRect(0, 0, 120, 120);
             
-            // Draw the homepage logo layout
+            // Draw the sun icon centered
             ctx.save();
             ctx.translate(60, 60); // Center the icon
             
-            // Outer circle background (primary/10 equivalent)
-            ctx.fillStyle = 'rgba(252, 211, 77, 0.1)';
-            ctx.beginPath();
-            ctx.arc(0, 0, 32, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Inner circle (primary background) - using theme primary color
-            ctx.fillStyle = 'hsl(47, 95%, 55%)';
-            ctx.beginPath();
-            ctx.arc(0, 0, 24, 0, Math.PI * 2);
-            ctx.fill();
-            
             // Draw favicon sun icon with exact same pattern
-            ctx.strokeStyle = '#F5D90A'; // Exact color from favicon
+            ctx.strokeStyle = '#F5D90A'; // Yellow color for the sun
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
