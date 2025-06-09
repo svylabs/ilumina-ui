@@ -358,89 +358,81 @@ export default function ActionViewer() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Action Info */}
-          <div className="lg:col-span-1">
-            <Card className="bg-gray-900/50 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-lg text-blue-400 flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Action Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-1">Actor</h4>
-                  <p className="text-white font-medium">{actorName}</p>
-                  <p className="text-gray-400 text-xs mt-1">{actorSummary}</p>
-                </div>
-                
-                <Separator className="bg-gray-800" />
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-1">Contract</h4>
-                  <p className="text-white font-medium">{contractName}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-1">Function</h4>
-                  <p className="text-white font-medium">{functionName}()</p>
-                </div>
-                
-                <Separator className="bg-gray-800" />
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-1">Description</h4>
-                  <p className="text-gray-300 text-sm">{actionSummary}</p>
-                </div>
-                
-                <Separator className="bg-gray-800" />
-                
-                <div className="pt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full border-gray-700 hover:bg-gray-800"
-                    asChild
-                  >
-                    <Link href={`/analysis/${submissionId}#test_setup`}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View in Simulation Setup
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Action Details Header */}
+      <div className="border-b border-gray-800 bg-gray-900/30">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-400" />
+              <div>
+                <span className="text-gray-400">Actor:</span>
+                <p className="text-white font-medium">{actorName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Box className="h-4 w-4 text-purple-400" />
+              <div>
+                <span className="text-gray-400">Contract:</span>
+                <p className="text-white font-medium">{contractName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Code2 className="h-4 w-4 text-green-400" />
+              <div>
+                <span className="text-gray-400">Function:</span>
+                <p className="text-white font-medium">{functionName}()</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-gray-700 hover:bg-gray-800"
+                asChild
+              >
+                <Link href={`/analysis/${submissionId}#test_setup`}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Back to Simulation
+                </Link>
+              </Button>
+            </div>
           </div>
+          
+          {actionSummary && (
+            <div className="mt-3 pt-3 border-t border-gray-800">
+              <p className="text-gray-300 text-sm">{actionSummary}</p>
+            </div>
+          )}
+        </div>
+      </div>
 
-          {/* Main Content - Tabs */}
-          <div className="lg:col-span-3">
-            <Card className="bg-gray-900/50 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-xl text-white">Implementation & Validation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
-                    <TabsTrigger value="summary" className="text-sm">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Summary
-                    </TabsTrigger>
-                    <TabsTrigger value="implementation" className="text-sm">
-                      <Code2 className="h-4 w-4 mr-2" />
-                      Implementation
-                    </TabsTrigger>
-                    <TabsTrigger value="validation" className="text-sm">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Validation
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="summary" className="mt-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-blue-400">Action Summary</h3>
+      {/* Main Content - Full Width */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <Card className="bg-gray-900/50 border-gray-800">
+          <CardContent className="p-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <div className="border-b border-gray-800 px-6 py-4">
+                <TabsList className="grid w-full max-w-md grid-cols-3 bg-gray-800/50">
+                  <TabsTrigger value="summary" className="text-sm">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Summary
+                  </TabsTrigger>
+                  <TabsTrigger value="implementation" className="text-sm">
+                    <Code2 className="h-4 w-4 mr-2" />
+                    Implementation
+                  </TabsTrigger>
+                  <TabsTrigger value="validation" className="text-sm">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Validation
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <div className="p-6">
+                <TabsContent value="summary" className="mt-0">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Action Overview</h3>
                       <ActionSummaryTab 
                         submissionId={submissionId}
                         contractName={contractName}
@@ -449,24 +441,30 @@ export default function ActionViewer() {
                         actor={actor}
                       />
                     </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="implementation" className="mt-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-blue-400">Implementation Code</h3>
-                      <ActionCodeTab 
-                        submissionId={submissionId}
-                        contractName={contractName}
-                        functionName={functionName}
-                        action={action}
-                        sectionContext={`implementation-${actorIndex}-${actionIndex}`}
-                      />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="implementation" className="mt-0">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Implementation Code</h3>
+                      <div className="bg-black/60 rounded-lg p-6">
+                        <ActionCodeTab 
+                          submissionId={submissionId}
+                          contractName={contractName}
+                          functionName={functionName}
+                          action={action}
+                          sectionContext={`implementation-${actorIndex}-${actionIndex}`}
+                        />
+                      </div>
                     </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="validation" className="mt-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-blue-400">Validation Rules</h3>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="validation" className="mt-0">
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Validation Rules</h3>
                       <ValidationRulesTab 
                         submissionId={submissionId}
                         contractName={contractName}
@@ -474,9 +472,11 @@ export default function ActionViewer() {
                         action={action}
                         actor={actor}
                       />
-                      
-                      <div className="mt-6">
-                        <h4 className="text-lg font-semibold text-yellow-400 mb-4">Validation Code</h4>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-xl font-semibold text-yellow-400 mb-4">Validation Implementation</h3>
+                      <div className="bg-black/60 rounded-lg p-6">
                         <ActionCodeTab 
                           submissionId={submissionId}
                           contractName={contractName}
@@ -486,12 +486,12 @@ export default function ActionViewer() {
                         />
                       </div>
                     </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
