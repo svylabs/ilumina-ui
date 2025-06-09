@@ -270,9 +270,24 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
 
   const { data: actionJsonData } = useActionFile(submissionId, contractName, functionName, 'json');
   
-  // Get code snippets from JSON data
+  // Get code snippets from JSON data - check multiple possible locations
   const realActionData = actionJsonData?.content;
-  const codeSnippets = realActionData?.action_detail?.code_snippet || action.code_snippet || {};
+  console.log('ActionCodeTab - realActionData:', realActionData);
+  
+  let codeSnippets = {};
+  
+  // Try different locations for contract code
+  if (realActionData?.action_context?.contracts) {
+    codeSnippets = realActionData.action_context.contracts;
+  } else if (realActionData?.action_detail?.code_snippet) {
+    codeSnippets = realActionData.action_detail.code_snippet;
+  } else if (realActionData?.action_context?.code) {
+    codeSnippets = realActionData.action_context.code;
+  } else if (action.code_snippet) {
+    codeSnippets = action.code_snippet;
+  }
+  
+  console.log('ActionCodeTab - extracted codeSnippets:', codeSnippets);
   
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
