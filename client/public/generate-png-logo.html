@@ -60,31 +60,25 @@
             ctx.arc(0, 0, 24, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw SunDim icon (simplified version)
-            ctx.strokeStyle = '#000000';
+            // Draw SunDim icon with dots instead of lines
             ctx.fillStyle = '#000000';
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
             
             // Central circle
             ctx.beginPath();
             ctx.arc(0, 0, 8, 0, Math.PI * 2);
             ctx.fill();
             
-            // Sun rays (8 rays like SunDim)
-            const rayLength = 6;
-            const rayDistance = 12;
+            // Sun rays as dots (8 dots around the center)
+            const rayDistance = 18;
+            const dotRadius = 2;
             for (let i = 0; i < 8; i++) {
                 const angle = (i * Math.PI * 2) / 8;
-                const startX = Math.cos(angle) * rayDistance;
-                const startY = Math.sin(angle) * rayDistance;
-                const endX = Math.cos(angle) * (rayDistance + rayLength);
-                const endY = Math.sin(angle) * (rayDistance + rayLength);
+                const dotX = Math.cos(angle) * rayDistance;
+                const dotY = Math.sin(angle) * rayDistance;
                 
                 ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
+                ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
+                ctx.fill();
             }
             
             ctx.restore();
