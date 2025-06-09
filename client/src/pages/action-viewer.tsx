@@ -294,7 +294,7 @@ function ValidationRulesTab({ submissionId, contractName, functionName, action, 
   }
 
   return (
-    <div className="bg-black/40 p-6 rounded text-base max-h-96 overflow-y-auto">
+    <div className="bg-black/40 p-6 rounded text-base">
       {realActionData?.action_detail?.post_execution_contract_state_validation_rules ? (
         <div className="space-y-4">
           <p className="text-yellow-300 text-lg font-semibold mb-4">Post-Execution Validation Rules:</p>
