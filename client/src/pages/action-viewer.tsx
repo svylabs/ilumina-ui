@@ -304,17 +304,28 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
                 </div>
                 <span className="text-gray-400 text-sm">Smart Contract</span>
               </div>
-              <div className="bg-gray-900/50 p-4 rounded overflow-x-auto">
-                <pre className="font-mono text-sm">
-                  {code.split('\n').map((line, index) => (
-                    <div key={index} className="flex">
-                      <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right shrink-0">
-                        {index + 1}
-                      </span>
-                      <span className="text-green-400 whitespace-pre">{line}</span>
-                    </div>
-                  ))}
-                </pre>
+              <div className="bg-gray-900/50 rounded overflow-x-auto">
+                <SyntaxHighlighter
+                  language="solidity"
+                  style={solidityStyle}
+                  showLineNumbers={true}
+                  lineNumberStyle={{
+                    color: '#6b7280',
+                    fontSize: '12px',
+                    minWidth: '3rem',
+                    textAlign: 'right',
+                    paddingRight: '1rem',
+                    userSelect: 'none'
+                  }}
+                  customStyle={{
+                    margin: 0,
+                    padding: '1rem',
+                    background: 'rgba(17, 24, 39, 0.5)',
+                    fontSize: '14px'
+                  }}
+                >
+                  {code}
+                </SyntaxHighlighter>
               </div>
             </div>
           ))}
