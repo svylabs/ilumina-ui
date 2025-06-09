@@ -287,21 +287,28 @@ export default function ActionViewer() {
   const actionIndex = params.actionIndex;
   
   // Parse URL search params to get actor and action data
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const actorName = urlParams.get('actorName') || '';
-  const actionName = urlParams.get('actionName') || '';
-  const contractName = urlParams.get('contractName') || '';
-  const functionName = urlParams.get('functionName') || '';
-  const actorSummary = urlParams.get('actorSummary') || '';
-  const actionSummary = urlParams.get('actionSummary') || '';
+  const searchParams = new URLSearchParams(window.location.search);
+  const actorName = searchParams.get('actorName') || '';
+  const actionName = searchParams.get('actionName') || '';
+  const contractName = searchParams.get('contractName') || '';
+  const functionName = searchParams.get('functionName') || '';
+  const actorSummary = searchParams.get('actorSummary') || '';
+  const actionSummary = searchParams.get('actionSummary') || '';
 
   // Fetch submission data to get complete action information
-  const { data: submission } = useQuery({
+  const { data: submission, isLoading: submissionLoading, error: submissionError } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
     enabled: !!submissionId
   });
 
   const [activeTab, setActiveTab] = useState("summary");
+
+  // Debug logging
+  console.log('ActionViewer params:', { submissionId, actorIndex, actionIndex });
+  console.log('ActionViewer URL params:', { actorName, actionName, contractName, functionName, actorSummary, actionSummary });
+  console.log('Submission data:', submission);
+  console.log('Submission loading:', submissionLoading);
+  console.log('Submission error:', submissionError);
 
   // Create mock objects for compatibility with existing components
   const actor = {
