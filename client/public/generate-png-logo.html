@@ -61,12 +61,14 @@
             ctx.fill();
             
             // Draw SunDim icon with dots instead of lines
+            ctx.strokeStyle = '#000000';
             ctx.fillStyle = '#000000';
+            ctx.lineWidth = 2;
             
-            // Central circle
+            // Central circle (hollow)
             ctx.beginPath();
             ctx.arc(0, 0, 8, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.stroke();
             
             // Sun rays as dots (8 dots around the center)
             const rayDistance = 18;
