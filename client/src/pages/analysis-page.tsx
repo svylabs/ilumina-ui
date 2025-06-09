@@ -5175,13 +5175,15 @@ export default function AnalysisPage() {
                                                           <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
                                                             {action.contract_name}
                                                           </span>
-                                                          <Link 
+                                                          <a 
                                                             href={`/action/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
                                                             className="text-xs bg-gray-600 hover:bg-gray-500 border border-gray-500 px-2 py-1 rounded text-gray-200 cursor-pointer inline-flex items-center gap-1"
                                                           >
                                                             <ExternalLink className="h-3 w-3" />
                                                             View Details
-                                                          </Link>
+                                                          </a>
                                                         </div>
                                                       </CollapsibleTrigger>
                                                       <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
