@@ -294,11 +294,30 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
       {Object.keys(codeSnippets).length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <h3 className="text-green-400 text-lg font-semibold mb-4">Contract Code</h3>
-          {Object.entries(codeSnippets as Record<string, string>).map(([contractName, code]) => 
-            formatCodeWithLineNumbers(code, `${contractName}.sol`)
-          )}
+          {Object.entries(codeSnippets as Record<string, string>).map(([contractName, code]) => (
+            <div key={contractName} className="space-y-3">
+              <div className="flex items-center gap-3 pb-2 border-b border-gray-700">
+                <div className="bg-blue-900/30 px-3 py-1 rounded border border-blue-700/50">
+                  <span className="text-blue-300 font-medium text-base">{contractName}.sol</span>
+                </div>
+                <span className="text-gray-400 text-sm">Smart Contract</span>
+              </div>
+              <div className="bg-gray-900/50 p-4 rounded overflow-x-auto">
+                <pre className="font-mono text-sm">
+                  {code.split('\n').map((line, index) => (
+                    <div key={index} className="flex">
+                      <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-green-400 whitespace-pre">{line}</span>
+                    </div>
+                  ))}
+                </pre>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="text-center py-12">
