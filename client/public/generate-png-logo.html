@@ -49,13 +49,13 @@
             ctx.translate(60, 60); // Center the icon
             
             // Outer circle background (primary/10 equivalent)
-            ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+            ctx.fillStyle = 'rgba(252, 211, 77, 0.1)';
             ctx.beginPath();
             ctx.arc(0, 0, 32, 0, Math.PI * 2);
             ctx.fill();
             
-            // Inner circle (primary background)
-            ctx.fillStyle = '#3B82F6';
+            // Inner circle (primary background) - using theme primary color
+            ctx.fillStyle = 'hsl(47, 95%, 55%)';
             ctx.beginPath();
             ctx.arc(0, 0, 24, 0, Math.PI * 2);
             ctx.fill();
