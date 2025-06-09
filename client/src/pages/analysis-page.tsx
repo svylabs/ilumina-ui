@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap, Clock as ClockIcon, History as HistoryIcon } from "lucide-react";
+import { AlertTriangle, AlertCircle, Check, Loader2, CheckCircle2, XCircle, CircleDot, Download, ChevronRight, ChevronDown, RefreshCw, FileCode, Users, Box, Laptop, PlayCircle, Code, FileEdit, Eye, MessageSquare, Wand, FileText, Code2, Lock, Zap, Clock as ClockIcon, History as HistoryIcon, ExternalLink } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -5175,9 +5175,13 @@ export default function AnalysisPage() {
                                                           <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
                                                             {action.contract_name}
                                                           </span>
-                                                          <span className="text-xs bg-gray-600 hover:bg-gray-500 border border-gray-500 px-2 py-1 rounded text-gray-200 cursor-pointer">
-                                                            Modify
-                                                          </span>
+                                                          <Link 
+                                                            href={`/action/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
+                                                            className="text-xs bg-gray-600 hover:bg-gray-500 border border-gray-500 px-2 py-1 rounded text-gray-200 cursor-pointer inline-flex items-center gap-1"
+                                                          >
+                                                            <ExternalLink className="h-3 w-3" />
+                                                            View Details
+                                                          </Link>
                                                         </div>
                                                       </CollapsibleTrigger>
                                                       <CollapsibleContent className="p-3 mt-2 bg-gray-700/30 rounded-md">
