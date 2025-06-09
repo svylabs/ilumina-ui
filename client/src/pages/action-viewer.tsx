@@ -248,21 +248,23 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
   action: any;
   sectionContext: string;
 }) {
-  // Add line numbers to code
+  // Add line numbers to code with proper indentation preserved
   const formatCodeWithLineNumbers = (code: string, title: string) => {
     const lines = code.split('\n');
     return (
       <div className="mb-6">
         <h4 className="text-blue-400 font-medium mb-3">{title}</h4>
-        <div className="bg-gray-900/50 p-4 rounded">
-          {lines.map((line, index) => (
-            <div key={index} className="flex">
-              <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right">
-                {index + 1}
-              </span>
-              <span className="flex-1 text-green-400">{line}</span>
-            </div>
-          ))}
+        <div className="bg-gray-900/50 p-4 rounded overflow-x-auto">
+          <pre className="font-mono text-sm">
+            {lines.map((line, index) => (
+              <div key={index} className="flex">
+                <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right shrink-0">
+                  {index + 1}
+                </span>
+                <span className="text-green-400 whitespace-pre">{line}</span>
+              </div>
+            ))}
+          </pre>
         </div>
       </div>
     );
@@ -274,7 +276,7 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
   const realActionData = actionJsonData?.content;
   console.log('ActionCodeTab - realActionData:', realActionData);
   
-  let codeSnippets = {};
+  let codeSnippets: Record<string, string> = {};
   
   // Extract contract code from action_context.contract_context
   if (realActionData?.action_context?.contract_context) {
@@ -294,8 +296,8 @@ function ActionCodeTab({ submissionId, contractName, functionName, action, secti
       {Object.keys(codeSnippets).length > 0 ? (
         <div className="space-y-6">
           <h3 className="text-green-400 text-lg font-semibold mb-4">Contract Code</h3>
-          {Object.entries(codeSnippets).map(([contractName, code]) => 
-            formatCodeWithLineNumbers(code as string, `${contractName}.sol`)
+          {Object.entries(codeSnippets as Record<string, string>).map(([contractName, code]) => 
+            formatCodeWithLineNumbers(code, `${contractName}.sol`)
           )}
         </div>
       ) : (
@@ -319,15 +321,15 @@ function SimulationCodeTab({ submissionId, contractName, functionName, action, s
 }) {
   const { data: codeData, isLoading, error } = useActionFile(submissionId, contractName, functionName, 'ts');
 
-  // Add line numbers to code
+  // Add line numbers to code with proper indentation preserved
   const formatCodeWithLineNumbers = (code: string) => {
     const lines = code.split('\n');
     return lines.map((line, index) => (
       <div key={index} className="flex">
-        <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right">
+        <span className="text-gray-500 text-xs mr-4 select-none min-w-[3rem] text-right shrink-0">
           {index + 1}
         </span>
-        <span className="flex-1">{line}</span>
+        <span className="text-orange-400 whitespace-pre">{line}</span>
       </div>
     ));
   };
@@ -357,8 +359,8 @@ function SimulationCodeTab({ submissionId, contractName, functionName, action, s
   return (
     <div className="bg-black/40 p-6 rounded text-sm">
       <h3 className="text-orange-400 text-lg font-semibold mb-4">Simulation Implementation</h3>
-      <div className="bg-gray-900/50 p-4 rounded">
-        <pre className="text-orange-400 font-mono whitespace-pre-wrap">
+      <div className="bg-gray-900/50 p-4 rounded overflow-x-auto">
+        <pre className="font-mono text-sm">
           {formatCodeWithLineNumbers(codeContent)}
         </pre>
       </div>
