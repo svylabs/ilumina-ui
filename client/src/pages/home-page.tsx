@@ -165,8 +165,7 @@ export default function HomePage() {
               Catch smart contract bugs before they cost you millions
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Agent-based simulation of real-world smart contract behavior to uncover 
-              vulnerabilities and validate smart contract behavior
+              Test smart contracts the way users and attackers interact with them — uncovering bugs before deployment.
             </p>
           </div>
 
