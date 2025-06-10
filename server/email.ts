@@ -18,6 +18,69 @@ const createTransporter = (isNoReply = false) => {
 };
 
 // Email templates
+const getRegistrationCompletionEmailTemplate = (user: SelectUser, completionToken: string) => {
+  const completionUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/complete-registration?token=${completionToken}&email=${encodeURIComponent(user.email)}`;
+  
+  return {
+    subject: 'Complete Your Ilumina Registration',
+    text: `
+Complete Your Ilumina Registration
+
+Hello!
+
+Thank you for starting your registration with Ilumina. To complete your account setup, please click the link below to set your name and password:
+
+${completionUrl}
+
+This link will expire in 24 hours for your security.
+
+If you didn't create an account with us, please ignore this email.
+
+Best regards,
+The Ilumina Team`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+          .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 15px 0; }
+          .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Complete Your Registration</h1>
+            <p>One more step to get started with Ilumina</p>
+          </div>
+          <div class="content">
+            <h2 style="margin: 0 0 20px 0; font-size: 24px; color: #1a1a1a;">Almost There!</h2>
+            
+            <p>Thank you for starting your registration with Ilumina. To complete your account setup, please set your name and password.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${completionUrl}" class="button" style="color: white; text-decoration: none;">Complete Registration</a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">This link will expire in 24 hours for your security.</p>
+            
+            <div class="footer">
+              <p>If you didn't create an account with us, please ignore this email.</p>
+              <p>Best regards,<br>The Ilumina Team</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  };
+};
+
 const getWelcomeEmailTemplate = (user: SelectUser) => {
   return {
     subject: 'Welcome to Ilumina - Create and run smart contract simulations in a day',
@@ -202,6 +265,27 @@ export const sendWelcomeEmail = async (user: SelectUser): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Error sending welcome email:', error);
+    return false;
+  }
+};
+
+export const sendRegistrationCompletionEmail = async (user: SelectUser, completionToken: string): Promise<boolean> => {
+  try {
+    const transporter = createTransporter(true); // Use noreply@ilumina.dev
+    const emailTemplate = getRegistrationCompletionEmailTemplate(user, completionToken);
+    
+    await transporter.sendMail({
+      from: `"Ilumina" <${process.env.NOREPLY_EMAIL}>`,
+      to: user.email,
+      subject: emailTemplate.subject,
+      text: emailTemplate.text,
+      html: emailTemplate.html,
+    });
+    
+    console.log(`Registration completion email sent successfully to ${user.email}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending registration completion email:', error);
     return false;
   }
 };

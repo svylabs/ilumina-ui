@@ -27,6 +27,15 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const registrationTokens = pgTable("registration_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Define teams table for team management
 export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
@@ -289,6 +298,11 @@ export const insertCreditPurchaseSchema = createInsertSchema(creditPurchases);
 export const selectCreditPurchaseSchema = createSelectSchema(creditPurchases);
 export type InsertCreditPurchase = typeof creditPurchases.$inferInsert;
 export type SelectCreditPurchase = typeof creditPurchases.$inferSelect;
+
+export const insertRegistrationTokenSchema = createInsertSchema(registrationTokens);
+export const selectRegistrationTokenSchema = createSelectSchema(registrationTokens);
+export type InsertRegistrationToken = typeof registrationTokens.$inferInsert;
+export type SelectRegistrationToken = typeof registrationTokens.$inferSelect;
 
 // Define relations between tables
 export const usersRelations = relations(users, ({ many }) => ({
