@@ -23,7 +23,6 @@ const registrationSchema = z.object({
 type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 export default function CompleteRegistration() {
-  const [, params] = useRoute('/complete-registration/:token');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +39,10 @@ export default function CompleteRegistration() {
     }
   });
 
-  const token = params?.token;
+  // Extract token and email from query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  const email = urlParams.get('email');
 
   useEffect(() => {
     if (!token) {

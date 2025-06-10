@@ -25,7 +25,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/forgot-password" component={ResetPasswordPage} />
-        <Route path="/complete-registration/:token" component={CompleteRegistration} />
+        <Route path="/complete-registration" component={CompleteRegistration} />
         <ProtectedRoute path="/projects" component={ProjectsPage} />
         <ProtectedRoute path="/new-project" component={NewProjectPage} />
         <ProtectedRoute path="/results/:id" component={ResultsPage} />
