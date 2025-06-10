@@ -835,7 +835,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-white font-semibold text-lg mb-4">Ilumina</h3>
               <p className="text-white/70 text-sm">
-                Smart testing for your smart contracts
+                Smart testing for smart contracts
               </p>
               <div className="flex space-x-4 mt-4">
                 <a href="#" className="text-white/70 hover:text-primary transition-colors">
