@@ -99,14 +99,14 @@ export default function CompleteRegistration() {
 
   if (isCompleted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md border-primary/20 bg-black/50">
           <CardHeader className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-2xl">Registration Complete!</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl text-white">Registration Complete!</CardTitle>
+            <CardDescription className="text-white/70">
               Your account has been successfully set up. You'll be redirected to your projects dashboard in a few seconds.
             </CardDescription>
           </CardHeader>
@@ -122,14 +122,14 @@ export default function CompleteRegistration() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md border-primary/20 bg-black/50">
           <CardHeader className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
               <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-2xl">Invalid Link</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl text-white">Invalid Link</CardTitle>
+            <CardDescription className="text-white/70">
               This registration link is invalid or has expired.
             </CardDescription>
           </CardHeader>
@@ -139,11 +139,11 @@ export default function CompleteRegistration() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md border-primary/20 bg-black/50">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Complete Your Registration</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl text-center text-white">Complete Your Registration</CardTitle>
+          <CardDescription className="text-center text-white/70">
             Set up your account details to get started with Ilumina
           </CardDescription>
         </CardHeader>
@@ -155,9 +155,13 @@ export default function CompleteRegistration() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel className="text-white">Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your full name" {...field} />
+                      <Input 
+                        placeholder="Enter your full name" 
+                        {...field} 
+                        className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -169,19 +173,20 @@ export default function CompleteRegistration() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-white">Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
                           {...field}
+                          className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-white/70 hover:text-white"
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? (
@@ -202,19 +207,20 @@ export default function CompleteRegistration() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className="text-white">Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm your password"
                           {...field}
+                          className="bg-black/50 border-primary/40 text-white placeholder:text-white/50"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-white/70 hover:text-white"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
                           {showConfirmPassword ? (
