@@ -4416,7 +4416,6 @@ export function registerRoutes(app: Express): Server {
           userId = newUsers[0].id;
           
           // Generate registration completion token
-          const crypto = require('crypto');
           const registrationToken = crypto.randomBytes(32).toString('hex');
           const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
