@@ -66,8 +66,10 @@ export default function SubmissionForm() {
         description: "Your project analysis has begun. Complete your profile while you wait.",
       });
 
-      // Redirect to analysis page
-      setLocation(`/analysis/${result.projectId}`);
+      // Wait a moment for session to be established, then redirect to analysis page
+      setTimeout(() => {
+        setLocation(`/analysis/${result.projectId}`);
+      }, 500);
     } catch (error) {
       toast({
         title: "Error",

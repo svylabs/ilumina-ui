@@ -4373,10 +4373,15 @@ export function registerRoutes(app: Express): Server {
           userId = existingUsers[0].id;
           
           // Authenticate the user in the session
-          req.login(existingUsers[0], (err) => {
-            if (err) {
-              console.error('Login error:', err);
-            }
+          await new Promise((resolve, reject) => {
+            req.login(existingUsers[0], (err) => {
+              if (err) {
+                console.error('Login error:', err);
+                reject(err);
+              } else {
+                resolve(void 0);
+              }
+            });
           });
         } else {
           // Create new user with minimal information
@@ -4394,10 +4399,15 @@ export function registerRoutes(app: Express): Server {
           userId = newUsers[0].id;
           
           // Authenticate the new user in the session
-          req.login(newUsers[0], (err) => {
-            if (err) {
-              console.error('Login error:', err);
-            }
+          await new Promise((resolve, reject) => {
+            req.login(newUsers[0], (err) => {
+              if (err) {
+                console.error('Login error:', err);
+                reject(err);
+              } else {
+                resolve(void 0);
+              }
+            });
           });
         }
       }
