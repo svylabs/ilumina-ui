@@ -19,7 +19,7 @@ const createTransporter = (isNoReply = false) => {
 
 // Email templates
 const getRegistrationCompletionEmailTemplate = (user: SelectUser, completionToken: string) => {
-  const completionUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/complete-registration?token=${completionToken}&email=${encodeURIComponent(user.email)}`;
+  const completionUrl = `${process.env.FRONTEND_URL || 'https://ilumina.dev'}/complete-registration?token=${completionToken}&email=${encodeURIComponent(user.email)}`;
   
   return {
     subject: 'Complete Your Ilumina Registration',
