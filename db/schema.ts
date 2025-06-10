@@ -334,6 +334,13 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   }),
 }));
 
+export const registrationTokensRelations = relations(registrationTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [registrationTokens.userId],
+    references: [users.id],
+  }),
+}));
+
 export const projectsRelations = relations(projects, ({ one }) => ({
   owner: one(users, {
     fields: [projects.userId],

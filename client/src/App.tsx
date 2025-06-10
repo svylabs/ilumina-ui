@@ -12,6 +12,7 @@ import ProjectsPage from "@/pages/projects-page";
 import NewProjectPage from "@/pages/new-project";
 import AuthPage from "@/pages/auth-page";
 import ResetPasswordPage from "@/pages/reset-password";
+import CompleteRegistration from "@/pages/complete-registration";
 import TeamsPage, { TeamDetailPage } from "@/pages/teams-page";
 import RootLayout from "@/components/layout/root-layout";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -24,6 +25,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/forgot-password" component={ResetPasswordPage} />
+        <Route path="/complete-registration/:token" component={CompleteRegistration} />
         <ProtectedRoute path="/projects" component={ProjectsPage} />
         <ProtectedRoute path="/new-project" component={NewProjectPage} />
         <ProtectedRoute path="/results/:id" component={ResultsPage} />
