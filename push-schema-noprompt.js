@@ -13,6 +13,31 @@ async function main() {
     await pool.query('SELECT NOW()');
     console.log('Database connection successful');
     
+    // Check if registration_tokens table exists
+    const registrationTokensCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_name = 'registration_tokens'
+      );
+    `);
+    
+    const registrationTokensExists = registrationTokensCheck.rows[0].exists;
+    
+    if (!registrationTokensExists) {
+      console.log('Creating registration_tokens table...');
+      await pool.query(`
+        CREATE TABLE registration_tokens (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token TEXT NOT NULL UNIQUE,
+          expires_at TIMESTAMP NOT NULL,
+          used BOOLEAN DEFAULT FALSE NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+      `);
+      console.log('registration_tokens table created successfully!');
+    }
+
     // Check if chat_messages table exists
     const tableCheck = await pool.query(`
       SELECT EXISTS (
