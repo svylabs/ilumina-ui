@@ -162,7 +162,7 @@ export default function HomePage() {
               </div>
             </div>
             <h1 className="text-5xl font-bold text-white">
-              Catch smart contract bugs before they cost you millions
+              Catch million-dollar smart contract bugs — whether you're writing code or breaking it.
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
               Test smart contracts the way users and attackers interact with them — uncover bugs before deployment with powerful agent-based simulations.
