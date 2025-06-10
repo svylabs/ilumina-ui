@@ -4352,6 +4352,23 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json({ ...project, submissionId: submission.id });
   });
 
+  // Test email endpoint
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      const { testEmailConfiguration } = await import('./email');
+      const emailWorking = await testEmailConfiguration();
+      
+      if (emailWorking) {
+        res.json({ success: true, message: "Email configuration is working" });
+      } else {
+        res.status(500).json({ success: false, message: "Email configuration failed" });
+      }
+    } catch (error) {
+      console.error('Email test error:', error);
+      res.status(500).json({ success: false, message: "Email test failed", error: error.message });
+    }
+  });
+
   // Auto-registration endpoint for new users
   app.post("/api/projects/create-with-user", async (req, res) => {
     const { name, githubUrl, email, autoRegister } = req.body;
@@ -4398,6 +4415,12 @@ export function registerRoutes(app: Express): Server {
 
           userId = newUsers[0].id;
           
+          // Send welcome email to new user (non-blocking)
+          const { sendWelcomeEmail } = await import('./email');
+          sendWelcomeEmail(newUsers[0]).catch(error => {
+            console.error('Failed to send welcome email:', error);
+          });
+
           // Authenticate the new user in the session
           await new Promise((resolve, reject) => {
             req.login(newUsers[0], (err) => {
