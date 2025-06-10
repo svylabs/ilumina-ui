@@ -32,19 +32,11 @@ export default function SubmissionForm() {
   });
 
   const handleSubmit = async (data: InsertSubmission) => {
-    if (!user) {
-      // Store GitHub URL in session storage and redirect to auth
-      sessionStorage.setItem('pendingGithubUrl', data.githubUrl);
-      if (data.email) {
-        sessionStorage.setItem('pendingEmail', data.email);
-      }
-      setLocation('/auth');
-      return;
-    }
-
     try {
       const repoName = data.githubUrl.split("/").pop()?.replace(".git", "") || "New Project";
-      const res = await fetch('/api/projects', {
+      
+      // Create project with auto-registration for new users
+      const res = await fetch('/api/projects/create-with-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +44,8 @@ export default function SubmissionForm() {
         body: JSON.stringify({
           name: repoName,
           githubUrl: data.githubUrl,
-          userId: user.id,
+          email: data.email,
+          autoRegister: !user, // Flag to indicate if we need to create a user
         }),
         credentials: 'include',
       });
@@ -62,22 +55,23 @@ export default function SubmissionForm() {
         throw new Error(error.message || 'Failed to create project');
       }
 
-      await res.json();
+      const result = await res.json();
 
-      // Invalidate the projects query to force a refresh
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
 
       toast({
-        title: "Success!",
-        description: "Your project has been created.",
+        title: "Analysis Started!",
+        description: "Your project analysis has begun. Complete your profile while you wait.",
       });
 
-      // Redirect to projects page after creation
-      setLocation('/projects');
+      // Redirect to analysis page
+      setLocation(`/analysis/${result.projectId}`);
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to create project',
+        description: error instanceof Error ? error.message : 'Failed to start analysis',
         variant: "destructive",
       });
     }

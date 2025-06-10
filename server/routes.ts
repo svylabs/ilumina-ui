@@ -4352,6 +4352,162 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json({ ...project, submissionId: submission.id });
   });
 
+  // Auto-registration endpoint for new users
+  app.post("/api/projects/create-with-user", async (req, res) => {
+    const { name, githubUrl, email, autoRegister } = req.body;
+
+    try {
+      let userId = req.user?.id;
+
+      // If user is not authenticated and autoRegister is true, create a new user
+      if (!userId && autoRegister && email) {
+        // Check if user already exists with this email
+        const existingUsers = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+
+        if (existingUsers.length > 0) {
+          // User exists, log them in
+          userId = existingUsers[0].id;
+          
+          // Authenticate the user in the session
+          req.login(existingUsers[0], (err) => {
+            if (err) {
+              console.error('Login error:', err);
+            }
+          });
+        } else {
+          // Create new user with minimal information
+          const newUsers = await db
+            .insert(users)
+            .values({
+              email: email,
+              name: email.split('@')[0], // Use email prefix as temporary name
+              password: crypto.randomBytes(32).toString('hex'), // Random password, user will set later
+              plan: 'free',
+              credits: 10
+            })
+            .returning();
+
+          userId = newUsers[0].id;
+          
+          // Authenticate the new user in the session
+          req.login(newUsers[0], (err) => {
+            if (err) {
+              console.error('Login error:', err);
+            }
+          });
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Create project using the same logic as the existing route
+      const [project] = await db
+        .insert(projects)
+        .values({
+          name,
+          githubUrl,
+          userId: userId,
+          teamId: null // Always create as personal project for auto-registered users
+        })
+        .returning();
+
+      // Create submission
+      const [submission] = await db
+        .insert(submissions)
+        .values({
+          githubUrl,
+          projectId: project.id,
+          email: email
+        })
+        .returning();
+
+      // Initialize analysis steps
+      await db
+        .insert(analysisSteps)
+        .values({
+          submissionId: submission.id,
+          stepId: "files",
+          status: "in_progress",
+          details: "Analyzing project structure and smart contracts...",
+        });
+      
+      await db
+        .insert(analysisSteps)
+        .values([
+          {
+            submissionId: submission.id,
+            stepId: "actors",
+            status: "pending",
+            details: "Waiting to analyze actors and interactions...",
+          },
+          {
+            submissionId: submission.id,
+            stepId: "deployment",
+            status: "pending",
+            details: "Waiting to generate deployment instructions...",
+          },
+          {
+            submissionId: submission.id,
+            stepId: "test_setup",
+            status: "pending",
+            details: "Waiting to set up test environment...",
+          },
+          {
+            submissionId: submission.id,
+            stepId: "simulations",
+            status: "pending",
+            details: "Waiting to run simulations...",
+          }
+        ]);
+
+      await db
+        .insert(runs)
+        .values({
+          submissionId: submission.id,
+          status: "running",
+        });
+
+      // Call external analysis API
+      try {
+        const baseUrl = process.env.ILUMINA_API_BASE_URL || 'https://ilumina-wf-tt2cgoxmbq-uc.a.run.app/api';
+        const apiKey = process.env.ILUMINA_API_KEY || 'my_secure_password';
+        
+        const analysisResponse = await fetch(joinPath(baseUrl, "begin_analysis"), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            github_repository_url: githubUrl,
+            submission_id: submission.id
+          })
+        });
+        
+        if (!analysisResponse.ok) {
+          console.error('Analysis API Error:', await analysisResponse.text());
+        }
+      } catch (error) {
+        console.error('Failed to call analysis API:', error);
+      }
+
+      res.status(201).json({ 
+        projectId: project.id, 
+        submissionId: submission.id,
+        userCreated: autoRegister 
+      });
+    } catch (error) {
+      console.error('Error in create-with-user:', error);
+      res.status(500).json({ error: "Failed to create project" });
+    }
+  });
+
   // Add this route after the other project routes
   app.delete("/api/projects/:id", async (req, res) => {
     console.log(`Delete request received for project ID: ${req.params.id}`);

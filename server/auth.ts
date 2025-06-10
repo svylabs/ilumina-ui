@@ -139,4 +139,37 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+
+  app.post("/api/user/complete-profile", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { name, password } = req.body;
+    
+    try {
+      const hashedPassword = await hashPassword(password);
+      
+      // Update user with new name and password
+      const updatedUsers = await db
+        .update(users)
+        .set({
+          name: name,
+          password: hashedPassword
+        })
+        .where(eq(users.id, req.user.id))
+        .returning();
+
+      if (updatedUsers.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Update the session with new user data
+      req.user.name = name;
+      req.user.password = hashedPassword;
+
+      res.json({ success: true, message: "Profile updated successfully" });
+    } catch (error) {
+      console.error('Profile completion error:', error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
 }
