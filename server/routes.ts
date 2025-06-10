@@ -6,7 +6,7 @@ import {
   submissions, runs, projects, simulationRuns, users, projectFiles,
   insertSubmissionSchema, insertContactSchema, 
   pricingPlans, planFeatures, teams, teamMembers, teamInvitations,
-  chatMessages, analysisSteps, creditPurchases, passwordResetTokens
+  chatMessages, analysisSteps, creditPurchases, passwordResetTokens, registrationTokens
 } from "@db/schema";
 import { eq, sql, desc, asc, and, or, gt } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
@@ -4415,10 +4415,25 @@ export function registerRoutes(app: Express): Server {
 
           userId = newUsers[0].id;
           
-          // Send welcome email to new user (non-blocking)
-          const { sendWelcomeEmail } = await import('./email');
+          // Generate registration completion token
+          const crypto = require('crypto');
+          const registrationToken = crypto.randomBytes(32).toString('hex');
+          const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+          // Save registration token to database
+          await db.insert(registrationTokens).values({
+            userId: newUsers[0].id,
+            token: registrationToken,
+            expiresAt,
+          });
+
+          // Send both welcome email and registration completion email
+          const { sendWelcomeEmail, sendRegistrationCompletionEmail } = await import('./email');
           sendWelcomeEmail(newUsers[0]).catch(error => {
             console.error('Failed to send welcome email:', error);
+          });
+          sendRegistrationCompletionEmail(newUsers[0], registrationToken).catch(error => {
+            console.error('Failed to send registration completion email:', error);
           });
 
           // Authenticate the new user in the session
@@ -6801,7 +6816,53 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Registration completion endpoint
+  app.post("/api/complete-registration", async (req, res) => {
+    try {
+      const { token, name, password } = req.body;
 
+      if (!token || !name || !password) {
+        return res.status(400).json({ error: "Token, name, and password are required" });
+      }
+
+      // Find valid registration token
+      const registrationToken = await db.query.registrationTokens.findFirst({
+        where: and(
+          eq(registrationTokens.token, token),
+          gt(registrationTokens.expiresAt, new Date())
+        ),
+        with: {
+          user: true
+        }
+      });
+
+      if (!registrationToken) {
+        return res.status(400).json({ error: "Invalid or expired registration token" });
+      }
+
+      // Hash the new password
+      const { hashPassword } = await import('./auth');
+      const hashedPassword = await hashPassword(password);
+
+      // Update user with name and password
+      await db.update(users)
+        .set({ 
+          name: name.trim(),
+          password: hashedPassword,
+          isEmailVerified: true
+        })
+        .where(eq(users.id, registrationToken.userId));
+
+      // Delete the registration token
+      await db.delete(registrationTokens)
+        .where(eq(registrationTokens.id, registrationToken.id));
+
+      res.json({ success: true, message: "Registration completed successfully" });
+    } catch (error) {
+      console.error('Error completing registration:', error);
+      res.status(500).json({ error: "Failed to complete registration" });
+    }
+  });
 
   // Create payment intent for credit purchase
   app.post("/api/create-credit-payment", isAuthenticated, async (req, res) => {
