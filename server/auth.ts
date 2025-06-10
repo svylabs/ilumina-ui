@@ -7,7 +7,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { users, passwordResetTokens, insertUserSchema, type SelectUser } from "@db/schema";
 import { db, pool } from "@db";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, update } from "drizzle-orm";
 import { fromZodError } from "zod-validation-error";
 import { sendWelcomeEmail } from "./email";
 import { v4 as uuidv4 } from 'uuid';

@@ -27,6 +27,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import GitHubCodeViewer from "@/components/github-code-viewer";
 import TestEnvironmentChat from "@/components/test-environment-chat";
 import ChatAssistant from "@/components/chat-assistant";
+import ProfileCompletion from "@/components/profile-completion";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -6598,6 +6599,23 @@ The deployment should initialize the contracts with test values and set me as th
           </div>
         </div>
       </div>
+      
+      {/* Profile Completion Component */}
+      {user && (
+        <div className="fixed bottom-4 right-4 z-40 max-w-md">
+          <ProfileCompletion 
+            user={user} 
+            onComplete={() => {
+              // Refresh user data after profile completion
+              window.location.reload();
+            }}
+            onDismiss={() => {
+              // User can dismiss the component if they don't want to complete now
+            }}
+          />
+        </div>
+      )}
+      
       {/* Add context-aware AI Chat Assistant */}
       <ChatAssistant projectId={id} currentSection={selectedStep} submissionId={submissionId} analysisData={analysis} />
     </div>
