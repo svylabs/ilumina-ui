@@ -70,13 +70,13 @@ export default function CompleteRegistration() {
         setIsCompleted(true);
         toast({
           title: "Registration Complete!",
-          description: "Your account has been set up successfully. You can now sign in.",
+          description: "Your account has been set up successfully. Welcome to Ilumina!",
         });
         
-        // Redirect to login after 3 seconds
+        // Redirect to projects dashboard after 2 seconds
         setTimeout(() => {
-          setLocation('/login');
-        }, 3000);
+          setLocation('/projects');
+        }, 2000);
       } else {
         const errorData = await response.json();
         toast({
@@ -107,12 +107,12 @@ export default function CompleteRegistration() {
             </div>
             <CardTitle className="text-2xl">Registration Complete!</CardTitle>
             <CardDescription>
-              Your account has been successfully set up. You'll be redirected to the login page in a few seconds.
+              Your account has been successfully set up. You'll be redirected to your projects dashboard in a few seconds.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Button onClick={() => setLocation('/login')} className="w-full">
-              Go to Login
+            <Button onClick={() => setLocation('/projects')} className="w-full">
+              Go to Projects
             </Button>
           </CardContent>
         </Card>
