@@ -706,6 +706,19 @@ export default function ActionViewer() {
                     </div>
                   </div>
                 </TabsContent>
+
+                <TabsContent value="code-review" className="mt-0">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xl font-semibold text-blue-400 mb-4">Code Review</h3>
+                      <CodeReviewSection 
+                        projectId={projectId || ''}
+                        contractName={contractName}
+                        functionName={functionName}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
               </div>
             </Tabs>
           </CardContent>
