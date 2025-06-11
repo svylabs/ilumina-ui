@@ -120,35 +120,63 @@ export default function CodeViewerWithReviews({
     return functionName; // Default to the current function name
   };
 
-  // Mutation for saving custom reviews
-  const saveCustomReviewMutation = useMutation({
-    mutationFn: async (reviewData: Omit<Review, 'id'>) => {
-      const response = await apiRequest('POST', `/api/custom-reviews/${projectId}/${contractName}/${functionName}`, reviewData);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Review Added",
-        description: "Your custom review has been saved successfully.",
-      });
-      setShowAddReview(null);
-      setNewReview({
-        line_number: 0,
-        description: '',
-        suggested_fix: '',
-        function_name: ''
-      });
-      // Refresh the reviews
-      queryClient.invalidateQueries({ queryKey: ['/api/code-review', projectId, contractName, functionName] });
-    },
-    onError: (error) => {
+  // Load custom reviews from localStorage
+  const loadCustomReviews = (): Review[] => {
+    try {
+      const stored = localStorage.getItem(`custom-reviews-${projectId}-${contractName}-${functionName}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Save custom reviews to localStorage
+  const saveCustomReviews = (reviews: Review[]) => {
+    localStorage.setItem(`custom-reviews-${projectId}-${contractName}-${functionName}`, JSON.stringify(reviews));
+  };
+
+  // Initialize custom reviews from localStorage on component mount
+  useEffect(() => {
+    setCustomReviews(loadCustomReviews());
+  }, [projectId, contractName, functionName]);
+
+  // Handle saving custom review locally
+  const handleSaveCustomReview = () => {
+    if (!newReview.description.trim()) {
       toast({
         title: "Error",
-        description: "Failed to save custom review. Please try again.",
+        description: "Please provide a description for the review.",
         variant: "destructive",
       });
-    },
-  });
+      return;
+    }
+
+    const customReview: Review = {
+      id: `custom-${Date.now()}`,
+      line_number: newReview.line_number,
+      description: newReview.description,
+      suggested_fix: newReview.suggested_fix,
+      function_name: newReview.function_name,
+      is_custom: true
+    };
+
+    const updatedCustomReviews = [...customReviews, customReview];
+    setCustomReviews(updatedCustomReviews);
+    saveCustomReviews(updatedCustomReviews);
+
+    toast({
+      title: "Review Added",
+      description: "Your custom review has been saved locally.",
+    });
+
+    setShowAddReview(null);
+    setNewReview({
+      line_number: 0,
+      description: '',
+      suggested_fix: '',
+      function_name: ''
+    });
+  };
 
   // Handle adding a new review
   const handleAddReview = (lineNumber: number) => {
@@ -162,25 +190,8 @@ export default function CodeViewerWithReviews({
     setShowAddReview(lineNumber);
   };
 
-  // Handle saving the new review
-  const handleSaveReview = () => {
-    if (!newReview.description.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide a description for the review.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    saveCustomReviewMutation.mutate({
-      line_number: newReview.line_number,
-      description: newReview.description,
-      suggested_fix: newReview.suggested_fix,
-      function_name: newReview.function_name,
-      is_custom: true
-    });
-  };
+  // Combine API reviews with custom reviews
+  const allReviews = [...reviews, ...customReviews];
 
   // Debug logging
   console.log('CodeViewerWithReviews - reviews prop:', reviews);
@@ -205,8 +216,8 @@ export default function CodeViewerWithReviews({
     );
   }
 
-  // Group reviews by line number
-  const reviewsByLine = reviews.reduce((acc, review) => {
+  // Group all reviews (API + custom) by line number
+  const reviewsByLine = allReviews.reduce((acc, review) => {
     if (!acc[review.line_number]) {
       acc[review.line_number] = [];
     }
@@ -217,7 +228,7 @@ export default function CodeViewerWithReviews({
   console.log('reviewsByLine created:', reviewsByLine);
   console.log('Number of lines with reviews:', Object.keys(reviewsByLine).length);
 
-  // Handle line clicks to toggle inline reviews
+  // Handle line clicks to toggle inline reviews or show add review option
   const handleLineClick = (lineNumber: number) => {
     console.log('Line clicked:', lineNumber);
     console.log('Reviews by line:', reviewsByLine);
@@ -237,6 +248,8 @@ export default function CodeViewerWithReviews({
       setExpandedLines(newExpandedLines);
     } else {
       console.log('No reviews found for line:', lineNumber);
+      // Show add review option for lines without reviews
+      handleAddReview(lineNumber);
     }
   };
 
@@ -307,10 +320,10 @@ export default function CodeViewerWithReviews({
               style: { 
                 display: 'block',
                 backgroundColor: hasReviews ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                cursor: hasReviews ? 'pointer' : 'default'
+                cursor: 'pointer'
               },
-              onClick: hasReviews ? () => handleLineClick(lineNumber) : undefined,
-              title: hasReviews ? `${hasReviews.length} review(s) on line ${lineNumber} - Click to view` : ''
+              onClick: () => handleLineClick(lineNumber),
+              title: hasReviews ? `${hasReviews.length} review(s) on line ${lineNumber} - Click to view` : `Click to add a review on line ${lineNumber}`
             };
           }}
         >
@@ -378,6 +391,78 @@ export default function CodeViewerWithReviews({
             </div>
           );
         })}
+
+        {/* Add review form */}
+        {showAddReview && (
+          <div
+            className="absolute left-20 z-20 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-w-lg w-96"
+            style={{
+              top: `${(showAddReview - 1) * 21 + 20}px`
+            }}
+          >
+            <div className="p-3 border-b border-gray-600 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-300">
+                  Add Review • Line {showAddReview} • {newReview.function_name}()
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddReview(null)}
+                className="h-5 w-5 p-0 text-gray-400 hover:text-white"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            <div className="p-3 space-y-3">
+              <div>
+                <textarea
+                  placeholder="Describe the issue or concern..."
+                  value={newReview.description}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full bg-gray-900/50 border border-gray-700 rounded-md p-2 text-xs text-gray-200 placeholder-gray-500 resize-none"
+                  rows={3}
+                />
+              </div>
+              
+              <div>
+                <textarea
+                  placeholder="Suggested fix (optional)..."
+                  value={newReview.suggested_fix}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, suggested_fix: e.target.value }))}
+                  className="w-full bg-gray-900/50 border border-gray-700 rounded-md p-2 text-xs text-gray-200 placeholder-gray-500 resize-none"
+                  rows={2}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSaveCustomReview}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                >
+                  Add Review
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddReview(null)}
+                  className="flex-1 text-xs"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+
+            {/* Arrow pointing to the line */}
+            <div 
+              className="absolute left-0 top-4 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-600"
+              style={{ transform: 'translateX(-4px)' }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
