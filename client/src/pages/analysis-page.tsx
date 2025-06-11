@@ -444,11 +444,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
   const [actorConfig, setActorConfig] = useState<{[actorName: string]: number}>({});
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   
-  // Action status state
-  const [actionStatuses, setActionStatuses] = useState<any>(null);
-  const [isLoadingActionStatuses, setIsLoadingActionStatuses] = useState(false);
-  const [actionStatusError, setActionStatusError] = useState<string | null>(null);
-  
   // Initialize actor config from submission data
   useEffect(() => {
     if (analysis?.steps?.actors?.jsonData?.actors) {
@@ -466,53 +461,9 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
       setActorConfig(defaultConfig);
     }
   }, [analysis]);
-
-  // Fetch action statuses when submission ID is available
-  useEffect(() => {
-    const fetchActionStatuses = async () => {
-      if (!submissionId) return;
-      
-      setIsLoadingActionStatuses(true);
-      setActionStatusError(null);
-      
-      try {
-        const response = await fetch(`/api/action-statuses/${submissionId}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch action statuses: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setActionStatuses(data);
-        console.log('Action statuses fetched:', data);
-      } catch (error) {
-        console.error('Error fetching action statuses:', error);
-        setActionStatusError(error instanceof Error ? error.message : 'Failed to load action statuses');
-      } finally {
-        setIsLoadingActionStatuses(false);
-      }
-    };
-
-    fetchActionStatuses();
-  }, [submissionId]);
   
   // Tab state for Simulations/History tabs
   const [activeTab, setActiveTab] = useState<'simulations' | 'history'>('simulations');
-
-  // Helper function to get action status
-  const getActionStatus = (contractName: string, functionName: string) => {
-    if (!actionStatuses?.actions) return null;
-    
-    const action = actionStatuses.actions.find((a: any) => 
-      a.contract_name === contractName && a.function_name === functionName
-    );
-    
-    return action ? {
-      step: action.current_step || 'pending',
-      status: action.status || 'pending',
-      progress: action.progress || 0
-    } : null;
-  };
   
   // Batch view state
   const [viewingBatchId, setViewingBatchId] = useState<string | null>(null);
@@ -1673,58 +1624,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
                               <p className="text-xs text-gray-500">{actor.summary}</p>
                             </div>
                           </div>
-                          
-                          {/* Action Status Display */}
-                          {actor.actions && actor.actions.length > 0 && (
-                            <div className="mb-3 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-400">Actions</span>
-                                {isLoadingActionStatuses && (
-                                  <span className="text-xs text-blue-400">Loading...</span>
-                                )}
-                                {actionStatusError && (
-                                  <span className="text-xs text-red-400">Status unavailable</span>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                {actor.actions.map((action: any, actionIndex: number) => {
-                                  const actionStatus = getActionStatus(action.contract_name, action.function_name);
-                                  return (
-                                    <div key={actionIndex} className="flex items-center justify-between bg-gray-900/50 p-2 rounded text-xs">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-gray-300 truncate">{action.name}</div>
-                                        <div className="text-gray-500 text-[10px]">{action.contract_name}.{action.function_name}</div>
-                                      </div>
-                                      <div className="flex items-center gap-2 ml-2">
-                                        {actionStatus ? (
-                                          <>
-                                            <span className={`px-2 py-1 rounded text-[10px] font-medium ${
-                                              actionStatus.status === 'completed' ? 'bg-green-900/50 text-green-300' :
-                                              actionStatus.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
-                                              actionStatus.status === 'failed' ? 'bg-red-900/50 text-red-300' :
-                                              'bg-gray-900/50 text-gray-400'
-                                            }`}>
-                                              {actionStatus.step}
-                                            </span>
-                                            <div className={`w-2 h-2 rounded-full ${
-                                              actionStatus.status === 'completed' ? 'bg-green-400' :
-                                              actionStatus.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
-                                              actionStatus.status === 'failed' ? 'bg-red-400' :
-                                              'bg-gray-500'
-                                            }`} />
-                                          </>
-                                        ) : (
-                                          <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-                                            pending
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
                           <div className="flex items-center gap-2">
                             <label className="text-xs text-gray-400">Count:</label>
                             <div className="flex items-center">

@@ -1647,46 +1647,6 @@ export function registerRoutes(app: Express): Server {
       return [];
     }
   }
-
-  // API endpoint to fetch action statuses for a submission
-  app.get("/api/action-statuses/:submission_id", async (req, res) => {
-    try {
-      const { submission_id } = req.params;
-      
-      console.log(`Fetching action statuses for submission: ${submission_id}`);
-      
-      // Validate submission ID
-      const result = await getValidSubmissionId(submission_id);
-      if (!result.submissionId) {
-        return res.status(result.statusCode || 400).json({ 
-          error: result.error,
-          details: result.details
-        });
-      }
-
-      // Call external API to get action statuses
-      const response = await callExternalIluminaAPI(`/submission/${result.submissionId}/actions`);
-      
-      if (!response.ok) {
-        console.error(`Failed to fetch action statuses: ${response.status} ${response.statusText}`);
-        return res.status(500).json({ 
-          error: "Failed to fetch action statuses from external API",
-          details: `External API returned ${response.status}`
-        });
-      }
-
-      const actionData = await response.json();
-      console.log(`Successfully fetched action statuses for submission ${result.submissionId}`);
-      
-      res.json(actionData);
-    } catch (error) {
-      console.error("Error fetching action statuses:", error);
-      res.status(500).json({ 
-        error: "Internal server error while fetching action statuses",
-        details: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
   
   // API endpoint to fetch deployment script
   app.get("/api/deployment-script/:submission_id", async (req, res) => {
