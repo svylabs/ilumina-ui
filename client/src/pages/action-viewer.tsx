@@ -512,6 +512,28 @@ function ValidationRulesTab({ submissionId, contractName, functionName, action, 
   );
 }
 
+// Function to format relative time
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMinutes < 1) {
+    return 'Just now';
+  } else if (diffInMinutes < 60) {
+    return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
+  } else if (diffInDays < 7) {
+    return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+  } else {
+    return date.toLocaleDateString();
+  }
+}
+
 export default function ActionViewer() {
   const params = useParams();
   const [location] = useLocation();
@@ -740,7 +762,7 @@ export default function ActionViewer() {
                   <div>
                     <span className="text-gray-400">Last Updated:</span>
                     <p className="text-white font-medium">
-                      {actionStatus.updated_at ? new Date(actionStatus.updated_at).toLocaleString() : 'Unknown'}
+                      {actionStatus.updated_at ? formatRelativeTime(actionStatus.updated_at) : 'Unknown'}
                     </p>
                   </div>
                 </div>
