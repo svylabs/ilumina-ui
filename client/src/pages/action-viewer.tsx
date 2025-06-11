@@ -600,16 +600,12 @@ export default function ActionViewer() {
       console.log('Action status for retry:', actionStatus);
       console.log('Current step value:', actionStatus?.step);
       
-      // Map internal step names to expected API parameter values
-      let step = 'analyze'; // Default to analyze
-      if (actionStatus?.step === 'analyze_action') {
-        step = 'analyze';
-      } else if (actionStatus?.step === 'implement_action') {
-        step = 'implement';
-      } else {
-        // For any other step or unknown, default to analyze
-        console.log('Unknown step, defaulting to analyze:', actionStatus?.step);
-        step = 'analyze';
+      // Use the step directly from the action analyses data
+      // The backend expects 'analyze' or 'implement' but the data contains 'analyze_action' or 'implement_action'
+      let step = actionStatus?.step;
+      if (!step) {
+        console.log('No step found, defaulting to analyze_action');
+        step = 'analyze_action';
       }
       
       console.log('Sending retry request with step:', step);

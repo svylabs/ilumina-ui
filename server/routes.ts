@@ -163,15 +163,16 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // Determine the correct step to retry
+      // Use the step directly from the action analyses data
+      // Accept either the mapped values ('analyze', 'implement') or the actual step names
       let retryStep = '';
-      if (step === 'analyze') {
+      if (step === 'analyze' || step === 'analyze_action') {
         retryStep = 'analyze_action';
-      } else if (step === 'implement') {
+      } else if (step === 'implement' || step === 'implement_action') {
         retryStep = 'implement_action';
       } else {
         return res.status(400).json({ 
-          error: `Invalid step: ${step}. Expected 'analyze' or 'implement'` 
+          error: `Invalid step: ${step}. Expected 'analyze', 'implement', 'analyze_action', or 'implement_action'` 
         });
       }
 
