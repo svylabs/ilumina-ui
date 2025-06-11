@@ -64,6 +64,7 @@ export default function CodeViewerWithReviews({
 }: CodeViewerWithReviewsProps) {
   const { data: code, isLoading, error } = useActionCode(projectId, contractName, functionName);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
 
   if (isLoading) {
     return (
@@ -93,11 +94,17 @@ export default function CodeViewerWithReviews({
     return acc;
   }, {} as Record<number, Review[]>);
 
-  // Handle line clicks
+  // Handle line clicks to toggle inline reviews
   const handleLineClick = (lineNumber: number) => {
     const hasReviews = reviewsByLine[lineNumber];
     if (hasReviews) {
-      setSelectedReview(hasReviews[0]);
+      const newExpandedLines = new Set(expandedLines);
+      if (expandedLines.has(lineNumber)) {
+        newExpandedLines.delete(lineNumber);
+      } else {
+        newExpandedLines.add(lineNumber);
+      }
+      setExpandedLines(newExpandedLines);
     }
   };
 
@@ -171,6 +178,67 @@ export default function CodeViewerWithReviews({
           {code}
         </SyntaxHighlighter>
 
+        {/* Review Overlays */}
+        {Array.from(expandedLines).map(lineNumber => {
+          const lineReviews = reviewsByLine[lineNumber];
+          if (!lineReviews) return null;
+
+          const severity = lineReviews.reduce((highest, review) => {
+            const reviewSeverity = getSeverityFromDescription(review.description);
+            const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+            return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
+          }, 'low' as 'low' | 'medium' | 'high' | 'critical');
+
+          // Calculate approximate position based on line number and line height
+          const lineHeight = 24; // Approximate line height in pixels
+          const topOffset = (lineNumber - 1) * lineHeight + 50; // 50px for padding/header
+
+          return (
+            <div
+              key={lineNumber}
+              className="absolute left-4 right-4 z-20"
+              style={{ top: `${topOffset}px` }}
+            >
+              <Card className="bg-gray-800/95 border-gray-600 shadow-xl backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className={severityColors[severity]}>
+                        {severity.toUpperCase()}
+                      </Badge>
+                      <span className="text-sm text-gray-300">
+                        Line {lineNumber} • {lineReviews[0].function_name}()
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleLineClick(lineNumber)}
+                      className="text-gray-400 hover:text-white h-6 w-6 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  
+                  {lineReviews.map((review, index) => (
+                    <div key={index} className="space-y-3 mb-4 last:mb-0">
+                      <div>
+                        <h4 className="text-sm font-medium text-white mb-1">Issue</h4>
+                        <p className="text-sm text-gray-300">{review.description}</p>
+                      </div>
+                      
+                      <div className="bg-blue-900/30 p-3 rounded border-l-2 border-blue-500">
+                        <h4 className="text-sm font-medium text-blue-400 mb-1">Suggested Fix</h4>
+                        <p className="text-sm text-blue-300">{review.suggested_fix}</p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })}
+
         {/* Review indicators on the right */}
         <div className="absolute top-4 right-4 space-y-1">
           {Object.entries(reviewsByLine).map(([lineNumber, lineReviews]) => {
@@ -180,13 +248,15 @@ export default function CodeViewerWithReviews({
               return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
             }, 'low' as 'low' | 'medium' | 'high' | 'critical');
 
+            const isExpanded = expandedLines.has(parseInt(lineNumber));
+
             return (
               <Button
                 key={lineNumber}
                 variant="ghost"
                 size="sm"
-                className={`h-6 px-2 text-xs ${severityColors[severity]} hover:opacity-80`}
-                onClick={() => setSelectedReview(lineReviews[0])}
+                className={`h-6 px-2 text-xs ${severityColors[severity]} hover:opacity-80 ${isExpanded ? 'ring-2 ring-blue-500' : ''}`}
+                onClick={() => handleLineClick(parseInt(lineNumber))}
               >
                 <MessageSquare className="h-3 w-3 mr-1" />
                 L{lineNumber}
