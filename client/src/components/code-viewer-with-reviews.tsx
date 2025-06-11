@@ -78,6 +78,11 @@ export default function CodeViewerWithReviews({
   const { data: code, isLoading, error } = useActionCode(projectId, contractName, functionName);
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
 
+  // Debug logging
+  console.log('CodeViewerWithReviews - reviews prop:', reviews);
+  console.log('CodeViewerWithReviews - reviews length:', reviews?.length);
+  console.log('CodeViewerWithReviews - code loaded:', !!code);
+
 
   if (isLoading) {
     return (
@@ -104,6 +109,9 @@ export default function CodeViewerWithReviews({
     acc[review.line_number].push(review);
     return acc;
   }, {} as Record<number, Review[]>);
+
+  console.log('reviewsByLine created:', reviewsByLine);
+  console.log('Number of lines with reviews:', Object.keys(reviewsByLine).length);
 
   // Handle line clicks to toggle inline reviews
   const handleLineClick = (lineNumber: number) => {
@@ -152,9 +160,9 @@ export default function CodeViewerWithReviews({
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Code viewer with overlay buttons */}
-      <div className="flex-1 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden relative">
+    <div className="h-full flex flex-col space-y-4">
+      {/* Code viewer */}
+      <div className="flex-1 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
         <SyntaxHighlighter
           language="typescript"
           style={customStyle}
@@ -182,7 +190,6 @@ export default function CodeViewerWithReviews({
           customStyle={{
             margin: 0,
             padding: '1rem',
-            paddingLeft: '4rem',
             background: 'rgba(17, 24, 39, 0.5)',
             fontSize: '14px',
             height: '100%',
@@ -202,34 +209,38 @@ export default function CodeViewerWithReviews({
         >
           {code}
         </SyntaxHighlighter>
-        
-        {/* Clickable review indicators overlay */}
-        <div className="absolute left-0 top-0 h-full pointer-events-none">
-          {Object.entries(reviewsByLine).map(([lineNumberStr, lineReviews]) => {
-            const lineNumber = parseInt(lineNumberStr);
-            const lineHeight = 20; // Approximate line height
-            const topPosition = (lineNumber - 1) * lineHeight + 16; // Offset for padding
-            
-            return (
-              <button
-                key={lineNumber}
-                className="absolute left-1 w-6 h-5 pointer-events-auto rounded text-xs font-bold hover:opacity-80 transition-opacity"
-                style={{
-                  top: `${topPosition}px`,
-                  backgroundColor: getSeverityColor(lineReviews).includes('text-orange') ? '#fb923c' : 
-                                   getSeverityColor(lineReviews).includes('text-blue') ? '#60a5fa' :
-                                   getSeverityColor(lineReviews).includes('text-red') ? '#f87171' : '#60a5fa',
-                  color: 'white'
-                }}
-                onClick={() => handleLineClick(lineNumber)}
-                title={`${lineReviews.length} review(s) on line ${lineNumber} - Click to view`}
-              >
-                {lineReviews.length}
-              </button>
-            );
-          })}
-        </div>
       </div>
+
+      {/* Review indicators and buttons */}
+      {Object.keys(reviewsByLine).length > 0 && (
+        <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+          <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Code Reviews ({Object.keys(reviewsByLine).length} lines)
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(reviewsByLine).map(([lineNumberStr, lineReviews]) => {
+              const lineNumber = parseInt(lineNumberStr);
+              const severityColor = getSeverityColor(lineReviews);
+              const bgColor = severityColor.includes('text-orange') ? 'bg-orange-500' : 
+                             severityColor.includes('text-blue') ? 'bg-blue-500' :
+                             severityColor.includes('text-red') ? 'bg-red-500' : 'bg-blue-500';
+              
+              return (
+                <button
+                  key={lineNumber}
+                  onClick={() => handleLineClick(lineNumber)}
+                  className={`${bgColor} hover:opacity-80 text-white px-3 py-1 rounded-full text-sm font-medium transition-opacity flex items-center gap-1`}
+                >
+                  Line {lineNumber} ({lineReviews.length})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Review overlays below the code */}
       {expandedLines.size > 0 && (
