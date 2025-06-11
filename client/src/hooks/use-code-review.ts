@@ -1,18 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
 interface CodeReview {
-  function_name: string;
-  contract_name: string;
-  review_summary: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  issues: Array<{
-    type: string;
+  reviews: Array<{
+    line_number: number;
     description: string;
-    severity: 'low' | 'medium' | 'high' | 'critical';
-    line_number?: number;
-    recommendation: string;
+    function_name: string;
+    suggested_fix: string;
   }>;
-  recommendations: string[];
+  overall_assessment: string[];
   file_path: string;
   html_url: string;
   last_modified: string;

@@ -23,6 +23,20 @@ interface CodeReviewSectionProps {
   functionName: string;
 }
 
+const getSeverityFromDescription = (description: string): 'low' | 'medium' | 'high' | 'critical' => {
+  const lowerDesc = description.toLowerCase();
+  if (lowerDesc.includes('critical') || lowerDesc.includes('security') || lowerDesc.includes('vulnerable')) {
+    return 'critical';
+  }
+  if (lowerDesc.includes('error') || lowerDesc.includes('fail') || lowerDesc.includes('incorrect')) {
+    return 'high';
+  }
+  if (lowerDesc.includes('should') || lowerDesc.includes('consider') || lowerDesc.includes('improve')) {
+    return 'medium';
+  }
+  return 'low';
+};
+
 const severityColors = {
   low: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
@@ -107,7 +121,15 @@ export default function CodeReviewSection({ projectId, contractName, functionNam
     );
   }
 
-  const SeverityIcon = severityIcons[review.severity];
+  // Calculate overall severity based on review content
+  const overallSeverity = review.reviews?.length > 0 ? 
+    review.reviews.reduce((highest, item) => {
+      const severity = getSeverityFromDescription(item.description);
+      const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+      return severityOrder[severity] > severityOrder[highest] ? severity : highest;
+    }, 'low' as 'low' | 'medium' | 'high' | 'critical') : 'low';
+
+  const SeverityIcon = severityIcons[overallSeverity];
 
   return (
     <Card className="bg-gray-900/50 border-gray-700">
@@ -116,9 +138,9 @@ export default function CodeReviewSection({ projectId, contractName, functionNam
           <CardTitle className="text-lg text-white flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Code Review
-            <Badge className={severityColors[review.severity]}>
+            <Badge className={severityColors[overallSeverity]}>
               <SeverityIcon className="h-3 w-3 mr-1" />
-              {review.severity.toUpperCase()}
+              {overallSeverity.toUpperCase()}
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -155,19 +177,23 @@ export default function CodeReviewSection({ projectId, contractName, functionNam
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Review Summary */}
-        <div className="bg-gray-800/50 p-4 rounded-lg">
-          <h4 className="font-medium text-white mb-2">Summary</h4>
-          <p className="text-gray-300 text-sm">{review.review_summary}</p>
-        </div>
+        {/* Overall Assessment */}
+        {review.overall_assessment && review.overall_assessment.length > 0 && (
+          <div className="bg-gray-800/50 p-4 rounded-lg">
+            <h4 className="font-medium text-white mb-2">Overall Assessment</h4>
+            {review.overall_assessment.map((assessment, index) => (
+              <p key={index} className="text-gray-300 text-sm mb-2 last:mb-0">{assessment}</p>
+            ))}
+          </div>
+        )}
 
-        {/* Issues */}
-        {review.issues && review.issues.length > 0 && (
+        {/* Review Items */}
+        {review.reviews && review.reviews.length > 0 && (
           <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
             <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors">
               <span className="font-medium text-white flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                Issues Found ({review.issues.length})
+                Review Items ({review.reviews.length})
               </span>
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4 text-gray-400" />
