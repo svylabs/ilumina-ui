@@ -5274,9 +5274,47 @@ export default function AnalysisPage() {
                                                           </span>
                                                           
                                                           {/* Action Status Display */}
-                                                          <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-                                                            pending
-                                                          </span>
+                                                          {(() => {
+                                                            if (!actionStatuses?.data) {
+                                                              return (
+                                                                <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
+                                                                  scheduled
+                                                                </span>
+                                                              );
+                                                            }
+                                                            
+                                                            const key = `${action.contract_name}.${action.function_name}`;
+                                                            const status = actionStatuses.data[key];
+                                                            
+                                                            if (!status) {
+                                                              return (
+                                                                <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
+                                                                  scheduled
+                                                                </span>
+                                                              );
+                                                            }
+                                                            
+                                                            const statusColor = 
+                                                              status.status === 'success' ? 'bg-green-900/50 text-green-300' :
+                                                              status.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
+                                                              status.status === 'error' ? 'bg-red-900/50 text-red-300' :
+                                                              'bg-gray-900/50 text-gray-400';
+                                                            
+                                                            const dotColor = 
+                                                              status.status === 'success' ? 'bg-green-400' :
+                                                              status.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
+                                                              status.status === 'error' ? 'bg-red-400' :
+                                                              'bg-gray-500';
+                                                              
+                                                            return (
+                                                              <div className="flex items-center gap-2">
+                                                                <span className={`px-2 py-1 rounded text-[10px] font-medium ${statusColor}`}>
+                                                                  {status.step || status.status}
+                                                                </span>
+                                                                <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+                                                              </div>
+                                                            );
+                                                          })()}
 
                                                           <a 
                                                             href={`/action/${id}/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
