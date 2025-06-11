@@ -143,9 +143,9 @@ export default function CodeViewerWithReviews({
   };
 
   return (
-    <div className="h-full relative">
-      <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden h-full">
-        {/* Custom line number renderer with review indicators */}
+    <div className="h-full flex flex-col">
+      {/* Code viewer */}
+      <div className="flex-1 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
         <SyntaxHighlighter
           language="typescript"
           style={customStyle}
@@ -200,23 +200,17 @@ export default function CodeViewerWithReviews({
         >
           {code}
         </SyntaxHighlighter>
+      </div>
 
-        {/* Review overlays positioned absolutely */}
-        {Object.entries(expandedLines).map(([lineNumberStr]) => {
-          const lineNumber = parseInt(lineNumberStr);
-          const lineReviews = reviewsByLine[lineNumber];
-          
-          if (!expandedLines.has(lineNumber) || !lineReviews) return null;
+      {/* Review overlays below the code */}
+      {expandedLines.size > 0 && (
+        <div className="mt-4 space-y-3">
+          {Array.from(expandedLines).map((lineNumber) => {
+            const lineReviews = reviewsByLine[lineNumber];
+            if (!lineReviews) return null;
 
-          return (
-            <div
-              key={lineNumber}
-              className="absolute left-4 right-4 z-10"
-              style={{
-                top: `${lineNumber * 20 + 40}px`, // Approximate line height positioning
-              }}
-            >
-              <Card className="bg-gray-900 border-gray-600 shadow-2xl border-2">
+            return (
+              <Card key={lineNumber} className="bg-gray-900 border-gray-600 shadow-lg">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -256,10 +250,10 @@ export default function CodeViewerWithReviews({
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
