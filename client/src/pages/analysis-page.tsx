@@ -444,6 +444,11 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
   const [actorConfig, setActorConfig] = useState<{[actorName: string]: number}>({});
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   
+  // Action status state
+  const [actionStatuses, setActionStatuses] = useState<any>(null);
+  const [isLoadingActionStatuses, setIsLoadingActionStatuses] = useState(false);
+  const [actionStatusError, setActionStatusError] = useState<string | null>(null);
+  
   // Initialize actor config from submission data
   useEffect(() => {
     if (analysis?.steps?.actors?.jsonData?.actors) {
@@ -461,6 +466,35 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
       setActorConfig(defaultConfig);
     }
   }, [analysis]);
+
+  // Fetch action statuses when submission ID is available
+  useEffect(() => {
+    const fetchActionStatuses = async () => {
+      if (!submissionId) return;
+      
+      setIsLoadingActionStatuses(true);
+      setActionStatusError(null);
+      
+      try {
+        const response = await fetch(`/api/action-statuses/${submissionId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch action statuses: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setActionStatuses(data);
+        console.log('Action statuses fetched:', data);
+      } catch (error) {
+        console.error('Error fetching action statuses:', error);
+        setActionStatusError(error instanceof Error ? error.message : 'Failed to load action statuses');
+      } finally {
+        setIsLoadingActionStatuses(false);
+      }
+    };
+
+    fetchActionStatuses();
+  }, [submissionId]);
   
   // Tab state for Simulations/History tabs
   const [activeTab, setActiveTab] = useState<'simulations' | 'history'>('simulations');
