@@ -92,16 +92,12 @@ function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
       a.contract_name === contractName && a.function_name === functionName
     );
     
-    if (!action?.metadata?.completed_steps) return null;
-    
-    // Get the latest step status
-    const completedSteps = action.metadata.completed_steps;
-    const latestStep = completedSteps[completedSteps.length - 1];
+    if (!action) return null;
     
     return {
-      status: latestStep.status || 'scheduled',
-      step: latestStep.step || null,
-      progress: completedSteps.length
+      status: action.status || 'scheduled',
+      step: action.step || null,
+      progress: 0
     };
   };
 
