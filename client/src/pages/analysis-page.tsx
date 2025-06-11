@@ -5215,7 +5215,6 @@ export default function AnalysisPage() {
                                                     <h5 className="text-sm font-medium text-blue-300">Actions</h5>
                                                   </div>
                                                   {actor.actions && actor.actions.map((action: any, i: number) => {
-                                                    const actionStatus = getActionStatus(action.contract_name, action.function_name);
                                                     return (
                                                       <Collapsible key={i} className="bg-gray-700/50 rounded-md">
                                                       <CollapsibleTrigger className="w-full p-3 flex items-center justify-between">
