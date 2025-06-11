@@ -485,20 +485,41 @@ export default function ActionViewer() {
   const params = useParams();
   const [location] = useLocation();
   
-  // Extract parameters from URL
-  const projectId = params.projectId;
-  const submissionId = params.submissionId;
-  const actorIndex = params.actorIndex;
-  const actionIndex = params.actionIndex;
+  // Handle two different route patterns:
+  // 1. /action/:projectId/:submissionId/:actorIndex/:actionIndex (original)
+  // 2. /project/:projectId/action/:contractName/:functionName (new)
   
-  // Parse URL search params to get actor and action data
-  const searchParams = new URLSearchParams(window.location.search);
-  const actorName = searchParams.get('actorName') || '';
-  const actionName = searchParams.get('actionName') || '';
-  const contractName = searchParams.get('contractName') || '';
-  const functionName = searchParams.get('functionName') || '';
-  const actorSummary = searchParams.get('actorSummary') || '';
-  const actionSummary = searchParams.get('actionSummary') || '';
+  let projectId, submissionId, actorIndex, actionIndex, contractName, functionName;
+  let actorName = '', actionName = '', actorSummary = '', actionSummary = '';
+  
+  if (params.contractName && params.functionName) {
+    // New route pattern: /project/:projectId/action/:contractName/:functionName
+    projectId = params.projectId;
+    contractName = params.contractName;
+    functionName = params.functionName;
+    submissionId = undefined; // Will be fetched based on projectId
+    actorIndex = '0'; // Default for code review
+    actionIndex = '0'; // Default for code review
+    
+    // Use contract and function names as display names
+    actorName = contractName;
+    actionName = functionName;
+  } else {
+    // Original route pattern: /action/:projectId/:submissionId/:actorIndex/:actionIndex
+    projectId = params.projectId;
+    submissionId = params.submissionId;
+    actorIndex = params.actorIndex;
+    actionIndex = params.actionIndex;
+    
+    // Parse URL search params to get actor and action data
+    const searchParams = new URLSearchParams(window.location.search);
+    actorName = searchParams.get('actorName') || '';
+    actionName = searchParams.get('actionName') || '';
+    contractName = searchParams.get('contractName') || '';
+    functionName = searchParams.get('functionName') || '';
+    actorSummary = searchParams.get('actorSummary') || '';
+    actionSummary = searchParams.get('actionSummary') || '';
+  }
 
   // Fetch submission data to get complete action information
   const { data: submission, isLoading: submissionLoading, error: submissionError } = useQuery({
@@ -509,8 +530,9 @@ export default function ActionViewer() {
   const [activeTab, setActiveTab] = useState("action-summary");
 
   // Debug logging
-  console.log('ActionViewer params:', { submissionId, actorIndex, actionIndex });
-  console.log('ActionViewer URL params:', { actorName, actionName, contractName, functionName, actorSummary, actionSummary });
+  console.log('Raw params:', params);
+  console.log('Extracted values:', { projectId, submissionId, actorIndex, actionIndex, contractName, functionName });
+  console.log('ActionViewer URL params:', { actorName, actionName, actorSummary, actionSummary });
   console.log('Submission data:', submission);
   console.log('Submission loading:', submissionLoading);
   console.log('Submission error:', submissionError);
