@@ -4221,18 +4221,32 @@ export function registerRoutes(app: Express): Server {
       const repoData = await repoResponse.json();
       const { owner, repo } = repoData;
       
-      // Construct the path to the action file - it's in simulation/actions/
-      const actionPath = `simulation/actions/${contractName.toLowerCase()}_${functionName.toLowerCase()}.js`;
+      // Construct the path to the action file - try both .ts and .js extensions
+      const baseFileName = `${contractName.toLowerCase()}_${functionName.toLowerCase()}`;
+      let actionPath = `simulation/actions/${baseFileName}.ts`;
       
-      // Fetch the action code file from GitHub
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${actionPath}`;
-      const response = await fetch(url, {
+      // First try .ts extension
+      let url = `https://api.github.com/repos/${owner}/${repo}/contents/${actionPath}`;
+      let response = await fetch(url, {
         headers: {
           'User-Agent': 'Ilumina-App',
           'Accept': 'application/vnd.github.v3+json',
           ...(process.env.GITHUB_TOKEN ? { 'Authorization': `token ${process.env.GITHUB_TOKEN}` } : {})
         }
       });
+      
+      // If .ts not found, try .js
+      if (!response.ok && response.status === 404) {
+        actionPath = `simulation/actions/${baseFileName}.js`;
+        url = `https://api.github.com/repos/${owner}/${repo}/contents/${actionPath}`;
+        response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Ilumina-App',
+            'Accept': 'application/vnd.github.v3+json',
+            ...(process.env.GITHUB_TOKEN ? { 'Authorization': `token ${process.env.GITHUB_TOKEN}` } : {})
+          }
+        });
+      }
       
       if (!response.ok) {
         if (response.status === 404) {
