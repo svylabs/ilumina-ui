@@ -79,44 +79,14 @@ type HistoryLogEntry = {
 import HistoryComponent from "@/components/history-component";
 
 // Action Status Display Component
-function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
+function ActionStatusDisplay({ contractName, functionName }: {
   contractName: string;
   functionName: string;
-  actionStatuses: any;
 }) {
-  const getActionStatus = (contractName: string, functionName: string) => {
-    if (!actionStatuses?.data) return null;
-    
-    const key = `${contractName}.${functionName}`;
-    return actionStatuses.data[key] || null;
-  };
-
-  const actionStatus = getActionStatus(contractName, functionName);
-  
-  if (actionStatus) {
-    return (
-      <div className="flex items-center gap-2">
-        <span className={`px-2 py-1 rounded text-[10px] font-medium ${
-          actionStatus.status === 'success' ? 'bg-green-900/50 text-green-300' :
-          actionStatus.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
-          actionStatus.status === 'error' ? 'bg-red-900/50 text-red-300' :
-          'bg-gray-900/50 text-gray-400'
-        }`}>
-          {actionStatus.step || actionStatus.status}
-        </span>
-        <div className={`w-2 h-2 rounded-full ${
-          actionStatus.status === 'success' ? 'bg-green-400' :
-          actionStatus.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
-          actionStatus.status === 'error' ? 'bg-red-400' :
-          'bg-gray-500'
-        }`} />
-      </div>
-    );
-  }
-  
+  // Simple static display for now
   return (
     <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-      scheduled
+      ready
     </span>
   );
 }
@@ -5277,7 +5247,6 @@ export default function AnalysisPage() {
                                                           <ActionStatusDisplay 
                                                             contractName={action.contract_name}
                                                             functionName={action.function_name}
-                                                            actionStatuses={actionStatuses}
                                                           />
 
                                                           <a 
