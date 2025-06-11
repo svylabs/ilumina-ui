@@ -200,6 +200,21 @@ export const projectFiles = pgTable("project_files", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Table to store custom review comments from users
+export const customReviews = pgTable("custom_reviews", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  contractName: text("contract_name").notNull(),
+  functionName: text("function_name").notNull(),
+  lineNumber: integer("line_number").notNull(),
+  description: text("description").notNull(),
+  suggestedFix: text("suggested_fix"),
+  severity: text("severity").notNull().default("medium"), // low, medium, high, critical
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
   name: z.string().min(1),
@@ -245,6 +260,9 @@ export const selectChatMessageSchema = createSelectSchema(chatMessages);
 
 export const insertProjectFilesSchema = createInsertSchema(projectFiles);
 export const selectProjectFilesSchema = createSelectSchema(projectFiles);
+
+export const insertCustomReviewSchema = createInsertSchema(customReviews);
+export const selectCustomReviewSchema = createSelectSchema(customReviews);
 
 export type InsertSubmission = typeof submissions.$inferInsert;
 export type SelectSubmission = typeof submissions.$inferSelect;

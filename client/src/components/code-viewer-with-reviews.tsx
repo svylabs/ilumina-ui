@@ -1,17 +1,24 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageSquare, X, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MessageSquare, X, ChevronRight, Plus, Save } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface Review {
   line_number: number;
   description: string;
   function_name: string;
   suggested_fix: string;
+  is_custom?: boolean;
+  id?: string;
 }
 
 interface CodeViewerWithReviewsProps {
@@ -77,6 +84,103 @@ export default function CodeViewerWithReviews({
 }: CodeViewerWithReviewsProps) {
   const { data: code, isLoading, error } = useActionCode(projectId, contractName, functionName);
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
+  const [showAddReview, setShowAddReview] = useState<number | null>(null);
+  const [customReviews, setCustomReviews] = useState<Review[]>([]);
+  const [newReview, setNewReview] = useState({
+    line_number: 0,
+    description: '',
+    suggested_fix: '',
+    function_name: ''
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Function to automatically infer method name from line content
+  const inferFunctionName = (lineNumber: number, codeContent: string): string => {
+    const lines = codeContent.split('\n');
+    const currentLine = lines[lineNumber - 1]?.toLowerCase() || '';
+    
+    // Check for common patterns
+    if (currentLine.includes('import') || currentLine.includes('require')) return 'import';
+    if (currentLine.includes('constructor')) return 'constructor';
+    if (currentLine.includes('initialize') || currentLine.includes('init')) return 'initialize';
+    if (currentLine.includes('execute') || currentLine.includes('run')) return 'execute';
+    if (currentLine.includes('validate') || currentLine.includes('check')) return 'validate';
+    
+    // Look for function declarations nearby
+    for (let i = Math.max(0, lineNumber - 5); i < Math.min(lines.length, lineNumber + 5); i++) {
+      const line = lines[i]?.toLowerCase() || '';
+      if (line.includes('function ') || line.includes('def ') || line.includes('async ')) {
+        const match = line.match(/(?:function|def|async)\s+(\w+)/);
+        if (match) return match[1];
+      }
+    }
+    
+    return functionName; // Default to the current function name
+  };
+
+  // Mutation for saving custom reviews
+  const saveCustomReviewMutation = useMutation({
+    mutationFn: async (reviewData: Omit<Review, 'id'>) => {
+      const response = await apiRequest('POST', `/api/custom-reviews/${projectId}/${contractName}/${functionName}`, reviewData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Review Added",
+        description: "Your custom review has been saved successfully.",
+      });
+      setShowAddReview(null);
+      setNewReview({
+        line_number: 0,
+        description: '',
+        suggested_fix: '',
+        function_name: ''
+      });
+      // Refresh the reviews
+      queryClient.invalidateQueries({ queryKey: ['/api/code-review', projectId, contractName, functionName] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save custom review. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle adding a new review
+  const handleAddReview = (lineNumber: number) => {
+    const inferredFunction = inferFunctionName(lineNumber, code);
+    setNewReview({
+      line_number: lineNumber,
+      description: '',
+      suggested_fix: '',
+      function_name: inferredFunction
+    });
+    setShowAddReview(lineNumber);
+  };
+
+  // Handle saving the new review
+  const handleSaveReview = () => {
+    if (!newReview.description.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a description for the review.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    saveCustomReviewMutation.mutate({
+      line_number: newReview.line_number,
+      description: newReview.description,
+      suggested_fix: newReview.suggested_fix,
+      function_name: newReview.function_name,
+      is_custom: true
+    });
+  };
 
   // Debug logging
   console.log('CodeViewerWithReviews - reviews prop:', reviews);
