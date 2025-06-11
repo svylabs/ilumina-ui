@@ -97,17 +97,17 @@ function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
     return (
       <div className="flex items-center gap-2">
         <span className={`px-2 py-1 rounded text-[10px] font-medium ${
-          actionStatus.status === 'completed' ? 'bg-green-900/50 text-green-300' :
+          actionStatus.status === 'success' ? 'bg-green-900/50 text-green-300' :
           actionStatus.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
-          actionStatus.status === 'failed' ? 'bg-red-900/50 text-red-300' :
+          actionStatus.status === 'error' ? 'bg-red-900/50 text-red-300' :
           'bg-gray-900/50 text-gray-400'
         }`}>
-          {actionStatus.step}
+          {actionStatus.step || actionStatus.status}
         </span>
         <div className={`w-2 h-2 rounded-full ${
-          actionStatus.status === 'completed' ? 'bg-green-400' :
+          actionStatus.status === 'success' ? 'bg-green-400' :
           actionStatus.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
-          actionStatus.status === 'failed' ? 'bg-red-400' :
+          actionStatus.status === 'error' ? 'bg-red-400' :
           'bg-gray-500'
         }`} />
       </div>
@@ -116,7 +116,7 @@ function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
   
   return (
     <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-      pending
+      scheduled
     </span>
   );
 }
@@ -5274,47 +5274,11 @@ export default function AnalysisPage() {
                                                           </span>
                                                           
                                                           {/* Action Status Display */}
-                                                          {(() => {
-                                                            if (!actionStatuses?.data) {
-                                                              return (
-                                                                <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-                                                                  scheduled
-                                                                </span>
-                                                              );
-                                                            }
-                                                            
-                                                            const key = `${action.contract_name}.${action.function_name}`;
-                                                            const status = actionStatuses.data[key];
-                                                            
-                                                            if (!status) {
-                                                              return (
-                                                                <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-                                                                  scheduled
-                                                                </span>
-                                                              );
-                                                            }
-                                                            
-                                                            const statusColor = 
-                                                              status.status === 'success' ? 'bg-green-900/50 text-green-300' :
-                                                              status.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
-                                                              status.status === 'error' ? 'bg-red-900/50 text-red-300' :
-                                                              'bg-gray-900/50 text-gray-400';
-                                                            
-                                                            const dotColor = 
-                                                              status.status === 'success' ? 'bg-green-400' :
-                                                              status.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
-                                                              status.status === 'error' ? 'bg-red-400' :
-                                                              'bg-gray-500';
-                                                              
-                                                            return (
-                                                              <div className="flex items-center gap-2">
-                                                                <span className={`px-2 py-1 rounded text-[10px] font-medium ${statusColor}`}>
-                                                                  {status.step || status.status}
-                                                                </span>
-                                                                <div className={`w-2 h-2 rounded-full ${dotColor}`} />
-                                                              </div>
-                                                            );
-                                                          })()}
+                                                          <ActionStatusDisplay 
+                                                            contractName={action.contract_name}
+                                                            functionName={action.function_name}
+                                                            actionStatuses={actionStatuses}
+                                                          />
 
                                                           <a 
                                                             href={`/action/${id}/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
