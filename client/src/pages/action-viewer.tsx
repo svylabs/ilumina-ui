@@ -596,7 +596,8 @@ export default function ActionViewer() {
 
     setIsRetrying(true);
     try {
-      const step = actionStatus?.step === 'analyze_action' ? 'analyze_action' : 'implement_action';
+      // Map internal step names to expected API parameter values
+      const step = actionStatus?.step === 'analyze_action' ? 'analyze' : 'implement';
       
       const response = await fetch('/api/retry-action', {
         method: 'POST',
