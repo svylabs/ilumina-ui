@@ -54,7 +54,7 @@ const severityIcons = {
 
 export default function CodeReviewSection({ projectId, contractName, functionName }: CodeReviewSectionProps) {
   const { data: review, isLoading, error } = useCodeReview(projectId, contractName, functionName);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [isImplementing, setIsImplementing] = useState(false);
   const { toast } = useToast();
 

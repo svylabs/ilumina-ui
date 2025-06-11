@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle, MessageSquare, ExternalLink } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { MessageSquare, X, ChevronRight } from 'lucide-react';
 
 interface Review {
   line_number: number;
@@ -19,6 +17,19 @@ interface CodeViewerWithReviewsProps {
   contractName: string;
   functionName: string;
   reviews: Review[];
+}
+
+function useActionCode(projectId: string, contractName: string, functionName: string) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['/api/action-code', projectId, contractName, functionName],
+    enabled: !!(projectId && contractName && functionName)
+  });
+  
+  return {
+    data: data?.code || '',
+    isLoading,
+    error
+  };
 }
 
 const getSeverityFromDescription = (description: string): 'low' | 'medium' | 'high' | 'critical' => {
@@ -42,19 +53,12 @@ const severityColors = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30'
 };
 
-function useActionCode(projectId: string, contractName: string, functionName: string) {
-  return useQuery({
-    queryKey: ['/api/action-code', projectId, contractName, functionName],
-    queryFn: async () => {
-      const response = await fetch(`/api/action-code/${projectId}/${contractName}/${functionName}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch action code');
-      }
-      return response.text();
-    },
-    enabled: !!projectId && !!contractName && !!functionName
-  });
-}
+const severityLineColors = {
+  low: 'text-blue-400 bg-blue-500/20',
+  medium: 'text-yellow-400 bg-yellow-500/20',
+  high: 'text-orange-400 bg-orange-500/20',
+  critical: 'text-red-400 bg-red-500/20'
+};
 
 export default function CodeViewerWithReviews({ 
   projectId, 
@@ -63,29 +67,26 @@ export default function CodeViewerWithReviews({
   reviews 
 }: CodeViewerWithReviewsProps) {
   const { data: code, isLoading, error } = useActionCode(projectId, contractName, functionName);
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
 
   if (isLoading) {
     return (
-      <div className="animate-pulse bg-gray-800/30 h-64 rounded-lg flex items-center justify-center">
-        <span className="text-gray-400">Loading simulation code...</span>
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+        <span className="ml-3 text-gray-400">Loading code...</span>
       </div>
     );
   }
 
   if (error || !code) {
     return (
-      <Card className="bg-gray-800/30 border-gray-700">
-        <CardContent className="p-4 text-center">
-          <AlertTriangle className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
-          <p className="text-gray-400">Unable to load simulation code</p>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8 text-gray-400">
+        Failed to load action code.
+      </div>
     );
   }
 
-  // Create a map of line numbers to reviews for quick lookup
+  // Group reviews by line number
   const reviewsByLine = reviews.reduce((acc, review) => {
     if (!acc[review.line_number]) {
       acc[review.line_number] = [];
@@ -93,8 +94,6 @@ export default function CodeViewerWithReviews({
     acc[review.line_number].push(review);
     return acc;
   }, {} as Record<number, Review[]>);
-
-
 
   // Handle line clicks to toggle inline reviews
   const handleLineClick = (lineNumber: number) => {
@@ -110,228 +109,145 @@ export default function CodeViewerWithReviews({
     }
   };
 
-  // Custom line renderer for SyntaxHighlighter
-  const lineProps = (lineNumber: number) => {
-    const hasReviews = reviewsByLine[lineNumber];
-    if (hasReviews) {
-      const severity = hasReviews.reduce((highest, review) => {
-        const reviewSeverity = getSeverityFromDescription(review.description);
-        const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
-        return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
-      }, 'low' as 'low' | 'medium' | 'high' | 'critical');
-
-      return {
-        style: {
-          backgroundColor: severity === 'critical' ? 'rgba(239, 68, 68, 0.1)' :
-                          severity === 'high' ? 'rgba(245, 101, 101, 0.1)' :
-                          severity === 'medium' ? 'rgba(251, 191, 36, 0.1)' :
-                          'rgba(59, 130, 246, 0.1)',
-          borderLeft: `4px solid ${
-            severity === 'critical' ? '#dc2626' :
-            severity === 'high' ? '#ea580c' :
-            severity === 'medium' ? '#d97706' :
-            '#2563eb'
-          }`,
-          paddingLeft: '8px',
-          cursor: 'pointer'
-        },
-        'data-line-number': lineNumber,
-        className: 'review-line'
-      };
-    }
-    return {};
+  const getSeverityColor = (lineReviews: Review[]): string => {
+    const severity = lineReviews.reduce((highest, review) => {
+      const reviewSeverity = getSeverityFromDescription(review.description);
+      const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+      return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
+    }, 'low' as 'low' | 'medium' | 'high' | 'critical');
+    return severityLineColors[severity];
   };
 
   return (
     <div className="space-y-4">
-      {/* Code Display */}
       <div 
-        className="relative"
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          const lineElement = target.closest('span[data-line-number]') || target.closest('.review-line');
-          if (lineElement) {
-            const lineNumber = parseInt(lineElement.getAttribute('data-line-number') || '0');
-            if (lineNumber > 0) {
-              handleLineClick(lineNumber);
-            }
-          }
+        className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden"
+        style={{ 
+          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
         }}
       >
-        <SyntaxHighlighter
-          language="javascript"
-          style={vscDarkPlus}
-          showLineNumbers={true}
-          lineNumberStyle={{ 
-            color: '#6b7280', 
-            fontSize: '12px',
-            paddingRight: '16px',
-            minWidth: '40px'
-          }}
-          customStyle={{
-            backgroundColor: '#1f2937',
-            border: '1px solid #374151',
-            borderRadius: '8px',
-            fontSize: '14px',
-            lineHeight: '1.5'
-          }}
-          lineProps={lineProps}
-        >
-          {code}
-        </SyntaxHighlighter>
-
-        {/* Review Overlays - positioned above the code */}
-        {Array.from(expandedLines).map(lineNumber => {
+        {/* Render code with inline review overlays */}
+        {code.split('\n').map((line, index) => {
+          const lineNumber = index + 1;
+          const hasReviews = reviewsByLine[lineNumber];
+          const isExpanded = expandedLines.has(lineNumber);
           const lineReviews = reviewsByLine[lineNumber];
-          if (!lineReviews) return null;
-
-          const severity = lineReviews.reduce((highest, review) => {
-            const reviewSeverity = getSeverityFromDescription(review.description);
-            const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
-            return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
-          }, 'low' as 'low' | 'medium' | 'high' | 'critical');
-
+          
           return (
-            <div
-              key={lineNumber}
-              className="absolute left-0 right-0 z-50 pointer-events-auto"
-              style={{ 
-                top: `${(lineNumber - 1) * 21 + 20}px`,
-                marginLeft: '60px',
-                marginRight: '20px'
-              }}
-            >
-              <Card className="bg-gray-900 border-gray-600 shadow-2xl border-2">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className={severityColors[severity]}>
-                        {severity.toUpperCase()}
-                      </Badge>
-                      <span className="text-sm text-gray-300">
-                        Line {lineNumber} • {lineReviews[0].function_name}()
-                      </span>
-                    </div>
+            <div key={lineNumber}>
+              {/* Code line */}
+              <div className="flex hover:bg-gray-800/30 transition-colors">
+                {/* Line number */}
+                <div className="flex-shrink-0 w-12 pr-2 text-right text-xs select-none bg-gray-800 border-r border-gray-600">
+                  <button
+                    className={`w-full text-right px-1 py-1 text-xs leading-5 hover:bg-gray-700 transition-colors ${
+                      hasReviews 
+                        ? `${getSeverityColor(hasReviews)} cursor-pointer font-medium` 
+                        : 'text-gray-500'
+                    }`}
+                    onClick={() => hasReviews && handleLineClick(lineNumber)}
+                    disabled={!hasReviews}
+                    title={hasReviews ? `${hasReviews.length} review(s) - Click to toggle` : ''}
+                  >
+                    {lineNumber}
+                  </button>
+                </div>
+                
+                {/* Code content */}
+                <div className="flex-1 bg-gray-900 px-4 py-1">
+                  <pre 
+                    className="text-sm leading-5 text-gray-100"
+                    style={{ margin: 0, fontFamily: 'inherit' }}
+                  >
+                    <code>{line || ' '}</code>
+                  </pre>
+                </div>
+
+                {/* Review indicator */}
+                {hasReviews && (
+                  <div className="flex-shrink-0 w-8 flex items-center justify-center">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLineClick(lineNumber);
-                      }}
-                      className="text-gray-400 hover:text-white h-6 w-6 p-0"
+                      className={`h-5 w-5 p-0 ${getSeverityColor(hasReviews)} hover:opacity-80`}
+                      onClick={() => handleLineClick(lineNumber)}
+                      title={`${hasReviews.length} review(s) on line ${lineNumber}`}
                     >
-                      ×
+                      <MessageSquare className="h-3 w-3" />
                     </Button>
                   </div>
-                  
-                  {lineReviews.map((review, index) => (
-                    <div key={index} className="space-y-3 mb-4 last:mb-0">
-                      <div>
-                        <h4 className="text-sm font-medium text-white mb-1">Issue</h4>
-                        <p className="text-sm text-gray-300">{review.description}</p>
+                )}
+              </div>
+
+              {/* Review overlay - appears directly below the line */}
+              {isExpanded && lineReviews && (
+                <div className="ml-12 mr-4 mt-1 mb-2">
+                  <Card className="bg-gray-900 border-gray-600 shadow-2xl border-2">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Badge className={severityColors[getSeverityFromDescription(lineReviews[0].description)]}>
+                            {getSeverityFromDescription(lineReviews[0].description).toUpperCase()}
+                          </Badge>
+                          <span className="text-sm text-gray-300">
+                            Line {lineNumber} • {lineReviews[0].function_name}()
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleLineClick(lineNumber)}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      
-                      <div className="bg-blue-900/30 p-3 rounded border-l-2 border-blue-500">
-                        <h4 className="text-sm font-medium text-blue-400 mb-1">Suggested Fix</h4>
-                        <p className="text-sm text-blue-300">{review.suggested_fix}</p>
+
+                      <div className="space-y-3">
+                        {lineReviews.map((review, reviewIndex) => (
+                          <div key={reviewIndex} className="space-y-2">
+                            <div className="text-sm text-gray-200">
+                              {review.description}
+                            </div>
+                            {review.suggested_fix && (
+                              <div className="bg-gray-800/50 border border-gray-700 rounded-md p-3">
+                                <div className="text-xs text-green-400 font-medium mb-1">Suggested Fix:</div>
+                                <div className="text-sm text-gray-300">
+                                  {review.suggested_fix}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
           );
         })}
+      </div>
 
-        {/* Review indicators on the right */}
-        <div className="absolute top-4 right-4 space-y-1">
-          {Object.entries(reviewsByLine).map(([lineNumber, lineReviews]) => {
-            const severity = lineReviews.reduce((highest, review) => {
-              const reviewSeverity = getSeverityFromDescription(review.description);
-              const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
-              return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
-            }, 'low' as 'low' | 'medium' | 'high' | 'critical');
-
-            const isExpanded = expandedLines.has(parseInt(lineNumber));
-
-            return (
-              <Button
-                key={lineNumber}
-                variant="ghost"
-                size="sm"
-                className={`h-6 px-2 text-xs ${severityColors[severity]} hover:opacity-80 ${isExpanded ? 'ring-2 ring-blue-500' : ''}`}
-                onClick={() => handleLineClick(parseInt(lineNumber))}
-              >
-                <MessageSquare className="h-3 w-3 mr-1" />
-                L{lineNumber}
-              </Button>
-            );
-          })}
+      {/* Review summary */}
+      {reviews.length > 0 && (
+        <div className="flex items-center gap-4 text-sm text-gray-400">
+          <span>{reviews.length} review{reviews.length !== 1 ? 's' : ''} found</span>
+          <div className="flex gap-2">
+            {Object.entries(
+              reviews.reduce((acc, review) => {
+                const severity = getSeverityFromDescription(review.description);
+                acc[severity] = (acc[severity] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>)
+            ).map(([severity, count]) => (
+              <Badge key={severity} className={severityColors[severity as keyof typeof severityColors]} variant="outline">
+                {count} {severity}
+              </Badge>
+            ))}
+          </div>
         </div>
-      </div>
-
-      {/* Selected Review Details */}
-      {selectedReview && (
-        <Card className="bg-gray-800/50 border-gray-700">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Badge className={severityColors[getSeverityFromDescription(selectedReview.description)]}>
-                  {getSeverityFromDescription(selectedReview.description).toUpperCase()}
-                </Badge>
-                <span className="text-sm text-gray-300">
-                  Line {selectedReview.line_number} • {selectedReview.function_name}()
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedReview(null)}
-                className="text-gray-400 hover:text-white"
-              >
-                ×
-              </Button>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <h4 className="text-sm font-medium text-white mb-1">Issue</h4>
-                <p className="text-sm text-gray-300">{selectedReview.description}</p>
-              </div>
-              
-              <div className="bg-blue-900/30 p-3 rounded border-l-2 border-blue-500">
-                <h4 className="text-sm font-medium text-blue-400 mb-1">Suggested Fix</h4>
-                <p className="text-sm text-blue-300">{selectedReview.suggested_fix}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       )}
-
-      {/* Summary */}
-      <div className="text-xs text-gray-500 flex items-center justify-between">
-        <span>
-          {reviews.length} review{reviews.length !== 1 ? 's' : ''} found • 
-          Click highlighted lines for details
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-gray-400 hover:text-white h-6 px-2"
-          asChild
-        >
-          <a 
-            href={`https://github.com/search?q=repo%3A${projectId}+${contractName}+${functionName}&type=code`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1"
-          >
-            <ExternalLink className="h-3 w-3" />
-            View on GitHub
-          </a>
-        </Button>
-      </div>
     </div>
   );
 }
