@@ -4,22 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, X, ChevronRight } from 'lucide-react';
-
-// Simple TypeScript syntax highlighter
-function highlightTypeScript(code: string): string {
-  if (!code.trim()) return '&nbsp;';
-  
-  return code
-    .replace(/\b(function|const|let|var|if|else|for|while|return|import|export|class|interface|type|async|await|try|catch|finally)\b/g, '<span style="color: #569cd6;">$1</span>')
-    .replace(/\b(string|number|boolean|void|any|unknown|never)\b/g, '<span style="color: #4ec9b0;">$1</span>')
-    .replace(/"([^"]*)"/g, '<span style="color: #ce9178;">"$1"</span>')
-    .replace(/'([^']*)'/g, '<span style="color: #ce9178;">\'$1\'</span>')
-    .replace(/`([^`]*)`/g, '<span style="color: #ce9178;">`$1`</span>')
-    .replace(/\/\/.*$/gm, '<span style="color: #6a9955;">$&</span>')
-    .replace(/\/\*[\s\S]*?\*\//g, '<span style="color: #6a9955;">$&</span>')
-    .replace(/\b(\d+\.?\d*)\b/g, '<span style="color: #b5cea8;">$1</span>')
-    .replace(/([{}()[\];,.])/g, '<span style="color: #d4d4d4;">$1</span>');
-}
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface Review {
   line_number: number;
@@ -142,116 +128,134 @@ export default function CodeViewerWithReviews({
     return severityLineColors[severity];
   };
 
+  // Custom style for syntax highlighter to match dark theme
+  const customStyle = {
+    ...vscDarkPlus,
+    'pre[class*="language-"]': {
+      ...vscDarkPlus['pre[class*="language-"]'],
+      background: 'rgba(17, 24, 39, 0.5)',
+      margin: 0,
+    },
+    'code[class*="language-"]': {
+      ...vscDarkPlus['code[class*="language-"]'],
+      background: 'transparent',
+    }
+  };
+
   return (
-    <div className="h-full">
-      <div 
-        className="bg-gray-900 border border-gray-700 rounded-lg overflow-auto h-full"
-        style={{ 
-          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
-        }}
-      >
-        {/* Render code with syntax highlighting and inline review overlays */}
-        {code.split('\n').map((line, index) => {
-          const lineNumber = index + 1;
-          const hasReviews = reviewsByLine[lineNumber];
-          const isExpanded = expandedLines.has(lineNumber);
+    <div className="h-full relative">
+      <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden h-full">
+        {/* Custom line number renderer with review indicators */}
+        <SyntaxHighlighter
+          language="typescript"
+          style={customStyle}
+          showLineNumbers={true}
+          lineNumberContainerStyle={{
+            float: 'left',
+            paddingRight: '10px',
+            backgroundColor: 'rgb(31, 41, 55)',
+            borderRight: '1px solid rgb(75, 85, 99)',
+            userSelect: 'none'
+          }}
+          lineNumberStyle={(lineNumber) => {
+            const hasReviews = reviewsByLine[lineNumber];
+            return {
+              color: hasReviews ? getSeverityColor(hasReviews).includes('text-orange') ? '#fb923c' : 
+                                  getSeverityColor(hasReviews).includes('text-blue') ? '#60a5fa' :
+                                  getSeverityColor(hasReviews).includes('text-red') ? '#f87171' : '#6b7280' : '#6b7280',
+              fontSize: '12px',
+              minWidth: '3rem',
+              textAlign: 'right',
+              paddingRight: '1rem',
+              cursor: hasReviews ? 'pointer' : 'default',
+              fontWeight: hasReviews ? 'bold' : 'normal'
+            };
+          }}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            background: 'rgba(17, 24, 39, 0.5)',
+            fontSize: '14px',
+            height: '100%',
+            overflow: 'auto'
+          }}
+          wrapLines={true}
+          lineProps={(lineNumber) => {
+            const hasReviews = reviewsByLine[lineNumber];
+            return {
+              style: { 
+                display: 'block',
+                backgroundColor: hasReviews ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
+              },
+              onClick: hasReviews ? () => handleLineClick(lineNumber) : undefined,
+              onMouseEnter: hasReviews ? (e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+              } : undefined,
+              onMouseLeave: hasReviews ? (e) => {
+                e.currentTarget.style.backgroundColor = hasReviews ? 'rgba(59, 130, 246, 0.1)' : 'transparent';
+              } : undefined,
+              title: hasReviews ? `${hasReviews.length} review(s) on line ${lineNumber} - Click to view` : ''
+            };
+          }}
+        >
+          {code}
+        </SyntaxHighlighter>
+
+        {/* Review overlays positioned absolutely */}
+        {Object.entries(expandedLines).map(([lineNumberStr]) => {
+          const lineNumber = parseInt(lineNumberStr);
           const lineReviews = reviewsByLine[lineNumber];
           
-          return (
-            <div key={lineNumber}>
-              {/* Code line */}
-              <div className="flex hover:bg-gray-800/30 transition-colors">
-                {/* Line number */}
-                <div className="flex-shrink-0 w-12 pr-2 text-right text-xs select-none bg-gray-800 border-r border-gray-600">
-                  <button
-                    className={`w-full text-right px-1 py-1 text-xs leading-5 hover:bg-gray-700 transition-colors ${
-                      hasReviews 
-                        ? `${getSeverityColor(hasReviews)} cursor-pointer font-medium` 
-                        : 'text-gray-500'
-                    }`}
-                    onClick={() => hasReviews && handleLineClick(lineNumber)}
-                    disabled={!hasReviews}
-                    title={hasReviews ? `${hasReviews.length} review(s) - Click to toggle` : ''}
-                  >
-                    {lineNumber}
-                  </button>
-                </div>
-                
-                {/* Code content with syntax highlighting */}
-                <div className="flex-1 bg-gray-900 px-4 py-1">
-                  <pre 
-                    className="text-sm leading-5"
-                    style={{ margin: 0, fontFamily: 'inherit' }}
-                  >
-                    <code className="language-typescript text-gray-100"
-                      dangerouslySetInnerHTML={{
-                        __html: highlightTypeScript(line || ' ')
-                      }}
-                    />
-                  </pre>
-                </div>
+          if (!expandedLines.has(lineNumber) || !lineReviews) return null;
 
-                {/* Review indicator */}
-                {hasReviews && (
-                  <div className="flex-shrink-0 w-8 flex items-center justify-center">
+          return (
+            <div
+              key={lineNumber}
+              className="absolute left-4 right-4 z-10"
+              style={{
+                top: `${lineNumber * 20 + 40}px`, // Approximate line height positioning
+              }}
+            >
+              <Card className="bg-gray-900 border-gray-600 shadow-2xl border-2">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className={severityColors[getSeverityFromDescription(lineReviews[0].description)]}>
+                        {getSeverityFromDescription(lineReviews[0].description).toUpperCase()}
+                      </Badge>
+                      <span className="text-sm text-gray-300">
+                        Line {lineNumber} • {lineReviews[0].function_name}()
+                      </span>
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`h-5 w-5 p-0 ${getSeverityColor(hasReviews)} hover:opacity-80`}
                       onClick={() => handleLineClick(lineNumber)}
-                      title={`${hasReviews.length} review(s) on line ${lineNumber}`}
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-white"
                     >
-                      <MessageSquare className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
-                )}
-              </div>
 
-              {/* Review overlay - appears directly below the line */}
-              {isExpanded && lineReviews && (
-                <div className="ml-12 mr-4 mt-1 mb-2">
-                  <Card className="bg-gray-900 border-gray-600 shadow-2xl border-2">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Badge className={severityColors[getSeverityFromDescription(lineReviews[0].description)]}>
-                            {getSeverityFromDescription(lineReviews[0].description).toUpperCase()}
-                          </Badge>
-                          <span className="text-sm text-gray-300">
-                            Line {lineNumber} • {lineReviews[0].function_name}()
-                          </span>
+                  <div className="space-y-3">
+                    {lineReviews.map((review, reviewIndex) => (
+                      <div key={reviewIndex} className="space-y-2">
+                        <div className="text-sm text-gray-200">
+                          {review.description}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleLineClick(lineNumber)}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {lineReviews.map((review, reviewIndex) => (
-                          <div key={reviewIndex} className="space-y-2">
-                            <div className="text-sm text-gray-200">
-                              {review.description}
+                        {review.suggested_fix && (
+                          <div className="bg-gray-800/50 border border-gray-700 rounded-md p-3">
+                            <div className="text-xs text-green-400 font-medium mb-1">Suggested Fix:</div>
+                            <div className="text-sm text-gray-300">
+                              {review.suggested_fix}
                             </div>
-                            {review.suggested_fix && (
-                              <div className="bg-gray-800/50 border border-gray-700 rounded-md p-3">
-                                <div className="text-xs text-green-400 font-medium mb-1">Suggested Fix:</div>
-                                <div className="text-sm text-gray-300">
-                                  {review.suggested_fix}
-                                </div>
-                              </div>
-                            )}
                           </div>
-                        ))}
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           );
         })}
