@@ -86,17 +86,23 @@ function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
 }) {
   // Get action status from the fetched data
   const getActionStatus = (contractName: string, functionName: string) => {
-    if (!actionStatuses?.actions) return null;
+    if (!actionStatuses?.action_analyses) return null;
     
-    const action = actionStatuses.actions.find((a: any) => 
+    const action = actionStatuses.action_analyses.find((a: any) => 
       a.contract_name === contractName && a.function_name === functionName
     );
     
-    return action ? {
-      status: action.status || 'scheduled',
-      step: action.current_step || null,
-      progress: action.progress || 0
-    } : null;
+    if (!action?.metadata?.completed_steps) return null;
+    
+    // Get the latest step status
+    const completedSteps = action.metadata.completed_steps;
+    const latestStep = completedSteps[completedSteps.length - 1];
+    
+    return {
+      status: latestStep.status || 'scheduled',
+      step: latestStep.step || null,
+      progress: completedSteps.length
+    };
   };
 
   const actionStatus = getActionStatus(contractName, functionName);
