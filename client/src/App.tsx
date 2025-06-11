@@ -31,6 +31,7 @@ function Router() {
         <ProtectedRoute path="/results/:id" component={ResultsPage} />
         <ProtectedRoute path="/analysis/:id" component={AnalysisPage} />
         <ProtectedRoute path="/action/:projectId/:submissionId/:actorIndex/:actionIndex" component={ActionViewer} />
+        <ProtectedRoute path="/project/:projectId/action/:contractName/:functionName" component={ActionViewer} />
         <ProtectedRoute path="/teams" component={TeamsPage} />
         <ProtectedRoute path="/teams/:id" component={TeamDetailPage} />
         <Route component={NotFound} />

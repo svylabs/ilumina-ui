@@ -94,17 +94,30 @@ export default function CodeViewerWithReviews({
     return acc;
   }, {} as Record<number, Review[]>);
 
+  // Debug logging
+  console.log('Reviews data:', reviews);
+  console.log('Reviews by line:', reviewsByLine);
+  console.log('Expanded lines:', Array.from(expandedLines));
+  
+  // Also log when overlay rendering happens
+  console.log('Total expanded lines to render:', expandedLines.size);
+
   // Handle line clicks to toggle inline reviews
   const handleLineClick = (lineNumber: number) => {
+    console.log('Line clicked:', lineNumber);
     const hasReviews = reviewsByLine[lineNumber];
+    console.log('Has reviews:', hasReviews);
     if (hasReviews) {
       const newExpandedLines = new Set(expandedLines);
       if (expandedLines.has(lineNumber)) {
         newExpandedLines.delete(lineNumber);
+        console.log('Closing overlay for line:', lineNumber);
       } else {
         newExpandedLines.add(lineNumber);
+        console.log('Opening overlay for line:', lineNumber);
       }
       setExpandedLines(newExpandedLines);
+      console.log('Expanded lines:', Array.from(newExpandedLines));
     }
   };
 
@@ -178,10 +191,15 @@ export default function CodeViewerWithReviews({
           {code}
         </SyntaxHighlighter>
 
-        {/* Review Overlays */}
+        {/* Review Overlays - positioned above the code */}
         {Array.from(expandedLines).map(lineNumber => {
           const lineReviews = reviewsByLine[lineNumber];
-          if (!lineReviews) return null;
+          if (!lineReviews) {
+            console.log('No reviews found for expanded line:', lineNumber);
+            return null;
+          }
+
+          console.log('Rendering overlay for line:', lineNumber, 'with reviews:', lineReviews);
 
           const severity = lineReviews.reduce((highest, review) => {
             const reviewSeverity = getSeverityFromDescription(review.description);
@@ -189,17 +207,16 @@ export default function CodeViewerWithReviews({
             return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
           }, 'low' as 'low' | 'medium' | 'high' | 'critical');
 
-          // Calculate approximate position based on line number and line height
-          const lineHeight = 24; // Approximate line height in pixels
-          const topOffset = (lineNumber - 1) * lineHeight + 50; // 50px for padding/header
-
           return (
             <div
               key={lineNumber}
-              className="absolute left-4 right-4 z-20"
-              style={{ top: `${topOffset}px` }}
+              className="absolute left-4 right-4 z-50 pointer-events-auto"
+              style={{ 
+                top: `${(lineNumber - 1) * 21 + 40}px`,
+                maxWidth: 'calc(100% - 2rem)'
+              }}
             >
-              <Card className="bg-gray-800/95 border-gray-600 shadow-xl backdrop-blur-sm">
+              <Card className="bg-gray-900/98 border-gray-600 shadow-2xl border-2">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -213,7 +230,10 @@ export default function CodeViewerWithReviews({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleLineClick(lineNumber)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLineClick(lineNumber);
+                      }}
                       className="text-gray-400 hover:text-white h-6 w-6 p-0"
                     >
                       ×
