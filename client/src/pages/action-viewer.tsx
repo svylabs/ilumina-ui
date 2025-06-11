@@ -1,7 +1,7 @@
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, FileText, Code2, Settings, Users, Box, ExternalLink, Shield } from "lucide-react";
+import { ArrowLeft, FileText, Code2, Settings, Users, Box, ExternalLink, Shield, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,37 @@ import { Separator } from "@/components/ui/separator";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import CodeReviewSection from "@/components/code-review-section";
+
+// Hook to fetch action status data
+function useActionStatus(submissionId: string | undefined, contractName: string, functionName: string) {
+  return useQuery({
+    queryKey: ['/api/action-statuses', submissionId, contractName, functionName],
+    queryFn: async () => {
+      if (!submissionId) throw new Error('No submission ID');
+      
+      const response = await fetch(`/api/action-statuses/${submissionId}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch action statuses: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Find the specific action status
+      const action = data.action_analyses?.find((a: any) => 
+        a.contract_name === contractName && a.function_name === functionName
+      );
+      
+      return action || null;
+    },
+    enabled: !!submissionId && !!contractName && !!functionName,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 10 * 1000, // Refetch every 10 seconds
+    retry: 1
+  });
+}
 
 // Define the useActionFile hook directly in this file
 function useActionFile(submissionId: string | undefined, contractName: string, functionName: string, fileType: 'json' | 'ts') {
@@ -527,7 +558,50 @@ export default function ActionViewer() {
     enabled: !!submissionId
   });
 
+  // Fetch action status information
+  const { data: actionStatus, isLoading: statusLoading, refetch: refetchStatus } = useActionStatus(
+    submissionId, 
+    contractName, 
+    functionName
+  );
+
   const [activeTab, setActiveTab] = useState("action-summary");
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  // Retry action handler
+  const handleRetryAction = async () => {
+    if (!submissionId || !contractName || !functionName || isRetrying) return;
+
+    setIsRetrying(true);
+    try {
+      const step = actionStatus?.step === 'analyze_action' ? 'analyze_action' : 'implement_action';
+      
+      const response = await fetch('/api/retry-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          submission_id: submissionId,
+          contract_name: contractName,
+          function_name: functionName,
+          step: step
+        })
+      });
+
+      if (response.ok) {
+        // Refetch status after retry
+        await refetchStatus();
+      } else {
+        console.error('Failed to retry action:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error retrying action:', error);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   // Debug logging
   console.log('Raw params:', params);
@@ -631,6 +705,71 @@ export default function ActionViewer() {
               </Button>
             </div>
           </div>
+
+          {/* Status Information Row */}
+          {actionStatus && (
+            <div className="mt-4 pt-4 border-t border-gray-800">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    actionStatus.status === 'success' ? 'bg-green-500' :
+                    actionStatus.status === 'error' ? 'bg-red-500' :
+                    actionStatus.status === 'in_progress' ? 'bg-yellow-500' :
+                    'bg-gray-500'
+                  }`} />
+                  <div>
+                    <span className="text-gray-400">Status:</span>
+                    <p className={`font-medium capitalize ${
+                      actionStatus.status === 'success' ? 'text-green-400' :
+                      actionStatus.status === 'error' ? 'text-red-400' :
+                      actionStatus.status === 'in_progress' ? 'text-yellow-400' :
+                      'text-gray-400'
+                    }`}>
+                      {actionStatus.status}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-orange-400" />
+                  <div>
+                    <span className="text-gray-400">Step:</span>
+                    <p className="text-white font-medium">{actionStatus.step || 'Unknown'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div>
+                    <span className="text-gray-400">Last Updated:</span>
+                    <p className="text-white font-medium">
+                      {actionStatus.last_updated ? new Date(actionStatus.last_updated).toLocaleString() : 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end">
+                  {actionStatus.status === 'error' && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={handleRetryAction}
+                      disabled={isRetrying}
+                      className="bg-red-600/20 border-red-600 text-red-400 hover:bg-red-600/30"
+                    >
+                      {isRetrying ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full mr-2" />
+                          Retrying...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Retry Action
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           
           {actionSummary && (
             <div className="mt-3 pt-3 border-t border-gray-800">
