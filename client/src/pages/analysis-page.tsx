@@ -478,6 +478,21 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Helper function to get action status
+  const getActionStatus = (contractName: string, functionName: string) => {
+    if (!actionStatuses?.actions) return null;
+    
+    const action = actionStatuses.actions.find((a: any) => 
+      a.contract_name === contractName && a.function_name === functionName
+    );
+    
+    return action ? {
+      step: action.current_step || 'pending',
+      status: action.status || 'pending',
+      progress: action.progress || 0
+    } : null;
+  };
+
   // Fetch action statuses for the test_setup section
   useEffect(() => {
     if (!submissionId) return;
@@ -505,21 +520,6 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
     fetchActionStatuses();
   }, [submissionId]);
 
-  // Helper function to get action status
-  const getActionStatus = (contractName: string, functionName: string) => {
-    if (!actionStatuses?.actions) return null;
-    
-    const action = actionStatuses.actions.find((a: any) => 
-      a.contract_name === contractName && a.function_name === functionName
-    );
-    
-    return action ? {
-      step: action.current_step || 'pending',
-      status: action.status || 'pending',
-      progress: action.progress || 0
-    } : null;
-  };
-  
   // Function to fetch batch simulations
   const fetchBatchSimulations = async (batchId: string) => {
     if (!submissionId || !batchId) return;
