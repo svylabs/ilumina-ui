@@ -151,6 +151,54 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication
   setupAuth(app);
   
+  // API endpoint to retry failed actions - placed early to prevent route conflicts
+  app.post("/api/retry-action", async (req, res) => {
+    console.log("Retry action endpoint called with body:", req.body);
+    try {
+      const { submission_id, contract_name, function_name, step } = req.body;
+      
+      if (!submission_id || !contract_name || !function_name || !step) {
+        return res.status(400).json({ 
+          error: "Missing required parameters: submission_id, contract_name, function_name, step" 
+        });
+      }
+
+      // Determine the correct step to retry
+      let retryStep = '';
+      if (step === 'analyze') {
+        retryStep = 'analyze_action';
+      } else if (step === 'implement') {
+        retryStep = 'implement_action';
+      } else {
+        return res.status(400).json({ 
+          error: `Invalid step: ${step}. Expected 'analyze' or 'implement'` 
+        });
+      }
+
+      // Call the external API to retry the action
+      const response = await callExternalIluminaAPI('/analyze', 'POST', {
+        submission_id,
+        step: retryStep,
+        contract_name,
+        function_name
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to retry action: ${response.status} ${errorText}`);
+        return res.status(response.status).json({ 
+          error: `Failed to retry action: ${errorText}` 
+        });
+      }
+      
+      const result = await response.json();
+      return res.json(result);
+    } catch (error) {
+      console.error("Error retrying action:", error);
+      return res.status(500).json({ error: "Failed to retry action" });
+    }
+  });
+  
   // Now let's continue with the rest of our routes
   
   app.get("/api/submission-details/:submission_id", async (req, res) => {
@@ -209,54 +257,6 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching action statuses:", error);
       return res.status(500).json({ error: "Failed to fetch action statuses" });
-    }
-  });
-
-  // API endpoint to retry failed actions
-  app.post("/api/retry-action", async (req, res) => {
-    console.log("Retry action endpoint called with body:", req.body);
-    try {
-      const { submission_id, contract_name, function_name, step } = req.body;
-      
-      if (!submission_id || !contract_name || !function_name || !step) {
-        return res.status(400).json({ 
-          error: "Missing required parameters: submission_id, contract_name, function_name, step" 
-        });
-      }
-
-      // Determine the correct step to retry
-      let retryStep = '';
-      if (step === 'analyze') {
-        retryStep = 'analyze_action';
-      } else if (step === 'implement') {
-        retryStep = 'implement_action';
-      } else {
-        return res.status(400).json({ 
-          error: `Invalid step: ${step}. Expected 'analyze' or 'implement'` 
-        });
-      }
-
-      // Call the external API to retry the action
-      const response = await callExternalIluminaAPI('/analyze', 'POST', {
-        submission_id,
-        step: retryStep,
-        contract_name,
-        function_name
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Failed to retry action: ${response.status} ${errorText}`);
-        return res.status(response.status).json({ 
-          error: `Failed to retry action: ${errorText}` 
-        });
-      }
-      
-      const result = await response.json();
-      return res.json(result);
-    } catch (error) {
-      console.error("Error retrying action:", error);
-      return res.status(500).json({ error: "Failed to retry action" });
     }
   });
   
