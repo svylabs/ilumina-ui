@@ -1,7 +1,7 @@
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, FileText, Code2, Settings, Users, Box, ExternalLink } from "lucide-react";
+import { ArrowLeft, FileText, Code2, Settings, Users, Box, ExternalLink, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import CodeReviewSection from "@/components/code-review-section";
 
 // Define the useActionFile hook directly in this file
 function useActionFile(submissionId: string | undefined, contractName: string, functionName: string, fileType: 'json' | 'ts') {
@@ -623,7 +624,7 @@ export default function ActionViewer() {
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="border-b border-gray-800 px-6 py-4">
-                <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-gray-800/50">
+                <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-gray-800/50">
                   <TabsTrigger value="action-summary" className="text-sm">
                     <FileText className="h-4 w-4 mr-1" />
                     Action Summary
@@ -639,6 +640,10 @@ export default function ActionViewer() {
                   <TabsTrigger value="simulation-code" className="text-sm">
                     <Box className="h-4 w-4 mr-1" />
                     Simulation Code
+                  </TabsTrigger>
+                  <TabsTrigger value="code-review" className="text-sm">
+                    <Shield className="h-4 w-4 mr-1" />
+                    Code Review
                   </TabsTrigger>
                 </TabsList>
               </div>
