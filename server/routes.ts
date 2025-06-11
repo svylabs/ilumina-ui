@@ -4207,6 +4207,54 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // API endpoint to get action code for an action
+  app.get("/api/action-code/:projectId/:contractName/:functionName", async (req, res) => {
+    const { projectId, contractName, functionName } = req.params;
+    
+    try {
+      // Get the simulation repository information
+      const repoResponse = await fetch(`http://localhost:5000/api/simulation-repo/${projectId}`);
+      if (!repoResponse.ok) {
+        return res.status(404).json({ error: 'Simulation repository not found' });
+      }
+      
+      const repoData = await repoResponse.json();
+      const { owner, repo } = repoData;
+      
+      // Construct the path to the action file - it's in simulation/actions/
+      const actionPath = `simulation/actions/${contractName.toLowerCase()}_${functionName.toLowerCase()}.js`;
+      
+      // Fetch the action code file from GitHub
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${actionPath}`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Ilumina-App',
+          'Accept': 'application/vnd.github.v3+json',
+          ...(process.env.GITHUB_TOKEN ? { 'Authorization': `token ${process.env.GITHUB_TOKEN}` } : {})
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return res.status(404).json({ error: 'Action code file not found' });
+        }
+        return res.status(response.status).json({ error: `GitHub API error: ${response.statusText}` });
+      }
+      
+      const fileData = await response.json();
+      
+      // Decode the base64 content
+      const content = Buffer.from(fileData.content, 'base64').toString('utf8');
+      
+      // Return as plain text
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(content);
+    } catch (error) {
+      console.error('Action code fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch action code' });
+    }
+  });
+
   // Get user's projects
   app.get("/api/projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

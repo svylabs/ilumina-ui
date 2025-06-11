@@ -16,6 +16,7 @@ import {
   Play
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import CodeViewerWithReviews from './code-viewer-with-reviews';
 
 interface CodeReviewSectionProps {
   projectId: string;
@@ -203,26 +204,12 @@ export default function CodeReviewSection({ projectId, contractName, functionNam
             </CollapsibleTrigger>
             
             <CollapsibleContent className="space-y-3 mt-3">
-              {review.issues.map((issue, index) => (
-                <div key={index} className="bg-gray-800/30 p-3 rounded-lg border-l-4 border-orange-500">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge className={severityColors[issue.severity]} variant="outline">
-                        {issue.severity.toUpperCase()}
-                      </Badge>
-                      <span className="font-medium text-white text-sm">{issue.type}</span>
-                      {issue.line_number && (
-                        <span className="text-xs text-gray-400">Line {issue.line_number}</span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-gray-300 text-sm mb-2">{issue.description}</p>
-                  <div className="bg-blue-900/30 p-2 rounded text-sm">
-                    <span className="text-blue-400 font-medium">Recommendation: </span>
-                    <span className="text-blue-300">{issue.recommendation}</span>
-                  </div>
-                </div>
-              ))}
+              <CodeViewerWithReviews 
+                projectId={projectId}
+                contractName={contractName}
+                functionName={functionName}
+                reviews={review.reviews}
+              />
             </CollapsibleContent>
           </Collapsible>
         )}
