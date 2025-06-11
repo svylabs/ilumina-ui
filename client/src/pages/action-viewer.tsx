@@ -599,13 +599,13 @@ export default function ActionViewer() {
       // Debug the current action status and step
       console.log('Action status for retry:', actionStatus);
       console.log('Current step value:', actionStatus?.step);
+      console.log('Current status value:', actionStatus?.status);
       
       // Use the step directly from the action analyses data
-      // The backend expects 'analyze' or 'implement' but the data contains 'analyze_action' or 'implement_action'
       let step = actionStatus?.step;
       if (!step) {
-        console.log('No step found, defaulting to analyze_action');
-        step = 'analyze_action';
+        console.log('No step found, defaulting to analyze');
+        step = 'analyze';
       }
       
       console.log('Sending retry request with step:', step);
