@@ -469,9 +469,56 @@ function SimulationsComponent({ analysis, deploymentVerified = false, submission
   const [viewingBatchId, setViewingBatchId] = useState<string | null>(null);
   const [currentBatch, setCurrentBatch] = useState<SimulationRun | null>(null);
   const [isLoadingBatch, setIsLoadingBatch] = useState(false);
+
+  // Action status state
+  const [actionStatuses, setActionStatuses] = useState<any>(null);
+  const [isLoadingActionStatuses, setIsLoadingActionStatuses] = useState(false);
+  const [actionStatusError, setActionStatusError] = useState<string | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Fetch action statuses for the test_setup section
+  useEffect(() => {
+    if (!submissionId) return;
+
+    const fetchActionStatuses = async () => {
+      setIsLoadingActionStatuses(true);
+      setActionStatusError(null);
+      
+      try {
+        const response = await fetch(`/api/action-statuses/${submissionId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setActionStatuses(data);
+        } else {
+          setActionStatusError('Failed to fetch action statuses');
+        }
+      } catch (error) {
+        console.error('Error fetching action statuses:', error);
+        setActionStatusError('Failed to fetch action statuses');
+      } finally {
+        setIsLoadingActionStatuses(false);
+      }
+    };
+
+    fetchActionStatuses();
+  }, [submissionId]);
+
+  // Helper function to get action status
+  const getActionStatus = (contractName: string, functionName: string) => {
+    if (!actionStatuses?.actions) return null;
+    
+    const action = actionStatuses.actions.find((a: any) => 
+      a.contract_name === contractName && a.function_name === functionName
+    );
+    
+    return action ? {
+      step: action.current_step || 'pending',
+      status: action.status || 'pending',
+      progress: action.progress || 0
+    } : null;
+  };
   
   // Function to fetch batch simulations
   const fetchBatchSimulations = async (batchId: string) => {
@@ -5164,18 +5211,52 @@ export default function AnalysisPage() {
                                                 </div>
                                                 
                                                 <div className="space-y-3">
-                                                  <h5 className="text-sm font-medium text-blue-300">Actions</h5>
-                                                  {actor.actions && actor.actions.map((action: any, i: number) => (
-                                                    <Collapsible key={i} className="bg-gray-700/50 rounded-md">
+                                                  <div className="flex items-center justify-between mb-2">
+                                                    <h5 className="text-sm font-medium text-blue-300">Actions</h5>
+                                                    {isLoadingActionStatuses && (
+                                                      <span className="text-xs text-blue-400">Loading status...</span>
+                                                    )}
+                                                    {actionStatusError && (
+                                                      <span className="text-xs text-red-400">Status unavailable</span>
+                                                    )}
+                                                  </div>
+                                                  {actor.actions && actor.actions.map((action: any, i: number) => {
+                                                    const actionStatus = getActionStatus(action.contract_name, action.function_name);
+                                                    return (
+                                                      <Collapsible key={i} className="bg-gray-700/50 rounded-md">
                                                       <CollapsibleTrigger className="w-full p-3 flex items-center justify-between">
-                                                        <div>
+                                                        <div className="flex-1 min-w-0">
                                                           <h6 className="text-white text-left text-sm font-medium">{action.name}</h6>
                                                           <p className="text-gray-400 text-xs text-left">{action.summary}</p>
+                                                          <p className="text-gray-500 text-[10px] text-left mt-1">{action.contract_name}.{action.function_name}</p>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2 ml-2">
                                                           <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
                                                             {action.contract_name}
                                                           </span>
+                                                          {/* Action Status Display */}
+                                                          {actionStatus ? (
+                                                            <div className="flex items-center gap-2">
+                                                              <span className={`px-2 py-1 rounded text-[10px] font-medium ${
+                                                                actionStatus.status === 'completed' ? 'bg-green-900/50 text-green-300' :
+                                                                actionStatus.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
+                                                                actionStatus.status === 'failed' ? 'bg-red-900/50 text-red-300' :
+                                                                'bg-gray-900/50 text-gray-400'
+                                                              }`}>
+                                                                {actionStatus.step}
+                                                              </span>
+                                                              <div className={`w-2 h-2 rounded-full ${
+                                                                actionStatus.status === 'completed' ? 'bg-green-400' :
+                                                                actionStatus.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
+                                                                actionStatus.status === 'failed' ? 'bg-red-400' :
+                                                                'bg-gray-500'
+                                                              }`} />
+                                                            </div>
+                                                          ) : (
+                                                            <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
+                                                              pending
+                                                            </span>
+                                                          )}
                                                           <a 
                                                             href={`/action/${id}/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
                                                             target="_blank"
@@ -5307,7 +5388,8 @@ export default function AnalysisPage() {
                                                         </div>
                                                       </CollapsibleContent>
                                                     </Collapsible>
-                                                  ))}
+                                                    );
+                                                  })}
                                                 </div>
                                               </div>
                                             </CollapsibleContent>

@@ -30,6 +30,7 @@ function Router() {
         <ProtectedRoute path="/new-project" component={NewProjectPage} />
         <ProtectedRoute path="/results/:id" component={ResultsPage} />
         <ProtectedRoute path="/analysis/:id" component={AnalysisPage} />
+        <ProtectedRoute path="/project/:projectId/:submissionId" component={AnalysisPage} />
         <ProtectedRoute path="/action/:projectId/:submissionId/:actorIndex/:actionIndex" component={ActionViewer} />
         <ProtectedRoute path="/project/:projectId/action/:contractName/:functionName" component={ActionViewer} />
         <ProtectedRoute path="/teams" component={TeamsPage} />
