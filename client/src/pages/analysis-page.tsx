@@ -5165,7 +5165,7 @@ export default function AnalysisPage() {
                           <div className="space-y-4" id="implementation-steps">
                             <h3 className="text-xl font-semibold text-blue-400">Actor Implementations</h3>
                             
-                            {/* Get actors data from API */}
+                            {/* Parse actors data from API */}
                             {(() => {
                               let actorsData = { actors: [] };
                               try {
@@ -5213,12 +5213,6 @@ export default function AnalysisPage() {
                                                 <div className="space-y-3">
                                                   <div className="flex items-center justify-between mb-2">
                                                     <h5 className="text-sm font-medium text-blue-300">Actions</h5>
-                                                    {isLoadingActionStatuses && (
-                                                      <span className="text-xs text-blue-400">Loading status...</span>
-                                                    )}
-                                                    {actionStatusError && (
-                                                      <span className="text-xs text-red-400">Status unavailable</span>
-                                                    )}
                                                   </div>
                                                   {actor.actions && actor.actions.map((action: any, i: number) => {
                                                     const actionStatus = getActionStatus(action.contract_name, action.function_name);
