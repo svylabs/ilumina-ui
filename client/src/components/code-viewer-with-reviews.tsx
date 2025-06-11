@@ -93,6 +93,14 @@ export default function CodeViewerWithReviews({
     return acc;
   }, {} as Record<number, Review[]>);
 
+  // Handle line clicks
+  const handleLineClick = (lineNumber: number) => {
+    const hasReviews = reviewsByLine[lineNumber];
+    if (hasReviews) {
+      setSelectedReview(hasReviews[0]);
+    }
+  };
+
   // Custom line renderer for SyntaxHighlighter
   const lineProps = (lineNumber: number) => {
     const hasReviews = reviewsByLine[lineNumber];
@@ -118,7 +126,8 @@ export default function CodeViewerWithReviews({
           paddingLeft: '8px',
           cursor: 'pointer'
         },
-        onClick: () => setSelectedReview(hasReviews[0])
+        'data-line-number': lineNumber,
+        className: 'review-line'
       };
     }
     return {};
@@ -127,7 +136,19 @@ export default function CodeViewerWithReviews({
   return (
     <div className="space-y-4">
       {/* Code Display */}
-      <div className="relative">
+      <div 
+        className="relative"
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          const lineElement = target.closest('span[data-line-number]') || target.closest('.review-line');
+          if (lineElement) {
+            const lineNumber = parseInt(lineElement.getAttribute('data-line-number') || '0');
+            if (lineNumber > 0) {
+              handleLineClick(lineNumber);
+            }
+          }
+        }}
+      >
         <SyntaxHighlighter
           language="javascript"
           style={vscDarkPlus}
