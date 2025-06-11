@@ -58,10 +58,6 @@ export default function CodeReviewSection({ projectId, contractName, functionNam
   const [isImplementing, setIsImplementing] = useState(false);
   const { toast } = useToast();
 
-  // Debug logging
-  console.log('CodeReviewSection props:', { projectId, contractName, functionName });
-  console.log('CodeReviewSection state:', { review, isLoading, error });
-
   const handleImplementRecommendations = async () => {
     setIsImplementing(true);
     try {
