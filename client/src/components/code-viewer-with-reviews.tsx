@@ -107,15 +107,24 @@ export default function CodeViewerWithReviews({
 
   // Handle line clicks to toggle inline reviews
   const handleLineClick = (lineNumber: number) => {
+    console.log('Line clicked:', lineNumber);
+    console.log('Reviews by line:', reviewsByLine);
+    console.log('Current expanded lines:', expandedLines);
+    
     const hasReviews = reviewsByLine[lineNumber];
     if (hasReviews) {
+      console.log('Reviews found for line:', hasReviews);
       const newExpandedLines = new Set(expandedLines);
       if (expandedLines.has(lineNumber)) {
         newExpandedLines.delete(lineNumber);
+        console.log('Removing line from expanded');
       } else {
         newExpandedLines.add(lineNumber);
+        console.log('Adding line to expanded');
       }
       setExpandedLines(newExpandedLines);
+    } else {
+      console.log('No reviews found for line:', lineNumber);
     }
   };
 
@@ -144,8 +153,8 @@ export default function CodeViewerWithReviews({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Code viewer */}
-      <div className="flex-1 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+      {/* Code viewer with overlay buttons */}
+      <div className="flex-1 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden relative">
         <SyntaxHighlighter
           language="typescript"
           style={customStyle}
@@ -167,13 +176,13 @@ export default function CodeViewerWithReviews({
               minWidth: '3rem',
               textAlign: 'right',
               paddingRight: '1rem',
-              cursor: hasReviews ? 'pointer' : 'default',
               fontWeight: hasReviews ? 'bold' : 'normal'
             };
           }}
           customStyle={{
             margin: 0,
             padding: '1rem',
+            paddingLeft: '4rem',
             background: 'rgba(17, 24, 39, 0.5)',
             fontSize: '14px',
             height: '100%',
@@ -187,19 +196,39 @@ export default function CodeViewerWithReviews({
                 display: 'block',
                 backgroundColor: hasReviews ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
               },
-              onClick: hasReviews ? () => handleLineClick(lineNumber) : undefined,
-              onMouseEnter: hasReviews ? (e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
-              } : undefined,
-              onMouseLeave: hasReviews ? (e) => {
-                e.currentTarget.style.backgroundColor = hasReviews ? 'rgba(59, 130, 246, 0.1)' : 'transparent';
-              } : undefined,
-              title: hasReviews ? `${hasReviews.length} review(s) on line ${lineNumber} - Click to view` : ''
+              title: hasReviews ? `${hasReviews.length} review(s) on line ${lineNumber}` : ''
             };
           }}
         >
           {code}
         </SyntaxHighlighter>
+        
+        {/* Clickable review indicators overlay */}
+        <div className="absolute left-0 top-0 h-full pointer-events-none">
+          {Object.entries(reviewsByLine).map(([lineNumberStr, lineReviews]) => {
+            const lineNumber = parseInt(lineNumberStr);
+            const lineHeight = 20; // Approximate line height
+            const topPosition = (lineNumber - 1) * lineHeight + 16; // Offset for padding
+            
+            return (
+              <button
+                key={lineNumber}
+                className="absolute left-1 w-6 h-5 pointer-events-auto rounded text-xs font-bold hover:opacity-80 transition-opacity"
+                style={{
+                  top: `${topPosition}px`,
+                  backgroundColor: getSeverityColor(lineReviews).includes('text-orange') ? '#fb923c' : 
+                                   getSeverityColor(lineReviews).includes('text-blue') ? '#60a5fa' :
+                                   getSeverityColor(lineReviews).includes('text-red') ? '#f87171' : '#60a5fa',
+                  color: 'white'
+                }}
+                onClick={() => handleLineClick(lineNumber)}
+                title={`${lineReviews.length} review(s) on line ${lineNumber} - Click to view`}
+              >
+                {lineReviews.length}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Review overlays below the code */}
