@@ -740,7 +740,7 @@ export default function ActionViewer() {
                   <div>
                     <span className="text-gray-400">Last Updated:</span>
                     <p className="text-white font-medium">
-                      {actionStatus.last_updated ? new Date(actionStatus.last_updated).toLocaleString() : 'Unknown'}
+                      {actionStatus.updated_at ? new Date(actionStatus.updated_at).toLocaleString() : 'Unknown'}
                     </p>
                   </div>
                 </div>
