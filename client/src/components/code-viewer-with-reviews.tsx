@@ -5,6 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, X, ChevronRight } from 'lucide-react';
 
+// Simple TypeScript syntax highlighter
+function highlightTypeScript(code: string): string {
+  if (!code.trim()) return '&nbsp;';
+  
+  return code
+    .replace(/\b(function|const|let|var|if|else|for|while|return|import|export|class|interface|type|async|await|try|catch|finally)\b/g, '<span style="color: #569cd6;">$1</span>')
+    .replace(/\b(string|number|boolean|void|any|unknown|never)\b/g, '<span style="color: #4ec9b0;">$1</span>')
+    .replace(/"([^"]*)"/g, '<span style="color: #ce9178;">"$1"</span>')
+    .replace(/'([^']*)'/g, '<span style="color: #ce9178;">\'$1\'</span>')
+    .replace(/`([^`]*)`/g, '<span style="color: #ce9178;">`$1`</span>')
+    .replace(/\/\/.*$/gm, '<span style="color: #6a9955;">$&</span>')
+    .replace(/\/\*[\s\S]*?\*\//g, '<span style="color: #6a9955;">$&</span>')
+    .replace(/\b(\d+\.?\d*)\b/g, '<span style="color: #b5cea8;">$1</span>')
+    .replace(/([{}()[\];,.])/g, '<span style="color: #d4d4d4;">$1</span>');
+}
+
 interface Review {
   line_number: number;
   description: string;
@@ -75,7 +91,7 @@ export default function CodeViewerWithReviews({
 }: CodeViewerWithReviewsProps) {
   const { data: code, isLoading, error } = useActionCode(projectId, contractName, functionName);
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
-  const [showReviewPanel, setShowReviewPanel] = useState(true);
+
 
   if (isLoading) {
     return (
@@ -127,201 +143,119 @@ export default function CodeViewerWithReviews({
   };
 
   return (
-    <div className="relative flex h-screen">
-      {/* Main code area */}
-      <div className="flex-1 overflow-auto">
-        <div 
-          className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden"
-          style={{ 
-            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
-          }}
-        >
-          {/* Render code with inline review overlays */}
-          {code.split('\n').map((line, index) => {
-            const lineNumber = index + 1;
-            const hasReviews = reviewsByLine[lineNumber];
-            const isExpanded = expandedLines.has(lineNumber);
-            const lineReviews = reviewsByLine[lineNumber];
-            
-            return (
-              <div key={lineNumber}>
-                {/* Code line */}
-                <div className="flex hover:bg-gray-800/30 transition-colors">
-                  {/* Line number */}
-                  <div className="flex-shrink-0 w-12 pr-2 text-right text-xs select-none bg-gray-800 border-r border-gray-600">
-                    <button
-                      className={`w-full text-right px-1 py-1 text-xs leading-5 hover:bg-gray-700 transition-colors ${
-                        hasReviews 
-                          ? `${getSeverityColor(hasReviews)} cursor-pointer font-medium` 
-                          : 'text-gray-500'
-                      }`}
-                      onClick={() => hasReviews && handleLineClick(lineNumber)}
-                      disabled={!hasReviews}
-                      title={hasReviews ? `${hasReviews.length} review(s) - Click to toggle` : ''}
-                    >
-                      {lineNumber}
-                    </button>
-                  </div>
-                  
-                  {/* Code content */}
-                  <div className="flex-1 bg-gray-900 px-4 py-1">
-                    <pre 
-                      className="text-sm leading-5 text-gray-100"
-                      style={{ margin: 0, fontFamily: 'inherit' }}
-                    >
-                      <code>{line || ' '}</code>
-                    </pre>
-                  </div>
-
-                  {/* Review indicator */}
-                  {hasReviews && (
-                    <div className="flex-shrink-0 w-8 flex items-center justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-5 w-5 p-0 ${getSeverityColor(hasReviews)} hover:opacity-80`}
-                        onClick={() => handleLineClick(lineNumber)}
-                        title={`${hasReviews.length} review(s) on line ${lineNumber}`}
-                      >
-                        <MessageSquare className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
+    <div className="h-full">
+      <div 
+        className="bg-gray-900 border border-gray-700 rounded-lg overflow-auto h-full"
+        style={{ 
+          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
+        }}
+      >
+        {/* Render code with syntax highlighting and inline review overlays */}
+        {code.split('\n').map((line, index) => {
+          const lineNumber = index + 1;
+          const hasReviews = reviewsByLine[lineNumber];
+          const isExpanded = expandedLines.has(lineNumber);
+          const lineReviews = reviewsByLine[lineNumber];
+          
+          return (
+            <div key={lineNumber}>
+              {/* Code line */}
+              <div className="flex hover:bg-gray-800/30 transition-colors">
+                {/* Line number */}
+                <div className="flex-shrink-0 w-12 pr-2 text-right text-xs select-none bg-gray-800 border-r border-gray-600">
+                  <button
+                    className={`w-full text-right px-1 py-1 text-xs leading-5 hover:bg-gray-700 transition-colors ${
+                      hasReviews 
+                        ? `${getSeverityColor(hasReviews)} cursor-pointer font-medium` 
+                        : 'text-gray-500'
+                    }`}
+                    onClick={() => hasReviews && handleLineClick(lineNumber)}
+                    disabled={!hasReviews}
+                    title={hasReviews ? `${hasReviews.length} review(s) - Click to toggle` : ''}
+                  >
+                    {lineNumber}
+                  </button>
+                </div>
+                
+                {/* Code content with syntax highlighting */}
+                <div className="flex-1 bg-gray-900 px-4 py-1">
+                  <pre 
+                    className="text-sm leading-5"
+                    style={{ margin: 0, fontFamily: 'inherit' }}
+                  >
+                    <code className="language-typescript text-gray-100"
+                      dangerouslySetInnerHTML={{
+                        __html: highlightTypeScript(line || ' ')
+                      }}
+                    />
+                  </pre>
                 </div>
 
-                {/* Review overlay - appears directly below the line */}
-                {isExpanded && lineReviews && (
-                  <div className="ml-12 mr-4 mt-1 mb-2">
-                    <Card className="bg-gray-900 border-gray-600 shadow-2xl border-2">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <Badge className={severityColors[getSeverityFromDescription(lineReviews[0].description)]}>
-                              {getSeverityFromDescription(lineReviews[0].description).toUpperCase()}
-                            </Badge>
-                            <span className="text-sm text-gray-300">
-                              Line {lineNumber} • {lineReviews[0].function_name}()
-                            </span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleLineClick(lineNumber)}
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <div className="space-y-3">
-                          {lineReviews.map((review, reviewIndex) => (
-                            <div key={reviewIndex} className="space-y-2">
-                              <div className="text-sm text-gray-200">
-                                {review.description}
-                              </div>
-                              {review.suggested_fix && (
-                                <div className="bg-gray-800/50 border border-gray-700 rounded-md p-3">
-                                  <div className="text-xs text-green-400 font-medium mb-1">Suggested Fix:</div>
-                                  <div className="text-sm text-gray-300">
-                                    {review.suggested_fix}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                {/* Review indicator */}
+                {hasReviews && (
+                  <div className="flex-shrink-0 w-8 flex items-center justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-5 w-5 p-0 ${getSeverityColor(hasReviews)} hover:opacity-80`}
+                      onClick={() => handleLineClick(lineNumber)}
+                      title={`${hasReviews.length} review(s) on line ${lineNumber}`}
+                    >
+                      <MessageSquare className="h-3 w-3" />
+                    </Button>
                   </div>
                 )}
               </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Fixed Review Panel */}
-      {reviews.length > 0 && (
-        <div className={`fixed top-4 right-4 w-80 transition-transform duration-300 ${showReviewPanel ? 'translate-x-0' : 'translate-x-full'}`}>
-          <Card className="bg-gray-900/95 border-gray-600 shadow-2xl border-2 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Reviews</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowReviewPanel(!showReviewPanel)}
-                  className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                >
-                  <ChevronRight className={`h-4 w-4 transition-transform ${showReviewPanel ? 'rotate-180' : ''}`} />
-                </Button>
-              </div>
-
-              {/* Review summary */}
-              <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
-                <span>{reviews.length} review{reviews.length !== 1 ? 's' : ''} found</span>
-                <div className="flex gap-1 flex-wrap">
-                  {Object.entries(
-                    reviews.reduce((acc, review) => {
-                      const severity = getSeverityFromDescription(review.description);
-                      acc[severity] = (acc[severity] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  ).map(([severity, count]) => (
-                    <Badge key={severity} className={severityColors[severity as keyof typeof severityColors]} variant="outline">
-                      {count} {severity}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Review list */}
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {Object.entries(reviewsByLine).map(([lineNumber, lineReviews]) => {
-                  const severity = lineReviews.reduce((highest, review) => {
-                    const reviewSeverity = getSeverityFromDescription(review.description);
-                    const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
-                    return severityOrder[reviewSeverity] > severityOrder[highest] ? reviewSeverity : highest;
-                  }, 'low' as 'low' | 'medium' | 'high' | 'critical');
-
-                  const isExpanded = expandedLines.has(parseInt(lineNumber));
-
-                  return (
-                    <Button
-                      key={lineNumber}
-                      variant="ghost"
-                      size="sm"
-                      className={`w-full justify-start text-left p-2 h-auto ${severityColors[severity]} hover:opacity-80 ${isExpanded ? 'ring-2 ring-blue-500' : ''}`}
-                      onClick={() => handleLineClick(parseInt(lineNumber))}
-                    >
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="h-3 w-3" />
-                        <span className="text-xs">Line {lineNumber}</span>
-                        <Badge className={severityColors[severity]} variant="outline">
-                          {lineReviews.length}
-                        </Badge>
+              {/* Review overlay - appears directly below the line */}
+              {isExpanded && lineReviews && (
+                <div className="ml-12 mr-4 mt-1 mb-2">
+                  <Card className="bg-gray-900 border-gray-600 shadow-2xl border-2">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Badge className={severityColors[getSeverityFromDescription(lineReviews[0].description)]}>
+                            {getSeverityFromDescription(lineReviews[0].description).toUpperCase()}
+                          </Badge>
+                          <span className="text-sm text-gray-300">
+                            Line {lineNumber} • {lineReviews[0].function_name}()
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleLineClick(lineNumber)}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </Button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
-      {/* Toggle button when panel is closed */}
-      {reviews.length > 0 && !showReviewPanel && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowReviewPanel(true)}
-          className="fixed top-4 right-4 bg-gray-900/95 border-gray-600 text-white hover:bg-gray-800"
-        >
-          <MessageSquare className="h-4 w-4 mr-2" />
-          {reviews.length} Reviews
-        </Button>
-      )}
+                      <div className="space-y-3">
+                        {lineReviews.map((review, reviewIndex) => (
+                          <div key={reviewIndex} className="space-y-2">
+                            <div className="text-sm text-gray-200">
+                              {review.description}
+                            </div>
+                            {review.suggested_fix && (
+                              <div className="bg-gray-800/50 border border-gray-700 rounded-md p-3">
+                                <div className="text-xs text-green-400 font-medium mb-1">Suggested Fix:</div>
+                                <div className="text-sm text-gray-300">
+                                  {review.suggested_fix}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
