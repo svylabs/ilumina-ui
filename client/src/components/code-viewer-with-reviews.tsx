@@ -224,7 +224,7 @@ export default function CodeViewerWithReviews({
           return (
             <div
               key={lineNumber}
-              className="absolute left-20 z-20 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-w-md w-80"
+              className="absolute left-20 z-20 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-w-lg w-96"
               style={{
                 top: `${topPosition}px`
               }}
