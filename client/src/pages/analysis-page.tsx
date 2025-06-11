@@ -5227,29 +5227,7 @@ export default function AnalysisPage() {
                                                           <span className="text-xs bg-blue-900 px-2 py-1 rounded-full text-blue-200">
                                                             {action.contract_name}
                                                           </span>
-                                                          {/* Action Status Display */}
-                                                          {actionStatus ? (
-                                                            <div className="flex items-center gap-2">
-                                                              <span className={`px-2 py-1 rounded text-[10px] font-medium ${
-                                                                actionStatus.status === 'completed' ? 'bg-green-900/50 text-green-300' :
-                                                                actionStatus.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
-                                                                actionStatus.status === 'failed' ? 'bg-red-900/50 text-red-300' :
-                                                                'bg-gray-900/50 text-gray-400'
-                                                              }`}>
-                                                                {actionStatus.step}
-                                                              </span>
-                                                              <div className={`w-2 h-2 rounded-full ${
-                                                                actionStatus.status === 'completed' ? 'bg-green-400' :
-                                                                actionStatus.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
-                                                                actionStatus.status === 'failed' ? 'bg-red-400' :
-                                                                'bg-gray-500'
-                                                              }`} />
-                                                            </div>
-                                                          ) : (
-                                                            <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-                                                              pending
-                                                            </span>
-                                                          )}
+
                                                           <a 
                                                             href={`/action/${id}/${submissionId}/${index}/${i}?actorName=${encodeURIComponent(actor.name)}&actionName=${encodeURIComponent(action.name)}&contractName=${encodeURIComponent(action.contract_name)}&functionName=${encodeURIComponent(action.function_name)}&actorSummary=${encodeURIComponent(actor.summary)}&actionSummary=${encodeURIComponent(action.summary)}`}
                                                             target="_blank"
