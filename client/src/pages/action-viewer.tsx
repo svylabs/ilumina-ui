@@ -596,8 +596,23 @@ export default function ActionViewer() {
 
     setIsRetrying(true);
     try {
+      // Debug the current action status and step
+      console.log('Action status for retry:', actionStatus);
+      console.log('Current step value:', actionStatus?.step);
+      
       // Map internal step names to expected API parameter values
-      const step = actionStatus?.step === 'analyze_action' ? 'analyze' : 'implement';
+      let step = 'analyze'; // Default to analyze
+      if (actionStatus?.step === 'analyze_action') {
+        step = 'analyze';
+      } else if (actionStatus?.step === 'implement_action') {
+        step = 'implement';
+      } else {
+        // For any other step or unknown, default to analyze
+        console.log('Unknown step, defaulting to analyze:', actionStatus?.step);
+        step = 'analyze';
+      }
+      
+      console.log('Sending retry request with step:', step);
       
       const response = await fetch('/api/retry-action', {
         method: 'POST',
