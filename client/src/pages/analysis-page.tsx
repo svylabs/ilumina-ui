@@ -79,11 +79,15 @@ type HistoryLogEntry = {
 import HistoryComponent from "@/components/history-component";
 
 // Action Status Display Component
-function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
+function ActionStatusDisplay({ contractName, functionName, actionStatuses, submissionId, onRetry }: {
   contractName: string;
   functionName: string;
   actionStatuses: any;
+  submissionId: string;
+  onRetry?: () => void;
 }) {
+  const [isRetrying, setIsRetrying] = useState(false);
+
   // Get action status from the fetched data
   const getActionStatus = (contractName: string, functionName: string) => {
     if (!actionStatuses?.action_analyses) return null;
@@ -99,6 +103,41 @@ function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
       step: action.step || null,
       progress: 0
     };
+  };
+
+  const handleRetry = async () => {
+    if (!actionStatus || actionStatus.status !== 'error') return;
+    
+    setIsRetrying(true);
+    
+    try {
+      const response = await fetch('/api/retry-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submission_id: submissionId,
+          contract_name: contractName,
+          function_name: functionName,
+          step: actionStatus.step || 'analyze'
+        })
+      });
+
+      if (response.ok) {
+        // Trigger a refetch of action statuses
+        if (onRetry) {
+          onRetry();
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to retry action:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error retrying action:', error);
+    } finally {
+      setIsRetrying(false);
+    }
   };
 
   const actionStatus = getActionStatus(contractName, functionName);
@@ -120,6 +159,16 @@ function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
           actionStatus.status === 'error' ? 'bg-red-400' :
           'bg-gray-500'
         }`} />
+        
+        {actionStatus.status === 'error' && (
+          <button
+            onClick={handleRetry}
+            disabled={isRetrying}
+            className="px-2 py-1 text-[10px] bg-red-900/20 hover:bg-red-900/40 text-red-300 rounded border border-red-800/50 hover:border-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRetrying ? 'Retrying...' : 'Retry'}
+          </button>
+        )}
       </div>
     );
   }
@@ -5320,6 +5369,25 @@ export default function AnalysisPage() {
                                                             contractName={action.contract_name}
                                                             functionName={action.function_name}
                                                             actionStatuses={actionStatuses}
+                                                            submissionId={submissionId}
+                                                            onRetry={() => {
+                                                              // Refetch action statuses after retry
+                                                              const fetchActionStatuses = async () => {
+                                                                setIsLoadingActionStatuses(true);
+                                                                try {
+                                                                  const response = await fetch(`/api/action-statuses/${submissionId}`);
+                                                                  if (response.ok) {
+                                                                    const data = await response.json();
+                                                                    setActionStatuses(data);
+                                                                  }
+                                                                } catch (error) {
+                                                                  console.error('Error refetching action statuses:', error);
+                                                                } finally {
+                                                                  setIsLoadingActionStatuses(false);
+                                                                }
+                                                              };
+                                                              fetchActionStatuses();
+                                                            }}
                                                           />
 
                                                           <a 
