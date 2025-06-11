@@ -15,7 +15,7 @@ interface CodeReview {
 
 export function useCodeReview(projectId: string | undefined, contractName: string, functionName: string) {
   return useQuery<CodeReview>({
-    queryKey: ['/api/code-review', projectId, contractName, functionName],
+    queryKey: [`/api/code-review/${projectId}/${contractName}/${functionName}`],
     enabled: !!projectId && !!contractName && !!functionName,
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
