@@ -184,6 +184,33 @@ export function registerRoutes(app: Express): Server {
       return res.status(500).json({ error: "Failed to fetch submission history" });
     }
   });
+
+  // API endpoint to fetch action statuses for a submission
+  app.get("/api/action-statuses/:submissionId", async (req, res) => {
+    try {
+      const submissionId = req.params.submissionId;
+      
+      if (!submissionId) {
+        return res.status(400).json({ error: "Missing submission ID" });
+      }
+
+      // Call the external API to get action statuses
+      const response = await callExternalIluminaAPI(`/api/submission/${submissionId}/actions`);
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch action statuses: ${response.status}`);
+        return res.status(response.status).json({ 
+          error: "Failed to fetch action statuses from external API" 
+        });
+      }
+      
+      const actionData = await response.json();
+      return res.json(actionData);
+    } catch (error) {
+      console.error("Error fetching action statuses:", error);
+      return res.status(500).json({ error: "Failed to fetch action statuses" });
+    }
+  });
   
   // API endpoint for analyze operations including debugging deployment scripts
   app.post("/api/analyze", async (req, res) => {

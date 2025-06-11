@@ -79,14 +79,52 @@ type HistoryLogEntry = {
 import HistoryComponent from "@/components/history-component";
 
 // Action Status Display Component
-function ActionStatusDisplay({ contractName, functionName }: {
+function ActionStatusDisplay({ contractName, functionName, actionStatuses }: {
   contractName: string;
   functionName: string;
+  actionStatuses: any;
 }) {
-  // Simple static display for now
+  // Get action status from the fetched data
+  const getActionStatus = (contractName: string, functionName: string) => {
+    if (!actionStatuses?.actions) return null;
+    
+    const action = actionStatuses.actions.find((a: any) => 
+      a.contract_name === contractName && a.function_name === functionName
+    );
+    
+    return action ? {
+      status: action.status || 'scheduled',
+      step: action.current_step || null,
+      progress: action.progress || 0
+    } : null;
+  };
+
+  const actionStatus = getActionStatus(contractName, functionName);
+  
+  if (actionStatus) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`px-2 py-1 rounded text-[10px] font-medium ${
+          actionStatus.status === 'success' ? 'bg-green-900/50 text-green-300' :
+          actionStatus.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' :
+          actionStatus.status === 'error' ? 'bg-red-900/50 text-red-300' :
+          'bg-gray-900/50 text-gray-400'
+        }`}>
+          {actionStatus.step || actionStatus.status}
+        </span>
+        <div className={`w-2 h-2 rounded-full ${
+          actionStatus.status === 'success' ? 'bg-green-400' :
+          actionStatus.status === 'in_progress' ? 'bg-blue-400 animate-pulse' :
+          actionStatus.status === 'error' ? 'bg-red-400' :
+          'bg-gray-500'
+        }`} />
+      </div>
+    );
+  }
+  
   return (
     <span className="px-2 py-1 rounded text-[10px] bg-gray-900/50 text-gray-500">
-      ready
+      scheduled
     </span>
   );
 }
@@ -4140,6 +4178,11 @@ export default function AnalysisPage() {
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   
+  // Action status state
+  const [actionStatuses, setActionStatuses] = useState<any>(null);
+  const [isLoadingActionStatuses, setIsLoadingActionStatuses] = useState(false);
+  const [actionStatusError, setActionStatusError] = useState<string | null>(null);
+  
   // Define the complete analysis flow order at component level
   const analysisFlow = [
     "analyze_project",
@@ -4257,6 +4300,33 @@ export default function AnalysisPage() {
     }
   }, [analysis, submissionId, isLoading, error, refetch]);
   
+  // Fetch action statuses for the test_setup section
+  useEffect(() => {
+    if (!submissionId || selectedStep !== 'test_setup') return;
+
+    const fetchActionStatuses = async () => {
+      setIsLoadingActionStatuses(true);
+      setActionStatusError(null);
+      
+      try {
+        const response = await fetch(`/api/action-statuses/${submissionId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setActionStatuses(data);
+        } else {
+          setActionStatusError('Failed to fetch action statuses');
+        }
+      } catch (error) {
+        console.error('Error fetching action statuses:', error);
+        setActionStatusError('Failed to fetch action statuses');
+      } finally {
+        setIsLoadingActionStatuses(false);
+      }
+    };
+
+    fetchActionStatuses();
+  }, [submissionId, selectedStep]);
+
   // Fetch simulation repository details when the user is viewing the test_setup step
   useEffect(() => {
     const fetchSimulationRepo = async () => {
@@ -5247,6 +5317,7 @@ export default function AnalysisPage() {
                                                           <ActionStatusDisplay 
                                                             contractName={action.contract_name}
                                                             functionName={action.function_name}
+                                                            actionStatuses={actionStatuses}
                                                           />
 
                                                           <a 
