@@ -161,7 +161,7 @@ export default function CodeViewerWithReviews({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Code viewer with overlay */}
+      {/* Code viewer with positioned tooltips */}
       <div className="flex-1 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden relative">
         <SyntaxHighlighter
           language="typescript"
@@ -213,60 +213,67 @@ export default function CodeViewerWithReviews({
           {code}
         </SyntaxHighlighter>
 
-        {/* Review overlay cards */}
-        {expandedLines.size > 0 && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center p-4">
-            <div className="bg-gray-900 border border-gray-600 rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-              <div className="p-4 border-b border-gray-600 flex items-center justify-between">
-                <h3 className="text-white font-medium text-lg">Code Review Details</h3>
+        {/* Positioned review callouts */}
+        {Array.from(expandedLines).map((lineNumber) => {
+          const lineReviews = reviewsByLine[lineNumber];
+          if (!lineReviews) return null;
+
+          const lineHeight = 21;
+          const topPosition = (lineNumber - 1) * lineHeight + 20;
+
+          return (
+            <div
+              key={lineNumber}
+              className="absolute left-20 z-20 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-w-md w-80"
+              style={{
+                top: `${topPosition}px`
+              }}
+            >
+              <div className="p-3 border-b border-gray-600 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge className={severityColors[getSeverityFromDescription(lineReviews[0].description)]}>
+                    {getSeverityFromDescription(lineReviews[0].description).toUpperCase()}
+                  </Badge>
+                  <span className="text-xs text-gray-300">
+                    Line {lineNumber} • {lineReviews[0].function_name}()
+                  </span>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setExpandedLines(new Set())}
-                  className="text-gray-400 hover:text-white"
+                  onClick={() => handleLineClick(lineNumber)}
+                  className="h-5 w-5 p-0 text-gray-400 hover:text-white"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-3 w-3" />
                 </Button>
               </div>
               
-              <div className="p-4 space-y-4">
-                {Array.from(expandedLines).map((lineNumber) => {
-                  const lineReviews = reviewsByLine[lineNumber];
-                  if (!lineReviews) return null;
-
-                  return (
-                    <div key={lineNumber} className="space-y-3">
-                      <div className="flex items-center gap-2 border-b border-gray-700 pb-2">
-                        <Badge className={severityColors[getSeverityFromDescription(lineReviews[0].description)]}>
-                          {getSeverityFromDescription(lineReviews[0].description).toUpperCase()}
-                        </Badge>
-                        <span className="text-sm text-gray-300">
-                          Line {lineNumber} • {lineReviews[0].function_name}()
-                        </span>
-                      </div>
-
-                      {lineReviews.map((review, reviewIndex) => (
-                        <div key={reviewIndex} className="space-y-3 pl-4">
-                          <div className="text-sm text-gray-200 leading-relaxed">
-                            {review.description}
-                          </div>
-                          {review.suggested_fix && (
-                            <div className="bg-gray-800/50 border border-gray-700 rounded-md p-3">
-                              <div className="text-xs text-green-400 font-medium mb-2">Suggested Fix:</div>
-                              <div className="text-sm text-gray-300 leading-relaxed">
-                                {review.suggested_fix}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+              <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
+                {lineReviews.map((review, reviewIndex) => (
+                  <div key={reviewIndex} className="space-y-2">
+                    <div className="text-xs text-gray-200 leading-relaxed">
+                      {review.description}
                     </div>
-                  );
-                })}
+                    {review.suggested_fix && (
+                      <div className="bg-gray-900/50 border border-gray-700 rounded-md p-2">
+                        <div className="text-xs text-green-400 font-medium mb-1">Fix:</div>
+                        <div className="text-xs text-gray-300 leading-relaxed">
+                          {review.suggested_fix}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
+
+              {/* Arrow pointing to the line */}
+              <div 
+                className="absolute left-0 top-4 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-600"
+                style={{ transform: 'translateX(-4px)' }}
+              />
             </div>
-          </div>
-        )}
+          );
+        })}
       </div>
     </div>
   );
