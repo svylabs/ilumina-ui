@@ -110,24 +110,40 @@ export default function HomePage() {
       name: "Free",
       price: 0,
       period: "forever",
-      description: "Perfect for getting started",
+      description: "Perfect for getting started • Basic models",
       features: [
         "1 project",
         "1 simulation run per day",
         "10 monthly credits for AI assisted edits",
-        "Export / Import simulation code to / from GitHub"
+        "Export / Import simulation code to / from GitHub",
+        "Basic AI models"
+      ]
+    },
+    {
+      name: "Lite",
+      price: 29,
+      period: "per month",
+      description: "Enhanced features • State-of-the-art models",
+      features: [
+        "2 projects",
+        "10 simulation runs per day",
+        "50 monthly credits for AI assisted edits",
+        "Export / Import simulation code to / from GitHub",
+        "State-of-the-art AI models",
+        "Email support"
       ]
     },
     {
       name: "Pro",
       price: 99,
       period: "per month",
-      description: "For professional developers",
+      description: "For professional developers • State-of-the-art models",
       features: [
-        "3 projects",
-        "20 simulation runs per day",
-        "AI assisted edits",
+        "5 projects",
+        "50 simulation runs per day",
+        "Unlimited AI assisted edits",
         "Export / Import simulation code to / from GitHub",
+        "State-of-the-art AI models",
         "Priority support"
       ]
     },
@@ -135,13 +151,14 @@ export default function HomePage() {
       name: "Teams",
       price: 999,
       period: "per month",
-      description: "For development teams",
+      description: "For development teams • State-of-the-art models",
       features: [
-        "10 projects",
+        "15 projects",
         "Unlimited simulation runs",
-        "AI assisted edits",
+        "Unlimited AI assisted edits",
         "10 hours of manual test plan analysis/creation support per month",
         "Export / Import simulation code to / from GitHub",
+        "State-of-the-art AI models",
         "< 24 hour support turnaround"
       ]
     }
@@ -311,7 +328,7 @@ export default function HomePage() {
           ) : (
             <div className="space-y-12">
               {/* Main Subscription Plans */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {pricingData?.map((plan: {
                   name: string;
                   price: number;
@@ -343,6 +360,11 @@ export default function HomePage() {
                       <div className="text-sm text-white/70">
                         {plan.period}
                       </div>
+                      {plan.name === 'Lite' && (
+                        <div className="mt-1 text-xs text-primary/80">
+                          Monthly subscription
+                        </div>
+                      )}
                       {plan.name === 'Pro' && (
                         <div className="mt-1 text-xs text-primary/80">
                           3-month commitment ($99/month) or<br />
