@@ -113,7 +113,7 @@ export default function HomePage() {
       description: "Perfect for getting started • Basic models",
       features: [
         "1 project",
-        "1 simulation run per day",
+        "1 simulation run per month",
         "10 monthly credits for AI assisted edits",
         "Export / Import simulation code to / from GitHub",
         "Basic AI models"
@@ -125,8 +125,8 @@ export default function HomePage() {
       period: "per month",
       description: "Enhanced features • State-of-the-art models",
       features: [
-        "2 projects",
-        "10 simulation runs per day",
+        "1 project",
+        "3 simulation runs per day",
         "50 monthly credits for AI assisted edits",
         "Export / Import simulation code to / from GitHub",
         "State-of-the-art AI models",
