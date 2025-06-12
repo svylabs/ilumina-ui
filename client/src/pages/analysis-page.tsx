@@ -4746,7 +4746,66 @@ export default function AnalysisPage() {
                   });
 
                   if (analysis?.status === "error" || hasFailedSteps) {
-                    return <h3 className="text-red-400 font-medium">Analysis Failed</h3>;
+                    return (
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-red-400 font-medium">Analysis Failed</h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-red-900/30 border-red-700 text-red-300 hover:bg-red-900/60 hover:text-red-200"
+                          onClick={async () => {
+                            try {
+                              // Find the failed step to retry
+                              const failedStep = analysis?.completedSteps?.find(cs => cs.status === 'error');
+                              if (!failedStep) {
+                                toast({
+                                  title: "Error",
+                                  description: "Could not determine which step failed",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+
+                              const response = await fetch('/api/analyze', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  submission_id: submissionId || id,
+                                  step: failedStep.step
+                                })
+                              });
+
+                              if (response.ok) {
+                                const result = await response.text();
+                                toast({
+                                  title: "Retry Started",
+                                  description: result || "Analysis retry initiated successfully"
+                                });
+                                // Refresh the analysis data
+                                refetch();
+                              } else {
+                                const errorText = await response.text();
+                                toast({
+                                  title: "Retry Failed",
+                                  description: errorText || "Failed to start retry",
+                                  variant: "destructive"
+                                });
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "An error occurred while retrying",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                        >
+                          Retry Analysis
+                        </Button>
+                      </div>
+                    );
                   } else if (allStepsComplete) {
                     return (
                       <>
