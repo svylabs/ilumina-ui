@@ -2450,8 +2450,11 @@ export function registerRoutes(app: Express): Server {
       case "free":
         limit = 1;
         break;
+      case "lite":
+        limit = 3;
+        break;
       case "pro":
-        limit = 20;
+        limit = 100;
         break;
       case "teams":
         // Unlimited
@@ -8212,7 +8215,17 @@ export function registerRoutes(app: Express): Server {
       
       if (user.plan !== 'teams') {
         // Check daily limits for non-teams plans
-        let limit = user.plan === 'pro' ? 20 : 1; // 20 for pro, 1 for free
+        let limit;
+        switch (user.plan) {
+          case 'lite':
+            limit = 3;
+            break;
+          case 'pro':
+            limit = 100;
+            break;
+          default:
+            limit = 1; // free plan
+        }
         
         // If it's a new day, reset the simulation counter
         if (user.lastSimulationDate) {

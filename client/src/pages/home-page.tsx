@@ -140,7 +140,7 @@ export default function HomePage() {
       description: "For professional developers • State-of-the-art models",
       features: [
         "5 projects",
-        "Unlimited simulation runs",
+        "100 simulation runs per day",
         "Unlimited AI assisted edits",
         "Export / Import simulation code to / from GitHub",
         "State-of-the-art AI models",
