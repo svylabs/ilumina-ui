@@ -156,7 +156,7 @@ export default function HomePage() {
         "15 projects",
         "Unlimited simulation runs",
         "Unlimited AI assisted edits",
-        "10 hours of manual test plan analysis/creation support per month",
+        "Manual simulation creation support for 1 project",
         "Export / Import simulation code to / from GitHub",
         "State-of-the-art AI models",
         "< 24 hour support turnaround"
