@@ -135,12 +135,12 @@ export default function HomePage() {
     },
     {
       name: "Pro",
-      price: 99,
+      price: 149,
       period: "per month",
       description: "For professional developers • State-of-the-art models",
       features: [
         "5 projects",
-        "50 simulation runs per day",
+        "Unlimited simulation runs",
         "Unlimited AI assisted edits",
         "Export / Import simulation code to / from GitHub",
         "State-of-the-art AI models",
@@ -149,7 +149,7 @@ export default function HomePage() {
     },
     {
       name: "Teams",
-      price: 999,
+      price: 1499,
       period: "per month",
       description: "For development teams • State-of-the-art models",
       features: [
@@ -367,14 +367,14 @@ export default function HomePage() {
                       )}
                       {plan.name === 'Pro' && (
                         <div className="mt-1 text-xs text-primary/80">
-                          3-month commitment ($99/month) or<br />
-                          Monthly subscription: $129/month
+                          3-month commitment ($149/month) or<br />
+                          Monthly subscription: $199/month
                         </div>
                       )}
                       {plan.name === 'Teams' && (
                         <div className="mt-1 text-xs text-primary/80">
-                          3-month commitment ($999/month) or<br />
-                          Monthly subscription: $1299/month
+                          3-month commitment ($1499/month) or<br />
+                          Monthly subscription: $1999/month
                         </div>
                       )}
                       <p className="mt-2 text-white/70">
