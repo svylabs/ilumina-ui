@@ -4755,12 +4755,12 @@ export default function AnalysisPage() {
                           className="bg-red-900/30 border-red-700 text-red-300 hover:bg-red-900/60 hover:text-red-200"
                           onClick={async () => {
                             try {
-                              // Find the failed step to retry
-                              const failedStep = analysis?.completedSteps?.find(cs => cs.status === 'error');
-                              if (!failedStep) {
+                              // Use the current step from submission data
+                              const currentStep = analysis?.currentStep;
+                              if (!currentStep) {
                                 toast({
                                   title: "Error",
-                                  description: "Could not determine which step failed",
+                                  description: "Could not determine current step to retry",
                                   variant: "destructive"
                                 });
                                 return;
@@ -4773,7 +4773,7 @@ export default function AnalysisPage() {
                                 },
                                 body: JSON.stringify({
                                   submission_id: submissionId || id,
-                                  step: failedStep.step
+                                  step: currentStep
                                 })
                               });
 
