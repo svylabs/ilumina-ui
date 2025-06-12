@@ -199,6 +199,54 @@ export function registerRoutes(app: Express): Server {
       return res.status(500).json({ error: "Failed to retry action" });
     }
   });
+
+  // API endpoint to retry failed analysis steps
+  app.post("/api/retry-analysis", async (req, res) => {
+    console.log("Retry analysis endpoint called with body:", req.body);
+    try {
+      const { submission_id, step } = req.body;
+      
+      if (!submission_id || !step) {
+        return res.status(400).json({ 
+          error: "Missing required parameters: submission_id, step" 
+        });
+      }
+
+      // Valid backend analysis steps
+      const validSteps = [
+        'analyze_project', 'analyze_actors', 'analyze_deployment',
+        'implement_deployment_script', 'verify_deployment_script',
+        'analyze_all_actions', 'analyze_snapshots', 'implement_all_snapshots', 'implement_all_actions'
+      ];
+
+      if (!validSteps.includes(step)) {
+        return res.status(400).json({ 
+          error: `Invalid step: ${step}. Expected one of: ${validSteps.join(', ')}` 
+        });
+      }
+
+      // Call the external API to retry the analysis step
+      const response = await callExternalIluminaAPI('/analyze', 'POST', {
+        submission_id,
+        step
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to retry analysis step: ${response.status} ${errorText}`);
+        return res.status(response.status).json({ 
+          error: `Failed to retry analysis step: ${errorText}` 
+        });
+      }
+      
+      const result = await response.json();
+      console.log('Retry analysis step response:', result);
+      return res.json(result);
+    } catch (error) {
+      console.error("Error retrying analysis step:", error);
+      return res.status(500).json({ error: "Failed to retry analysis step" });
+    }
+  });
   
   // Now let's continue with the rest of our routes
   
