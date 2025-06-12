@@ -327,9 +327,9 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="space-y-12">
-              {/* Main Subscription Plans */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {pricingData?.map((plan: {
+              {/* Top Row - First 3 Plans */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {pricingData?.slice(0, 3).map((plan: {
                   name: string;
                   price: number;
                   period: string;
@@ -401,6 +401,58 @@ export default function HomePage() {
                   </CardContent>
                 </Card>
               ))}
+              </div>
+
+              {/* Bottom Row - Teams Plan and Custom */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                {pricingData?.slice(3).map((plan: {
+                  name: string;
+                  price: number;
+                  period: string;
+                  description: string;
+                  features: string[];
+                }) => (
+                <Card
+                  key={plan.name}
+                  className="border-2 border-primary/20 bg-black/50 backdrop-blur relative"
+                >
+                  <CardContent className="p-6">
+                    <div className="text-center mb-6">
+                      <h3 className="text-xl font-semibold mb-2 text-white">
+                        {plan.name}
+                      </h3>
+                      <div className="text-3xl font-bold text-white mb-1">
+                        ${plan.price}
+                      </div>
+                      <div className="text-sm text-white/70">
+                        {plan.period}
+                      </div>
+                      {plan.name === 'Teams' && (
+                        <div className="mt-1 text-xs text-primary/80">
+                          3-month commitment ($1499/month) or<br />
+                          Monthly subscription: $1999/month
+                        </div>
+                      )}
+                      <p className="mt-2 text-white/70">
+                        {plan.description}
+                      </p>
+                    </div>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature: string) => (
+                        <li key={feature} className="flex items-center text-white/90">
+                          <Check className="h-4 w-4 text-primary mr-2" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className="w-full bg-primary/20 hover:bg-primary/30 text-white"
+                    >
+                      Get Started
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
               
               {/* Custom Plan Card */}
               <Card className="border-2 border-primary/20 bg-black/50 backdrop-blur relative">
@@ -438,7 +490,7 @@ export default function HomePage() {
                   </Button>
                 </CardContent>
               </Card>
-            </div>
+              </div>
 
               {/* Credit Purchase Options for Free Users */}
               <div className="mt-16">
