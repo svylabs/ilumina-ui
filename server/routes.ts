@@ -3833,8 +3833,13 @@ export function registerRoutes(app: Express): Server {
       };
       
       // Add authorization if GitHub token is available
+      const hasToken = Boolean(process.env.GITHUB_TOKEN);
+      console.log(`GitHub API request - Token available: ${hasToken}, Environment: ${process.env.NODE_ENV || 'development'}`);
+      
       if (process.env.GITHUB_TOKEN) {
         headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      } else {
+        console.warn('GitHub token not available - requests may be rate limited or fail for private repos');
       }
       
       const response = await fetch(url, { headers });
@@ -3878,6 +3883,9 @@ export function registerRoutes(app: Express): Server {
         : `https://api.github.com/repos/${owner}/${repo}/contents?ref=${branch}`;
       
       // GitHub API requires a User-Agent header
+      const hasToken = Boolean(process.env.GITHUB_TOKEN);
+      console.log(`GitHub Contents API - Token available: ${hasToken}, Environment: ${process.env.NODE_ENV || 'development'}, URL: ${url}`);
+      
       const response = await fetch(url, {
         headers: {
           'User-Agent': 'Ilumina-App',
