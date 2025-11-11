@@ -4620,13 +4620,33 @@ export function registerRoutes(app: Express): Server {
 
   // Debug endpoint to check environment variables in production
   app.get("/api/debug/env-check", async (req, res) => {
+    const envVars: Record<string, any> = {};
+    
+    // Check all environment variables (excluding sensitive full values)
+    Object.keys(process.env).forEach(key => {
+      const value = process.env[key];
+      if (value) {
+        // For token/secret keys, show only first 7 characters
+        if (key.toLowerCase().includes('token') || 
+            key.toLowerCase().includes('key') || 
+            key.toLowerCase().includes('secret') ||
+            key.toLowerCase().includes('pass')) {
+          envVars[key] = {
+            exists: true,
+            length: value.length,
+            prefix: value.substring(0, 7) + '...'
+          };
+        } else {
+          // For non-sensitive vars, show full value
+          envVars[key] = value;
+        }
+      }
+    });
+    
     res.json({
-      hasGithubToken: Boolean(process.env.GITHUB_TOKEN),
-      tokenLength: process.env.GITHUB_TOKEN ? process.env.GITHUB_TOKEN.length : 0,
-      tokenPrefix: process.env.GITHUB_TOKEN ? process.env.GITHUB_TOKEN.substring(0, 4) + '...' : 'not set',
-      isProduction: process.env.NODE_ENV === 'production',
+      environment: process.env.NODE_ENV || 'not set',
       isDeployment: process.env.REPLIT_DEPLOYMENT === '1',
-      nodeEnv: process.env.NODE_ENV || 'not set'
+      environmentVariables: envVars
     });
   });
 
