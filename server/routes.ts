@@ -4618,6 +4618,18 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Debug endpoint to check environment variables in production
+  app.get("/api/debug/env-check", async (req, res) => {
+    res.json({
+      hasGithubToken: Boolean(process.env.GITHUB_TOKEN),
+      tokenLength: process.env.GITHUB_TOKEN ? process.env.GITHUB_TOKEN.length : 0,
+      tokenPrefix: process.env.GITHUB_TOKEN ? process.env.GITHUB_TOKEN.substring(0, 4) + '...' : 'not set',
+      isProduction: process.env.NODE_ENV === 'production',
+      isDeployment: process.env.REPLIT_DEPLOYMENT === '1',
+      nodeEnv: process.env.NODE_ENV || 'not set'
+    });
+  });
+
   // Auto-registration endpoint for new users
   app.post("/api/projects/create-with-user", async (req, res) => {
     const { name, githubUrl, email, autoRegister } = req.body;
