@@ -28,10 +28,24 @@ export async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  const parts = stored.split(".");
+  if (parts.length !== 2) {
+    console.error("Invalid password format in database - missing salt");
+    return false;
+  }
+  const [hashed, salt] = parts;
+  if (!hashed || !salt) {
+    console.error("Invalid password format in database - empty hash or salt");
+    return false;
+  }
+  try {
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
 async function getUserByEmail(email: string) {
